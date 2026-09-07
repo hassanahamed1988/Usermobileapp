@@ -1,0 +1,55 @@
+:root {
+  /* Default Text Color - Full Black */
+  --text-main: #000000;
+  --text-muted: #4b5563;
+  --text-inverse: #ffffff; /* For buttons with dark backgrounds */
+}
+
+/* Dark mode ONLY changes text color */
+.dark {
+  --text-main: #ffffff;
+  --text-muted: #d1d5db;
+}
+
+.text-text-main {
+  color: var(--text-main);
+}
+.text-text-muted {
+  color: var(--text-muted);
+}
+
+/* Legibility Correction for Light/White Background boxes & cards */
+.bg-white,
+.bg-gray-50,
+.bg-gray-100,
+.bg-theme-card,
+.bg-card-bg {
+  --text-main: #000000 !important;
+  --text-muted: #4b5563 !important;
+}
+
+/* Maintain light text inside dark cards and containers under dark mode or night mode */
+.dark-mode .bg-white,
+.dark-mode .bg-gray-50,
+.dark-mode .bg-gray-100,
+.dark-mode .bg-theme-card,
+.dark-mode .bg-card-bg,
+.dark-mode .bg-\[\#111111\],
+.dark-mode .trip-file-modal,
+.dark .bg-white,
+.dark .bg-gray-50,
+.dark .bg-gray-100,
+.dark .bg-theme-card,
+.dark .bg-card-bg,
+.dark .bg-\[\#111111\],
+.dark .trip-file-modal,
+.dark-theme .bg-white,
+.dark-theme .bg-gray-50,
+.dark-theme .bg-gray-100,
+.dark-theme .bg-theme-card,
+.dark-theme .bg-card-bg,
+.dark-theme .bg-\[\#111111\],
+.dark-theme .trip-file-modal {
+  --text-main: #ffffff !important;
+  --text-muted: #d1d5db !important;
+}

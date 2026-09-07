@@ -1,0 +1,346 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents local user account profiles and system permission settings",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["ADMIN", "USER"] },
+        "status": { "type": "string", "enum": ["PENDING", "ENABLED", "DISABLED", "BLOCKED"] },
+        "expiryDate": { "type": "string" },
+        "registrationDate": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "role", "status"]
+    },
+    "Trip": {
+      "title": "Trip",
+      "description": "A single transport or logistics delivery trip",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fileId": { "type": "string" },
+        "fromCountry": { "type": "string" },
+        "loadingPlace": { "type": "string" },
+        "loadingDate": { "type": "string" },
+        "arrivalCountry": { "type": "string" },
+        "deliveryPlace": { "type": "string" },
+        "deliveryDate": { "type": "string" },
+        "companyName": { "type": "string" },
+        "loadingType": { "type": "string" },
+        "containerNumber": { "type": "string" },
+        "vehicleNumber": { "type": "string" },
+        "userId": { "type": "string" },
+        "totalAmount": { "type": "number" },
+        "paidAmount": { "type": "number" },
+        "paymentStatus": { "type": "string", "enum": ["PAID", "PARTIAL", "UNPAID"] }
+      },
+      "required": ["id", "fileId", "userId", "fromCountry", "arrivalCountry", "paymentStatus"]
+    },
+    "Profile": {
+      "title": "Profile",
+      "description": "A driver or vehicle companion associate profile",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "idNumber": { "type": "string" },
+        "mobile": { "type": "string" },
+        "nationality": { "type": "string" },
+        "joiningDate": { "type": "string" },
+        "type": { "type": "string", "enum": ["COMPANY", "EMPLOYEE"] },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "name", "userId", "type"]
+    },
+    "FinancialRecord": {
+      "title": "FinancialRecord",
+      "description": "A ledger record for salary, commission or advances paid",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["SALARY", "ADVANCE", "COMMISSION"] },
+        "status": { "type": "string", "enum": ["PAID", "PENDING"] },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "amount", "type", "status", "userId"]
+    },
+    "MonthlyFile": {
+      "title": "MonthlyFile",
+      "description": "A folder representing an active month for logging trips",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "month": { "type": "integer" },
+        "year": { "type": "integer" },
+        "status": { "type": "string", "enum": ["OPEN", "CLOSED"] },
+        "createdAt": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "month", "year", "status", "userId"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "A transaction entry for an income or a deduction",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "transactionId": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string" },
+        "type": { "type": "string", "enum": ["INCOME", "DEDUCTION"] },
+        "category": { "type": "string" },
+        "method": { "type": "string", "enum": ["CASH", "ONLINE_BANK", "MOBILE_BANKING"] },
+        "userId": { "type": "string" },
+        "status": { "type": "string", "enum": ["PENDING", "RECEIVED"] }
+      },
+      "required": ["id", "transactionId", "amount", "type", "category", "method", "userId", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Activity warnings, reminders or audit messages",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["EXPIRY", "REGISTRATION", "INFO"] },
+        "timestamp": { "type": "string" },
+        "isRead": { "type": "boolean" },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "title", "message", "type", "timestamp", "isRead"]
+    },
+    "FuelPurchase": {
+      "title": "FuelPurchase",
+      "description": "Represents a diesel buy or purchase transaction log",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "receiptNumber": { "type": "string" },
+        "price": { "type": "number" },
+        "volume": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "userId": { "type": "string" },
+        "month": { "type": "integer" },
+        "year": { "type": "integer" }
+      },
+      "required": ["id", "date", "receiptNumber", "price", "volume", "totalAmount", "userId", "month", "year"]
+    },
+    "Purchase": {
+      "title": "Purchase",
+      "description": "Represents an individual purchase transaction or receipt collection",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "hypermarketName": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "number" },
+        "receipt": { "type": "string" }
+      },
+      "required": ["id", "userId", "hypermarketName", "date", "amount", "status", "createdAt"]
+    },
+    "FamilyMaintenance": {
+      "title": "FamilyMaintenance",
+      "description": "Represents an individual family maintenance transaction record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "category": { "type": "string", "enum": ["Family", "Others"] },
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["Income", "Expense"] },
+        "date": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "description": { "type": "string" },
+        "attachment": { "type": "string" },
+        "bankName": { "type": "string" },
+        "accountName": { "type": "string" },
+        "accountNumber": { "type": "string" },
+        "transactionReference": { "type": "string" },
+        "mobileBankingWallet": { "type": "string" },
+        "transactionId": { "type": "string" },
+        "familyMemberName": { "type": "string" },
+        "relationship": { "type": "string" },
+        "otherCategory": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "payoutCurrency": { "type": "string" },
+        "payoutAmount": { "type": "number" },
+        "exchangeRate": { "type": "number" },
+        "receiveCurrency": { "type": "string" },
+        "receiveAmount": { "type": "number" },
+        "sourceOfIncome": { "type": "string" }
+      },
+      "required": ["id", "userId", "category", "amount", "type", "date", "createdAt"]
+    },
+    "Contact": {
+      "title": "Contact",
+      "description": "Represents a contact saved by a specific user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "photo": { "type": "string" },
+        "fullName": { "type": "string" },
+        "mobileNumber": { "type": "string" },
+        "altMobileNumber": { "type": "string" },
+        "emailAddress": { "type": "string" },
+        "companyName": { "type": "string" },
+        "address": { "type": "string" },
+        "relationship": { "type": "string" },
+        "nationality": { "type": "string" },
+        "documentType": { "type": "string" },
+        "documentNumber": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "fullName", "mobileNumber"]
+    },
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "A vehicle registry entry for trailer, driver and permit details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "vehicleNumber": { "type": "string" },
+        "trailerNumber": { "type": "string" },
+        "vehiclePermitExpiry": { "type": "string" },
+        "trailerPermitExpiry": { "type": "string" },
+        "driverName": { "type": "string" },
+        "vehicleAssignedDate": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "vehicleNumber", "status"]
+    },
+    "VehicleService": {
+      "title": "VehicleService",
+      "description": "A maintenance or servicing log entry for a vehicle",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "vehicleId": { "type": "string" },
+        "vehicleNumber": { "type": "string" },
+        "serviceType": { "type": "string" },
+        "serviceDate": { "type": "string" },
+        "currentKilometer": { "type": "number" },
+        "serviceCost": { "type": "number" },
+        "workshopProvider": { "type": "string" },
+        "descriptionNotes": { "type": "string" },
+        "oilValidity": { "type": "number" },
+        "nextServiceKilometer": { "type": "number" }
+      },
+      "required": ["id", "userId", "vehicleId", "vehicleNumber", "serviceType", "serviceDate", "currentKilometer", "serviceCost"]
+    },
+    "ApplicationRequest": {
+      "title": "ApplicationRequest",
+      "description": "Represents a mobile app registration application request with tracking status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "applicationId": { "type": "string" },
+        "fullName": { "type": "string" },
+        "email": { "type": "string" },
+        "mobile": { "type": "string" },
+        "countryCode": { "type": "string" },
+        "accountType": { "type": "string", "enum": ["PERSONAL", "COMPANY"] },
+        "status": { "type": "string", "enum": ["Submitted", "Under Review", "Pending Information", "Approved", "Rejected", "Cancelled"] },
+        "submissionDate": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "nationality": { "type": "string" },
+        "religion": { "type": "string" },
+        "gender": { "type": "string" },
+        "dob": { "type": "string" },
+        "profession": { "type": "string" },
+        "companyName": { "type": "string" },
+        "country": { "type": "string" },
+        "addressLine1": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "zoneNumber": { "type": "string" },
+        "buildingNumber": { "type": "string" },
+        "streetNumber": { "type": "string" }
+      },
+      "required": ["id", "applicationId", "fullName", "email", "mobile", "status", "submissionDate"]
+    }
+  },
+  "firestore": {
+    "application_requests": {
+      "schema": "ApplicationRequest",
+      "description": "Mobile registration application requests logs"
+    },
+    "users": {
+      "schema": "User",
+      "description": "Global user profiles database"
+    },
+    "users/{userId}/Contacts": {
+      "schema": "Contact",
+      "description": "User specific contacts directory"
+    },
+    "admins/{adminId}/Contacts": {
+      "schema": "Contact",
+      "description": "Admin/Manager specific contacts directory"
+    },
+    "users/{userId}/Purchase": {
+      "schema": "Purchase",
+      "description": "User specific purchase collection"
+    },
+    "admins/{adminId}/Purchase": {
+      "schema": "Purchase",
+      "description": "Admin/Manager specific purchase collection"
+    },
+    "users/{userId}/vehicles": {
+      "schema": "Vehicle",
+      "description": "User specific vehicle logs directory"
+    },
+    "users/{userId}/vehicleServices": {
+      "schema": "VehicleService",
+      "description": "User specific vehicle services logs directory"
+    },
+    "trips": {
+      "schema": "Trip",
+      "description": "User trip logs details"
+    },
+    "profiles": {
+      "schema": "Profile",
+      "description": "Companion profiling details lookup"
+    },
+    "finances": {
+      "schema": "FinancialRecord",
+      "description": "Driver internal financial balance books details"
+    },
+    "monthlyFiles": {
+      "schema": "MonthlyFile",
+      "description": "Trip logging files grouping index schemas"
+    },
+    "payments": {
+      "schema": "Payment",
+      "description": "Financial ledger transactions audit histories"
+    },
+    "notifications": {
+      "schema": "Notification",
+      "description": "Warning alerts, updates logs"
+    },
+    "fuels": {
+      "schema": "FuelPurchase",
+      "description": "Diesel purchase transaction entries"
+    },
+    "family_maintenance": {
+      "schema": "FamilyMaintenance",
+      "description": "Isolated family maintenance private transactions log"
+    }
+  }
+}

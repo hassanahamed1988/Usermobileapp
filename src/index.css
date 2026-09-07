@@ -1,0 +1,228 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark-mode, .dark-theme, .dark *, .dark-mode *, .dark-theme *));
+
+/* Disable all transitions during preload or view mounting to avoid flashing on reload */
+.preload,
+.preload *,
+.no-initial-transitions,
+.no-initial-transitions * {
+  -webkit-transition: none !important;
+  -moz-transition: none !important;
+  -ms-transition: none !important;
+  -o-transition: none !important;
+  transition: none !important;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+* {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+input, textarea, [contenteditable="true"] {
+  -webkit-touch-callout: default;
+  -webkit-user-select: auto;
+  -ms-user-select: auto;
+  user-select: auto;
+}
+
+/* Global Smooth Slide-In Animation (Disabled) */
+.smooth-slide-in {
+  animation: none !important;
+}
+
+
+
+@keyframes fingerprint-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px 4px rgba(37, 99, 235, 0.25);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+  }
+}
+
+.animate-fingerprint-pulse {
+  animation: fingerprint-pulse 2s infinite ease-in-out;
+}
+
+/* ==============================================================================
+   CARD BORDER & SHADOW LOGIC (MAIN CARDS ONLY)
+   - Layout Main Cards: Retain existing Border Shadow
+   - Sub Cards inside Main Card: Clean (No Box Border, No Border Shadow)
+   - Selection Menus / Selection Panels: Clean (No Box Border, No Border Shadow)
+   - Floating Label Background Areas: Clean (No Box Border, No Border Shadow)
+   ============================================================================== */
+
+/* 1. Sub Cards inside Main Card - Disable Box Borders and Border Shadows */
+.bg-card-bg .bg-card-bg,
+.bg-card-bg .bg-theme-card,
+.bg-card-bg .bg-nested-card,
+.bg-card-bg .sub-card,
+.bg-card-bg [class*="sub-card"],
+.bg-card-bg [class*="nested-card"],
+.bg-theme-card .bg-theme-card,
+.bg-theme-card .bg-card-bg,
+.bg-theme-card .bg-nested-card,
+.bg-theme-card .sub-card,
+.bg-theme-card [class*="sub-card"],
+.bg-theme-card [class*="nested-card"],
+.glass-card .bg-theme-card,
+.glass-card .bg-card-bg,
+.glass-card .bg-nested-card,
+.glass-card .sub-card,
+.reset-option-card .bg-theme-card,
+.reset-option-card .bg-card-bg,
+.reset-option-card .bg-nested-card,
+.bg-nested-card,
+[class*="bg-card"] .bg-nested-card,
+[class*="bg-card"] [class*="sub-card"],
+[class*="bg-card"] [class*="nested-card"] {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  border: none !important;
+}
+
+/* 2. Selection Menus, Selection Panels & Inner Options inside Main Card */
+.bg-card-bg select,
+.bg-card-bg option,
+.bg-card-bg [role="option"],
+.bg-card-bg [role="menu"],
+.bg-card-bg [role="listbox"],
+.bg-card-bg [role="combobox"],
+.bg-card-bg .selection-card,
+.bg-card-bg .selection-panel,
+.bg-card-bg .selection-menu,
+.bg-card-bg .select-menu,
+.bg-card-bg .menu-panel,
+.bg-card-bg .custom-statement-select,
+.bg-card-bg .selection-opt,
+.bg-theme-card select,
+.bg-theme-card option,
+.bg-theme-card [role="option"],
+.bg-theme-card [role="menu"],
+.bg-theme-card [role="listbox"],
+.bg-theme-card [role="combobox"],
+.bg-theme-card .selection-card,
+.bg-theme-card .selection-panel,
+.bg-theme-card .selection-menu,
+.bg-theme-card .select-menu,
+.bg-theme-card .menu-panel,
+.bg-theme-card .custom-statement-select,
+.bg-theme-card .selection-opt,
+.glass-card select,
+.glass-card [role="option"],
+.glass-card [role="menu"],
+.glass-card [role="listbox"],
+.glass-card .selection-panel,
+.glass-card .selection-menu,
+[class*="bg-card"] select,
+[class*="bg-card"] option,
+[class*="bg-card"] [role="option"],
+[class*="bg-card"] [role="menu"],
+[class*="bg-card"] [role="listbox"],
+[class*="bg-card"] [role="combobox"],
+[class*="bg-card"] .selection-card,
+[class*="bg-card"] .selection-panel,
+[class*="bg-card"] .selection-menu,
+[class*="bg-card"] .select-menu,
+[class*="bg-card"] .menu-panel,
+[class*="bg-card"] .selection-opt {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* 3. Floating Label Background Areas - Clean without Box Border or Border Shadow */
+label,
+label.absolute,
+.floating-label,
+.floating-label-bg,
+.floating-label-container,
+.input-field-container label,
+.simple-input-container label,
+[class*="input-field-container"] label,
+[class*="simple-input"] label,
+.invoice-panel label,
+.invoice-panel .relative label,
+div[class*="input"] label,
+form label {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  border: none !important;
+  outline: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+
+/* 4. Global Card Separation & Isolation to Prevent Shadow Overlapping and Extra Box Layers */
+.grid > .bg-theme-card,
+.grid > .bg-card-bg,
+.grid > .glass-card,
+.grid > button.bg-theme-card,
+.grid > button.bg-card-bg,
+.space-y-2 > .bg-theme-card,
+.space-y-3 > .bg-theme-card,
+.space-y-4 > .bg-theme-card,
+.space-y-2 > div.bg-theme-card,
+.space-y-3 > div.bg-theme-card,
+.space-y-4 > div.bg-theme-card {
+  isolation: isolate;
+  margin-bottom: 2px;
+  
+}
+
+/* Global Card Base Drop Shadow & Elevation - Main Cards */
+.bg-theme-card, 
+.bg-card-bg, 
+.glass-card, 
+.reset-option-card {
+  box-shadow: var(--dynamic-card-shadow, 0 4px 16px rgba(0, 0, 0, 0.02)) !important;
+  -webkit-box-shadow: var(--dynamic-card-shadow, 0 4px 16px rgba(0, 0, 0, 0.02)) !important;
+  border: var(--dynamic-card-border, 1px solid rgba(0, 0, 0, 0.04)) !important;
+  isolation: isolate !important;
+  /* No transition on border-color/box-shadow: these are set once from CSS
+     variables at mount time (see Layout.tsx --dynamic-card-border /
+     --dynamic-card-shadow). Animating them made every freshly-mounted card
+     "flash" its border/shadow into place on first paint of every screen —
+     not how a native Android app's static card chrome behaves. Interactive
+     hover/press feedback is handled separately (see hover:/active: utility
+     classes), so this stays static like a normal app UI. */
+}
+
+.dark .bg-theme-card,
+.dark .bg-card-bg,
+.dark .glass-card,
+.dark .reset-option-card,
+.dark-mode .bg-theme-card,
+.dark-mode .bg-card-bg {
+  box-shadow: var(--dynamic-card-shadow, none) !important;
+  -webkit-box-shadow: var(--dynamic-card-shadow, none) !important;
+  border: var(--dynamic-card-border, 1px solid rgba(255, 255, 255, 0.08)) !important;
+  isolation: isolate !important;
+}
+
+/* Smooth floating label transition */
+.floating-label-transition {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), top 0.25s cubic-bezier(0.4, 0, 0.2, 1), left 0.25s cubic-bezier(0.4, 0, 0.2, 1), font-size 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+
+

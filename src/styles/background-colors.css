@@ -1,0 +1,62 @@
+:root {
+  /* Main App Background - Slate Out */
+  --app-bg: #f8fafc;
+  
+  /* Elements on top of background - Full White */
+  --card-bg: #ffffff;
+  --nested-card-bg: #f3f4f6;
+  --sidebar-bg: #ffffff;
+  --form-bg: #ffffff;
+  --header-bg: #ffffff;
+  --nav-bg: #ffffff;
+  
+  /* Hover states */
+  --hover-bg: rgba(0, 0, 0, 0.05);
+  --active-bg: rgba(0, 0, 0, 0.1);
+}
+
+
+/* Global dividers for local transaction cards (Monthly Files, Payment Summary, My Income Summary) */
+.bg-card-bg .pointer-events-auto > div {
+  border-bottom: none !important;
+}
+
+.bg-card-bg .pointer-events-auto > div + div {
+  border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
+  padding-top: 0.375rem !important;
+  margin-top: 0.375rem !important;
+}
+
+html.dark .bg-card-bg .pointer-events-auto > div + div {
+  border-top-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.bg-card-bg .pointer-events-auto span,
+.bg-card-bg .pointer-events-auto p {
+  font-size: 12px !important;
+}
+
+/* Card inner options, menus, input boxes - Disable box border shadows */
+.bg-card-bg input,
+.bg-card-bg select,
+.bg-card-bg textarea,
+.bg-card-bg button,
+.bg-card-bg option,
+.bg-card-bg [role="option"],
+.bg-card-bg [role="menu"],
+.bg-theme-card input,
+.bg-theme-card select,
+.bg-theme-card textarea,
+.bg-theme-card button,
+.bg-theme-card option,
+.bg-theme-card [role="option"],
+.bg-theme-card [role="menu"],
+[class*="bg-card"] input,
+[class*="bg-card"] select,
+[class*="bg-card"] textarea,
+[class*="bg-card"] button,
+[class*="bg-card"] option,
+[class*="bg-card"] [role="option"],
+[class*="bg-card"] [role="menu"] {
+  box-shadow: none !important;
+}
