@@ -344,6 +344,7 @@ const Login: React.FC = () => {
     }
   };
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [showLoginSheet, setShowLoginSheet] = useState(false);
   const [isPinError, setIsPinError] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
@@ -466,7 +467,7 @@ const Login: React.FC = () => {
   };
 
 
-  const openModal = (modal: 'menu' | 'login' | 'support' | 'prayer_times' | 'weather' | 'ramadan' | 'about' | 'application_status') => {
+  const openModal = (modal: 'menu' | 'login' | 'support' | 'prayer_times' | 'weather' | 'ramadan' | 'about' | 'application_status' | 'setup_biometric') => {
     if (modal === 'menu') {
       setIsMenuOpen(true);
       return;
@@ -498,6 +499,12 @@ const Login: React.FC = () => {
         if (savedId) {
           localStorage.removeItem('fleetpro_temp_track_app_id');
         }
+      }
+      if (modal === 'setup_biometric') {
+        setShowFingerprintEnrollModal(true);
+        setEnrollUsername('');
+        setEnrollPassword('');
+        setEnrollMobile('');
       }
     }, 300);
   };
@@ -1838,16 +1845,9 @@ const Login: React.FC = () => {
       {/* Floating Header Controls */}
       <>
         {activeTab !== 'signup' && (
-          <div
-            
-            
-            
-            
-          >
+          <div>
             {/* Menu Button */}
             <button 
-              
-              
               onClick={() => openModal('menu')}
               className={`absolute top-safe left-6 p-3 rounded-lg shadow-lg z-50 border ${
                 isBackgroundLight 
@@ -1857,6 +1857,73 @@ const Login: React.FC = () => {
             >
               <Menu size={24} />
             </button>
+
+            {/* Language Toggle Button on the Right Side (same level as Menu button) */}
+            <div className="absolute top-safe right-6 z-50">
+              <button 
+                type="button"
+                onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                className={`p-3 rounded-lg shadow-lg border flex items-center gap-1.5 font-black text-xs uppercase tracking-wider transition-all ${
+                  isBackgroundLight 
+                    ? 'bg-white text-black border-black/5 hover:bg-black/5' 
+                    : 'bg-[#18181b]/95 text-white border-white/5 hover:bg-white/5'
+                }`}
+              >
+                <Globe size={18} />
+                <span>{language === 'bn' ? 'BN' : language === 'ar' ? 'AR' : 'EN'}</span>
+                <ChevronDown size={14} className={`transition-transform duration-200 ${showLanguageDropdown ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Language Dropdown List */}
+              <AnimatePresence>
+                {showLanguageDropdown && (
+                  <>
+                    {/* Backdrop to close on click outside */}
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setShowLanguageDropdown(false)} 
+                    />
+                    
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className={`absolute right-0 mt-2 w-36 py-1.5 rounded-lg shadow-xl z-50 border flex flex-col ${
+                        isBackgroundLight 
+                          ? 'bg-white border-black/5 text-black' 
+                          : 'bg-[#18181b]/95 border-white/5 text-white'
+                      }`}
+                    >
+                      {[
+                        { code: 'en', label: 'English', short: 'EN' },
+                        { code: 'bn', label: 'বাংলা', short: 'BN' },
+                        { code: 'ar', label: 'العربية', short: 'AR' }
+                      ].map((lang) => (
+                        <button
+                          key={lang.code}
+                          type="button"
+                          onClick={() => {
+                            setLanguage(lang.code);
+                            setShowLanguageDropdown(false);
+                          }}
+                          className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors flex items-center justify-between ${
+                            language === lang.code 
+                              ? 'text-blue-500 font-black bg-blue-500/5' 
+                              : isBackgroundLight 
+                                ? 'hover:bg-black/5' 
+                                : 'hover:bg-white/5'
+                          }`}
+                        >
+                          <span>{lang.label}</span>
+                          <span className="text-[10px] opacity-50 font-black">{lang.short}</span>
+                        </button>
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         )}
       </>
@@ -3553,69 +3620,12 @@ const Login: React.FC = () => {
                 {activeTab === 'signin' ? (
                   <div 
                     style={loginCardStyle}
-                    className={`w-full login-card-container border-t ${loginCardIsDark ? 'border-white/10 shadow-[0_-15px_50px_rgba(0,0,0,0.6)]' : 'border-black/10 shadow-[0_-10px_40px_rgba(0,0,0,0.08)]'} rounded-t-[24px] rounded-b-none border-x-0 border-b-0 p-6 sm:p-8 pb-[calc(max(2rem,env(safe-area-inset-bottom))+24px)] mt-auto min-h-[460px] md:border-t-0 md:rounded-2xl md:border md:shadow-2xl md:my-auto md:min-h-[510px] md:max-w-md md:mx-auto`}
+                    className={`w-full login-card-container border-t ${loginCardIsDark ? 'border-white/10 shadow-[0_-15px_50px_rgba(0,0,0,0.6)]' : 'border-black/10 shadow-[0_-10px_40px_rgba(0,0,0,0.08)]'} rounded-t-[24px] rounded-b-none border-x-0 border-b-0 p-6 sm:p-8 pb-6 md:pb-8 mt-auto md:border-t-0 md:rounded-2xl md:border md:shadow-2xl md:my-auto md:max-w-md md:mx-auto`}
                   >
                     {/* iOS Bottom Sheet Drag Handle */}
                     {!showForgotPassword && !showForgotUsername && !showFingerprintEnrollModal && (
-                      <div className="flex justify-between items-start mb-5 -mt-2">
-                        <div className="flex-1 invisible" />
+                      <div className="flex justify-center items-center mb-5 -mt-2">
                         <div className={`w-[36px] h-1.5 rounded-full ${loginCardIsDark ? 'bg-white/20' : 'bg-black/20'}`} />
-                        <div className="flex-1 flex justify-end">
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              const langs: any[] = ['en', 'bn', 'ar'];
-                              const next = langs[(langs.indexOf(language) + 1) % langs.length];
-                              setLanguage(next);
-                            }}
-                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider transition-all border ${
-                              loginCardIsDark 
-                                ? 'bg-white/10 text-white/80 hover:bg-white/20 border-white/10' 
-                                : 'bg-black/5 text-black/60 hover:bg-black/10 border-black/5'
-                            }`}
-                          >
-                            <Globe size={10} className={loginCardIsDark ? 'text-white/60' : 'text-zinc-500'} />
-                            <span>{language === 'bn' ? 'ল্যাঙ্গুয়েজ' : language === 'ar' ? 'اللغة' : 'Language'}</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                
-                    {/* Tabs - Beautiful iOS Segmented Control */}
-                    {!showAdminPinStep && !showForgotPassword && !showForgotUsername && !showFingerprintEnrollModal && (
-                      <div className={`p-1 rounded-lg flex items-center mb-6 border ${loginCardIsDark ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'}`}>
-                        <button 
-                          onClick={() => {
-                            setShowForgotPassword(false);
-                            setActiveTab('signin');
-                          }}
-                          className={`flex-1 py-2.5 rounded-md text-xs font-black uppercase transition-all duration-200 active:scale-95 ${
-                            activeTab === 'signin' && !showForgotPassword
-                              ? 'tab-btn-active bg-white text-black shadow-sm font-extrabold scale-[1.01]' 
-                              : `tab-btn-inactive ${loginCardIsDark ? 'text-white/40 hover:text-white/80' : 'text-black/40 hover:text-black/80'} font-black`
-                          }`}
-                          style={{
-                            color: (activeTab === 'signin' && !showForgotPassword) ? '#000000' : (loginCardIsDark ? 'rgba(255, 255, 255, 0.45)' : 'rgba(0, 0, 0, 0.45)')
-                          }}
-                        >
-                          {t.LOGIN}
-                        </button>
-                        <button 
-                          onClick={() => {
-                            setShowForgotPassword(false);
-                            setActiveTab('signup');
-                          }}
-                          className={`flex-1 py-2.5 rounded-md text-xs font-black uppercase transition-all duration-200 active:scale-95 ${
-                            activeTab === 'signup' 
-                              ? 'tab-btn-active bg-white text-black shadow-sm font-extrabold scale-[1.01]' 
-                              : `tab-btn-inactive ${loginCardIsDark ? 'text-white/40 hover:text-white/80' : 'text-black/40 hover:text-black/80'} font-black`
-                          }`}
-                          style={{
-                            color: (activeTab === 'signup') ? '#000000' : (loginCardIsDark ? 'rgba(255, 255, 255, 0.45)' : 'rgba(0, 0, 0, 0.45)')
-                          }}
-                        >
-                          {t.SIGNUP}
-                        </button>
                       </div>
                     )}
 
@@ -3912,7 +3922,7 @@ const Login: React.FC = () => {
                             </div>
                           </div>
 
-                          <div className="pt-2 mb-8">
+                          <div className="pt-2">
                             <button 
                               type="submit"
                               onClick={handleLogin}
@@ -3938,33 +3948,29 @@ const Login: React.FC = () => {
                             </button>
                           </div>
 
-                          <>
-                              {/* OR BIOMETRICS - 2px gap below continue button */}
-                              <div className="flex items-center justify-center mt-[2px]">
-                                <span className="text-[10px] font-black tracking-widest uppercase text-text-muted">
-                                  {language === 'bn' ? 'অথবা ফিঙ্গারপ্রিন্ট' : 'OR BIOMETRICS'}
-                                </span>
-                              </div>
+                          {/* Sign Up Option below Submit Button */}
+                          <div className="text-center mt-4 mb-6">
+                            <span className="text-xs text-text-muted font-bold">
+                              {language === 'bn' ? 'নতুন অ্যাকাউন্ট তৈরি করতে চান? ' : language === 'ar' ? 'ليس لديك حساب؟ ' : "Don't have an account? "}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowForgotPassword(false);
+                                setActiveTab('signup');
+                              }}
+                              className="text-xs font-black text-emerald-600 dark:text-emerald-400 hover:underline transition-all"
+                            >
+                              {language === 'bn' ? 'নিবন্ধন করুন (Sign up)' : language === 'ar' ? 'إنشاء حساب' : 'Sign up'}
+                            </button>
+                          </div>
 
-                              {/* Fingerprint Icon - 2px gap below OR BIOMETRICS text */}
-                              <div className="flex items-center justify-center mt-[2px]">
-                                <button
-                                  type="button"
-                                  onClick={handleFingerprintIconClick}
-                                  className="w-20 h-20 rounded-full flex items-center justify-center transition-all bg-zinc-50 dark:bg-white/5 text-blue-600 hover:text-blue-500 border-2 border-blue-500 dark:border-blue-400 shadow-sm active:scale-95 hover:scale-105 group animate-fingerprint-pulse"
-                                  title={language === 'bn' ? 'ফিঙ্গারপ্রিন্ট লগইন' : 'Biometric Login'}
-                                >
-                                  <Fingerprint size={48} className="group-hover:animate-pulse" />
-                                </button>
-                              </div>
-
-                              {/* VERSION 2.6.0 SECURE CLOUD SYSTEM - 2px gap below Fingerprint Icon */}
-                              <div className="flex items-center justify-center mt-[2px]">
-                                <p className="text-center text-[9px] text-text-muted uppercase font-bold tracking-widest opacity-40">
-                                  VERSION 2.6.0 • SECURE CLOUD SYSTEM
-                                </p>
-                              </div>
-                            </>
+                          {/* VERSION 2.6.0 SECURE CLOUD SYSTEM */}
+                          <div className="flex items-center justify-center mt-2">
+                            <p className="text-center text-[9px] text-text-muted uppercase font-bold tracking-widest opacity-40">
+                              VERSION 2.6.0 • SECURE CLOUD SYSTEM
+                            </p>
+                          </div>
                         </motion.form>
                       )}
                     </AnimatePresence>

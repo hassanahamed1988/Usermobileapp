@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Home, Clock, Calendar, Cloud, LifeBuoy, Info, ClipboardList } from 'lucide-react';
+import { Home, Clock, Calendar, Cloud, LifeBuoy, Info, ClipboardList, Fingerprint } from 'lucide-react';
 import { useStore } from '@/store';
 
 interface LoginMenuItemsProps {
@@ -17,6 +17,7 @@ const LoginMenuItems: React.FC<LoginMenuItemsProps> = ({ t, openModal, setActive
   const menuItems = [
     { icon: <Home size={20} />, label: "Home", action: () => { openModal('login'); setActiveTab('signin'); } },
     { icon: <ClipboardList size={20} className="text-emerald-500 animate-pulse" />, label: language === 'bn' ? 'আবেদন ট্র্যাকিং' : 'Application Status', action: () => openModal('application_status') },
+    { icon: <Fingerprint size={20} className="text-blue-500" />, label: language === 'bn' ? 'সেটআপ বায়োমেট্রিক' : 'Setup Biometric', action: () => openModal('setup_biometric') },
     { icon: <Clock size={20} />, label: t.PRAYER_TIMES, action: () => openModal('prayer_times') },
     { icon: <Calendar size={20} />, label: t.RAMADAN_SCHEDULE, action: () => openModal('ramadan') },
     { icon: <Cloud size={20} />, label: t.WEATHER, action: () => openModal('weather') },

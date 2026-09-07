@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight, Check, ChevronDown } from 'lucide-react';
 import { useStore } from '@/store';
 
 export interface GlobalDateTimePickerProps {
@@ -58,6 +58,10 @@ const GlobalDateTimePicker: React.FC<GlobalDateTimePickerProps> = ({
   const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
   const [viewDate, setViewDate] = useState<Date>(new Date(initialDate.getFullYear(), initialDate.getMonth(), 1));
   const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
+  const [calendarViewMode, setCalendarViewMode] = useState<'days' | 'months' | 'years'>('days');
+  const [yearGridStart, setYearGridStart] = useState<number>(() => {
+    return new Date().getFullYear() - 4;
+  });
 
   // Range mode (if needed)
   const [rangeStart, setRangeStart] = useState<Date | null>(null);
@@ -68,6 +72,86 @@ const GlobalDateTimePicker: React.FC<GlobalDateTimePickerProps> = ({
   const [selectedHour, setSelectedHour] = useState('09');
   const [selectedMinute, setSelectedMinute] = useState('00');
   const [selectedPeriod, setSelectedPeriod] = useState<'AM' | 'PM'>('AM');
+
+  // iOS Time Wheel Refs and Options
+  const hourWheelRef = useRef<HTMLDivElement>(null);
+  const minuteWheelRef = useRef<HTMLDivElement>(null);
+  const periodWheelRef = useRef<HTMLDivElement>(null);
+  const scrollTimeoutRef = useRef<{ [key: string]: NodeJS.Timeout }>({});
+
+  const itemHeight = 44; // Standard iOS list element height
+  const hours = useMemo(() => Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0')), []);
+  const minutes = useMemo(() => Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0')), []);
+  const periods = useMemo(() => ['AM', 'PM'], []);
+
+  // Sync scroll position with state values when opening or updating state
+  useEffect(() => {
+    if (isOpen && type === 'time') {
+      const timer = setTimeout(() => {
+        if (hourWheelRef.current) {
+          const idx = hours.indexOf(selectedHour);
+          if (idx !== -1) {
+            hourWheelRef.current.scrollTop = idx * itemHeight;
+          }
+        }
+        if (minuteWheelRef.current) {
+          const idx = minutes.indexOf(selectedMinute);
+          if (idx !== -1) {
+            minuteWheelRef.current.scrollTop = idx * itemHeight;
+          }
+        }
+        if (periodWheelRef.current) {
+          const idx = periods.indexOf(selectedPeriod);
+          if (idx !== -1) {
+            periodWheelRef.current.scrollTop = idx * itemHeight;
+          }
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, type, selectedHour, selectedMinute, selectedPeriod, hours, minutes, periods]);
+
+  // Cleanup scroll timeouts on unmount
+  useEffect(() => {
+    return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      Object.values(scrollTimeoutRef.current).forEach(clearTimeout);
+    };
+  }, []);
+
+  const handleScrollWithDebounce = (
+    key: string,
+    ref: React.RefObject<HTMLDivElement | null>,
+    items: string[],
+    setter: (val: any) => void
+  ) => {
+    if (!ref.current) return;
+    if (scrollTimeoutRef.current[key]) {
+      clearTimeout(scrollTimeoutRef.current[key]);
+    }
+    scrollTimeoutRef.current[key] = setTimeout(() => {
+      if (!ref.current) return;
+      const scrollTop = ref.current.scrollTop;
+      const idx = Math.min(Math.max(Math.round(scrollTop / itemHeight), 0), items.length - 1);
+      const val = items[idx];
+      if (val) {
+        setter(val);
+        ref.current.scrollTo({ top: idx * itemHeight, behavior: 'smooth' });
+      }
+    }, 150);
+  };
+
+  const selectItem = (
+    ref: React.RefObject<HTMLDivElement | null>,
+    idx: number,
+    setter: (val: any) => void,
+    val: any
+  ) => {
+    setter(val);
+    if (ref.current) {
+      ref.current.scrollTo({ top: idx * itemHeight, behavior: 'smooth' });
+    }
+  };
 
   // Prevent background scrolling while picker is open
   useEffect(() => {
@@ -123,7 +207,7 @@ const GlobalDateTimePicker: React.FC<GlobalDateTimePickerProps> = ({
         }
         setSelectedDate(validD);
         setViewDate(new Date(validD.getFullYear(), validD.getMonth(), 1));
-        setIsYearPickerOpen(false);
+        setCalendarViewMode('days');
       } else if (type === 'time') {
         const now = new Date();
         let h = now.getHours();
@@ -175,7 +259,7 @@ const GlobalDateTimePicker: React.FC<GlobalDateTimePickerProps> = ({
   const yearsList = useMemo(() => {
     const currentY = new Date().getFullYear();
     const list = [];
-    for (let y = currentY - 20; y <= currentY + 12; y++) {
+    for (let y = currentY + 20; y >= currentY - 80; y--) {
       list.push(y);
     }
     return list;
@@ -257,12 +341,24 @@ const GlobalDateTimePicker: React.FC<GlobalDateTimePickerProps> = ({
     }
   };
 
-  const prevMonth = () => {
-    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
+  const handlePrev = () => {
+    if (calendarViewMode === 'days') {
+      setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
+    } else if (calendarViewMode === 'months') {
+      setViewDate(new Date(viewDate.getFullYear() - 1, viewDate.getMonth(), 1));
+    } else if (calendarViewMode === 'years') {
+      setYearGridStart((prev) => prev - 12);
+    }
   };
 
-  const nextMonth = () => {
-    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
+  const handleNext = () => {
+    if (calendarViewMode === 'days') {
+      setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
+    } else if (calendarViewMode === 'months') {
+      setViewDate(new Date(viewDate.getFullYear() + 1, viewDate.getMonth(), 1));
+    } else if (calendarViewMode === 'years') {
+      setYearGridStart((prev) => prev + 12);
+    }
   };
 
   // ===================== CALENDAR GRID CALCULATION =====================
@@ -485,67 +581,66 @@ const GlobalDateTimePicker: React.FC<GlobalDateTimePickerProps> = ({
             {/* ======================= DATE PICKER VIEW ======================= */}
             {type === 'date' && (
               <>
-                {/* iOS Quick Date Shortcuts */}
-                <div className="px-4 pt-3 pb-1 flex items-center gap-2 overflow-x-auto scrollbar-hide">
-                  <button
-                    type="button"
-                    onClick={() => selectQuickDate('today')}
-                    className="px-3.5 py-1.5 rounded-full bg-white dark:bg-[#2C2C2E] text-slate-800 dark:text-slate-200 text-xs font-semibold shadow-2xs border border-black/5 dark:border-white/5 active:scale-95 transition-all shrink-0 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  >
-                    {isBn ? 'আজ' : 'Today'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => selectQuickDate('yesterday')}
-                    className="px-3.5 py-1.5 rounded-full bg-white dark:bg-[#2C2C2E] text-slate-800 dark:text-slate-200 text-xs font-semibold shadow-2xs border border-black/5 dark:border-white/5 active:scale-95 transition-all shrink-0 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  >
-                    {isBn ? 'গতকাল' : 'Yesterday'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => selectQuickDate('tomorrow')}
-                    className="px-3.5 py-1.5 rounded-full bg-white dark:bg-[#2C2C2E] text-slate-800 dark:text-slate-200 text-xs font-semibold shadow-2xs border border-black/5 dark:border-white/5 active:scale-95 transition-all shrink-0 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  >
-                    {isBn ? 'আগামীকাল' : 'Tomorrow'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => selectQuickDate('firstOfMonth')}
-                    className="px-3.5 py-1.5 rounded-full bg-white dark:bg-[#2C2C2E] text-slate-800 dark:text-slate-200 text-xs font-semibold shadow-2xs border border-black/5 dark:border-white/5 active:scale-95 transition-all shrink-0 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  >
-                    {isBn ? 'মাসের ১ম দিন' : '1st of Month'}
-                  </button>
-                </div>
-
                 {/* iOS Calendar Card Container */}
-                <div className="px-4 py-2">
-                  <div className="bg-white dark:bg-[#2C2C2E] rounded-2xl p-4 shadow-sm border border-black/[0.04] dark:border-white/[0.06]">
+                <div className="px-5 py-3">
+                  <div className="bg-white dark:bg-[#2C2C2E] rounded-3xl p-5 shadow-xs border border-black/[0.04] dark:border-white/[0.06]">
                     {/* Month / Year Bar with Switcher */}
-                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-black/[0.04] dark:border-white/[0.06]">
-                      <button
-                        type="button"
-                        onClick={() => setIsYearPickerOpen(!isYearPickerOpen)}
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#3A3A3C] hover:opacity-85 active:scale-95 transition-all"
-                      >
-                        <span className="text-[15px] font-bold text-slate-900 dark:text-white">
-                          {monthNames[viewDate.getMonth()]} {viewDate.getFullYear()}
-                        </span>
-                        <ChevronRight size={14} className={`text-slate-400 dark:text-slate-500 transition-transform ${isYearPickerOpen ? 'rotate-90' : ''}`} />
-                      </button>
+                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-black/[0.03] dark:border-white/[0.05]">
+                      <div className="flex items-center gap-1.5 relative z-30">
+                        {/* Month Menu Toggle */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCalendarViewMode(calendarViewMode === 'months' ? 'days' : 'months');
+                          }}
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[14px] font-bold transition-all active:scale-95 cursor-pointer ${
+                            calendarViewMode === 'months'
+                              ? 'bg-[#007AFF] text-white shadow-xs'
+                              : 'bg-slate-50 dark:bg-[#3A3A3C] text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#48484A]'
+                          }`}
+                        >
+                          <span>{monthNames[viewDate.getMonth()]}</span>
+                        </button>
+
+                        {/* Year Menu Toggle */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (calendarViewMode === 'years') {
+                              setCalendarViewMode('days');
+                            } else {
+                              const currentSelectedYear = viewDate.getFullYear();
+                              setYearGridStart(currentSelectedYear - 4);
+                              setCalendarViewMode('years');
+                            }
+                          }}
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[14px] font-bold transition-all active:scale-95 cursor-pointer ${
+                            calendarViewMode === 'years'
+                              ? 'bg-[#007AFF] text-white shadow-xs'
+                              : 'bg-slate-50 dark:bg-[#3A3A3C] text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#48484A]'
+                          }`}
+                        >
+                          <span>
+                            {calendarViewMode === 'years'
+                              ? `${isBn ? yearGridStart.toLocaleString('bn-BD', { useGrouping: false }) : yearGridStart}–${isBn ? (yearGridStart + 11).toLocaleString('bn-BD', { useGrouping: false }) : yearGridStart + 11}`
+                              : (isBn ? viewDate.getFullYear().toLocaleString('bn-BD', { useGrouping: false }) : viewDate.getFullYear())}
+                          </span>
+                        </button>
+                      </div>
 
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
-                          onClick={prevMonth}
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-[#007AFF] dark:text-[#0A84FF] hover:bg-slate-100 dark:hover:bg-[#3A3A3C] active:scale-90 transition-all"
+                          onClick={handlePrev}
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-[#007AFF] dark:text-[#0A84FF] hover:bg-slate-100 dark:hover:bg-[#3A3A3C] active:scale-90 transition-all cursor-pointer"
                           aria-label="Previous Month"
                         >
                           <ChevronLeft size={20} />
                         </button>
                         <button
                           type="button"
-                          onClick={nextMonth}
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-[#007AFF] dark:text-[#0A84FF] hover:bg-slate-100 dark:hover:bg-[#3A3A3C] active:scale-90 transition-all"
+                          onClick={handleNext}
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-[#007AFF] dark:text-[#0A84FF] hover:bg-slate-100 dark:hover:bg-[#3A3A3C] active:scale-90 transition-all cursor-pointer"
                           aria-label="Next Month"
                         >
                           <ChevronRight size={20} />
@@ -553,113 +648,145 @@ const GlobalDateTimePicker: React.FC<GlobalDateTimePickerProps> = ({
                       </div>
                     </div>
 
-                    {/* Year / Month Quick Selector View */}
-                    {isYearPickerOpen ? (
-                      <div className="py-2 space-y-3">
-                        <div>
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1.5">
-                            {isBn ? 'মাস নির্বাচন' : 'Select Month'}
-                          </span>
-                          <div className="grid grid-cols-3 gap-1.5">
-                            {monthNames.map((mName, idx) => (
-                              <button
-                                key={mName}
-                                type="button"
-                                onClick={() => {
-                                  setViewDate(new Date(viewDate.getFullYear(), idx, 1));
-                                  setIsYearPickerOpen(false);
-                                }}
-                                className={`py-2 px-1 text-xs font-semibold rounded-xl transition-all ${viewDate.getMonth() === idx ? 'bg-[#007AFF] text-white shadow-xs' : 'bg-slate-50 dark:bg-[#3A3A3C] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
-                              >
-                                {mName}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div>
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1.5">
-                            {isBn ? 'বছর নির্বাচন' : 'Select Year'}
-                          </span>
-                          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
-                            {yearsList.map((yr) => (
-                              <button
-                                key={yr}
-                                type="button"
-                                onClick={() => {
-                                  setViewDate(new Date(yr, viewDate.getMonth(), 1));
-                                  setIsYearPickerOpen(false);
-                                }}
-                                className={`px-3 py-1.5 text-xs font-semibold rounded-xl shrink-0 transition-all ${viewDate.getFullYear() === yr ? 'bg-[#007AFF] text-white shadow-xs' : 'bg-slate-50 dark:bg-[#3A3A3C] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
-                              >
-                                {yr}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      /* Calendar Days Grid */
-                      <div>
-                        {/* Weekday labels */}
-                        <div className="grid grid-cols-7 gap-1 mb-1.5">
-                          {weekdaysShort.map((w, idx) => (
-                            <div key={idx} className="text-center text-[11px] font-bold text-slate-400 dark:text-slate-500 py-0.5">
-                              {w}
+                    {/* Conditional Grid Render based on calendarViewMode with framer-motion */}
+                    <div className="relative min-h-[254px]">
+                      <AnimatePresence mode="wait">
+                        {calendarViewMode === 'days' && (
+                          <motion.div
+                            key="days"
+                            initial={{ opacity: 0, scale: 0.96, y: 4 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                          >
+                            {/* Weekday labels */}
+                            <div className="grid grid-cols-7 gap-1 mb-2">
+                              {weekdaysShort.map((w, idx) => (
+                                <div key={idx} className="text-center text-[12px] font-bold text-slate-400 dark:text-slate-500 py-0.5">
+                                  {w.substring(0, 1)}
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
 
-                        {/* Day Cells */}
-                        <div className="grid grid-cols-7 gap-1">
-                          {calendarDays.map((cell, idx) => {
-                            const isSelected = cell.isSelected;
-                            const isCurrentMonth = cell.isCurrentMonth;
-                            const isToday = cell.isToday;
+                            {/* Day Cells */}
+                            <div className="grid grid-cols-7 gap-1">
+                              {calendarDays.map((cell, idx) => {
+                                const isSelected = cell.isSelected;
+                                const isCurrentMonth = cell.isCurrentMonth;
+                                const isToday = cell.isToday;
 
-                            return (
-                              <button
-                                key={idx}
-                                type="button"
-                                onClick={() => {
-                                  setSelectedDate(cell.date);
-                                  if (!isCurrentMonth) {
-                                    setViewDate(new Date(cell.date.getFullYear(), cell.date.getMonth(), 1));
-                                  }
-                                }}
-                                className="aspect-square flex items-center justify-center p-0.5 relative group"
-                              >
-                                <div
-                                  className={`w-9 h-9 rounded-full flex items-center justify-center text-[15px] transition-all ${
+                                // Keep grid spacers clean of numbers for previous/next months (Standard Cupertino styling)
+                                if (!isCurrentMonth) {
+                                  return <div key={idx} className="aspect-square" />;
+                                }
+
+                                return (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedDate(cell.date);
+                                    }}
+                                    className="aspect-square flex items-center justify-center p-0.5 relative group"
+                                  >
+                                    <div
+                                      className={`w-9 h-9 rounded-full flex items-center justify-center text-[15px] transition-all ${
+                                        isSelected
+                                          ? isToday
+                                            ? 'bg-[#FF3B30] text-white font-semibold shadow-xs scale-105'
+                                            : 'bg-[#007AFF] text-white font-semibold shadow-xs scale-105'
+                                          : isToday
+                                          ? 'font-bold text-[#FF3B30] hover:bg-slate-100 dark:hover:bg-[#3A3A3C]'
+                                          : 'text-slate-900 dark:text-slate-100 font-medium hover:bg-slate-100 dark:hover:bg-[#3A3A3C]'
+                                      }`}
+                                    >
+                                      {isBn ? cell.date.getDate().toLocaleString('bn-BD') : cell.date.getDate()}
+                                    </div>
+                                    {isToday && !isSelected && (
+                                      <div className="absolute bottom-1 w-1 h-1 bg-[#FF3B30] rounded-full" />
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </motion.div>
+                        )}
+
+                        {calendarViewMode === 'months' && (
+                          <motion.div
+                            key="months"
+                            initial={{ opacity: 0, scale: 0.96, y: 4 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                            className="grid grid-cols-3 gap-2 py-1"
+                          >
+                            {monthNames.map((mName, idx) => {
+                              const isSelected = viewDate.getMonth() === idx;
+                              return (
+                                <button
+                                  key={mName}
+                                  type="button"
+                                  onClick={() => {
+                                    setViewDate(new Date(viewDate.getFullYear(), idx, 1));
+                                    setCalendarViewMode('days');
+                                  }}
+                                  className={`py-3 px-1 rounded-2xl text-[14px] font-bold transition-all text-center active:scale-95 cursor-pointer ${
                                     isSelected
-                                      ? 'bg-[#007AFF] text-white font-bold shadow-md shadow-[#007AFF]/30 scale-105'
-                                      : isToday
-                                      ? 'font-bold text-[#007AFF] dark:text-[#0A84FF] bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100'
-                                      : isCurrentMonth
-                                      ? 'text-slate-900 dark:text-slate-100 font-medium hover:bg-slate-100 dark:hover:bg-[#3A3A3C]'
-                                      : 'text-slate-300 dark:text-slate-600 font-normal hover:bg-slate-100/50 dark:hover:bg-[#3A3A3C]/40'
+                                      ? 'bg-[#007AFF] text-white shadow-md'
+                                      : 'text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#3A3A3C]'
                                   }`}
                                 >
-                                  {cell.date.getDate()}
-                                </div>
-                                {isToday && !isSelected && (
-                                  <div className="absolute bottom-1 w-1 h-1 bg-[#007AFF] dark:bg-[#0A84FF] rounded-full" />
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
+                                  {mName}
+                                </button>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+
+                        {calendarViewMode === 'years' && (
+                          <motion.div
+                            key="years"
+                            initial={{ opacity: 0, scale: 0.96, y: 4 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                            className="grid grid-cols-3 gap-2 py-1"
+                          >
+                            {Array.from({ length: 12 }).map((_, idx) => {
+                              const yr = yearGridStart + idx;
+                              const isSelected = viewDate.getFullYear() === yr;
+                              return (
+                                <button
+                                  key={yr}
+                                  type="button"
+                                  onClick={() => {
+                                    setViewDate(new Date(yr, viewDate.getMonth(), 1));
+                                    setCalendarViewMode('days');
+                                  }}
+                                  className={`py-3 px-1 rounded-2xl text-[14px] font-bold transition-all text-center active:scale-95 cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-[#007AFF] text-white shadow-md'
+                                      : 'text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#3A3A3C]'
+                                  }`}
+                                >
+                                  {isBn ? yr.toLocaleString('bn-BD', { useGrouping: false }) : yr}
+                                </button>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
                 </div>
 
                 {/* Selected Date Indicator Banner & Safe Area Padding */}
-                <div className="px-4 pb-[calc(18px+env(safe-area-inset-bottom,18px))] pt-1">
-                  <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-white/80 dark:bg-[#2C2C2E]/80 border border-black/[0.04] dark:border-white/[0.04]">
+                <div className="px-5 pb-[calc(24px+env(safe-area-inset-bottom,24px))] pt-1">
+                  <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-white dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.04] shadow-xs">
                     <div className="flex items-center gap-2">
                       <CalendarIcon size={15} className="text-[#007AFF] dark:text-[#0A84FF]" />
-                      <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         {isBn ? 'নির্বাচিত তারিখ:' : 'Selected:'}
                       </span>
                     </div>
@@ -674,126 +801,107 @@ const GlobalDateTimePicker: React.FC<GlobalDateTimePickerProps> = ({
             {/* ======================= TIME PICKER VIEW ======================= */}
             {type === 'time' && (
               <>
-                {/* iOS Quick Time Shortcuts */}
-                <div className="px-4 pt-3 pb-1 flex items-center gap-2 overflow-x-auto scrollbar-hide">
-                  <button
-                    type="button"
-                    onClick={() => selectQuickTime('now')}
-                    className="px-3.5 py-1.5 rounded-full bg-white dark:bg-[#2C2C2E] text-slate-800 dark:text-slate-200 text-xs font-semibold shadow-2xs border border-black/5 dark:border-white/5 active:scale-95 transition-all shrink-0 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  >
-                    {isBn ? 'এখন' : 'Now'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => selectQuickTime('morning')}
-                    className="px-3.5 py-1.5 rounded-full bg-white dark:bg-[#2C2C2E] text-slate-800 dark:text-slate-200 text-xs font-semibold shadow-2xs border border-black/5 dark:border-white/5 active:scale-95 transition-all shrink-0 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  >
-                    {isBn ? 'সকাল ০৯:০০' : '09:00 AM'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => selectQuickTime('noon')}
-                    className="px-3.5 py-1.5 rounded-full bg-white dark:bg-[#2C2C2E] text-slate-800 dark:text-slate-200 text-xs font-semibold shadow-2xs border border-black/5 dark:border-white/5 active:scale-95 transition-all shrink-0 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  >
-                    {isBn ? 'দুপুর ০১:০০' : '01:00 PM'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => selectQuickTime('evening')}
-                    className="px-3.5 py-1.5 rounded-full bg-white dark:bg-[#2C2C2E] text-slate-800 dark:text-slate-200 text-xs font-semibold shadow-2xs border border-black/5 dark:border-white/5 active:scale-95 transition-all shrink-0 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  >
-                    {isBn ? 'সন্ধ্যা ০৬:০০' : '06:00 PM'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => selectQuickTime('night')}
-                    className="px-3.5 py-1.5 rounded-full bg-white dark:bg-[#2C2C2E] text-slate-800 dark:text-slate-200 text-xs font-semibold shadow-2xs border border-black/5 dark:border-white/5 active:scale-95 transition-all shrink-0 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  >
-                    {isBn ? 'রাত ০৯:০০' : '09:00 PM'}
-                  </button>
-                </div>
+                {/* iOS Drum Wheel Container */}
+                <div className="px-5 py-3 flex justify-center">
+                  <div className="relative w-full max-w-[340px] h-[220px] bg-white dark:bg-[#2C2C2E] rounded-3xl overflow-hidden shadow-xs border border-black/[0.04] dark:border-white/[0.06] flex items-center justify-center select-none">
+                    
+                    {/* Semi-transparent Fading Gradients at Top & Bottom */}
+                    <div className="absolute top-0 left-0 right-0 h-[64px] bg-gradient-to-b from-white via-white/70 to-transparent dark:from-[#2C2C2E] dark:via-[#2C2C2E]/70 pointer-events-none z-10" />
+                    <div className="absolute bottom-0 left-0 right-0 h-[64px] bg-gradient-to-t from-white via-white/70 to-transparent dark:from-[#2C2C2E] dark:via-[#2C2C2E]/70 pointer-events-none z-10" />
 
-                {/* Clock Face Display */}
-                {renderClock()}
+                    {/* Translucent Selection Bar Cover at Center (88px to 132px) */}
+                    <div className="absolute top-[88px] h-[44px] left-3 right-3 bg-black/[0.03] dark:bg-white/[0.04] border-y border-black/[0.05] dark:border-white/[0.06] pointer-events-none rounded-[10px] z-0" />
 
-                {/* Time Selection Controls Card */}
-                <div className="px-4 py-1">
-                  <div className="bg-white dark:bg-[#2C2C2E] rounded-2xl p-4 shadow-sm border border-black/[0.04] dark:border-white/[0.06] flex items-center justify-center gap-3">
-                    {/* Hour Select */}
-                    <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
-                        {isBn ? 'ঘণ্টা' : 'Hour'}
-                      </span>
-                      <select
-                        value={selectedHour}
-                        onChange={(e) => setSelectedHour(e.target.value)}
-                        className="bg-slate-100 dark:bg-[#3A3A3C] text-slate-900 dark:text-white font-bold text-lg py-2 px-3 rounded-xl border border-black/5 dark:border-white/5 outline-none cursor-pointer focus:ring-2 focus:ring-[#007AFF] text-center"
+                    <div className="relative z-10 flex w-full h-full justify-center">
+                      {/* Hour Column */}
+                      <div 
+                        ref={hourWheelRef}
+                        onScroll={() => handleScrollWithDebounce('hour', hourWheelRef, hours, setSelectedHour)}
+                        className="w-[80px] h-full overflow-y-auto scrollbar-none snap-y snap-mandatory py-[88px]"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                       >
-                        {Array.from({ length: 12 }, (_, i) => {
-                          const val = (i + 1).toString().padStart(2, '0');
-                          return <option key={`h-${val}`} value={val}>{val}</option>;
+                        {hours.map((h, idx) => {
+                          const isActive = h === selectedHour;
+                          return (
+                            <div
+                              key={`h-wheel-${h}`}
+                              onClick={() => selectItem(hourWheelRef, idx, setSelectedHour, h)}
+                              className={`snap-center h-[44px] flex items-center justify-center text-[21px] transition-all duration-150 cursor-pointer ${
+                                isActive 
+                                  ? 'text-slate-900 dark:text-white font-semibold scale-105' 
+                                  : 'text-slate-400 dark:text-slate-500 font-normal scale-90 opacity-60'
+                              }`}
+                            >
+                              {h}
+                            </div>
+                          );
                         })}
-                      </select>
-                    </div>
+                      </div>
 
-                    <span className="text-2xl font-black text-slate-400 dark:text-slate-500 mt-4">:</span>
+                      {/* Divider Colon */}
+                      <div className="h-full flex items-center justify-center text-slate-800 dark:text-slate-200 text-xl font-bold select-none px-2 self-center">
+                        :
+                      </div>
 
-                    {/* Minute Select */}
-                    <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
-                        {isBn ? 'মিনিট' : 'Minute'}
-                      </span>
-                      <select
-                        value={selectedMinute}
-                        onChange={(e) => setSelectedMinute(e.target.value)}
-                        className="bg-slate-100 dark:bg-[#3A3A3C] text-slate-900 dark:text-white font-bold text-lg py-2 px-3 rounded-xl border border-black/5 dark:border-white/5 outline-none cursor-pointer focus:ring-2 focus:ring-[#007AFF] text-center"
+                      {/* Minute Column */}
+                      <div 
+                        ref={minuteWheelRef}
+                        onScroll={() => handleScrollWithDebounce('minute', minuteWheelRef, minutes, setSelectedMinute)}
+                        className="w-[80px] h-full overflow-y-auto scrollbar-none snap-y snap-mandatory py-[88px]"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                       >
-                        {Array.from({ length: 60 }, (_, i) => {
-                          const val = i.toString().padStart(2, '0');
-                          return <option key={`m-${val}`} value={val}>{val}</option>;
+                        {minutes.map((m, idx) => {
+                          const isActive = m === selectedMinute;
+                          return (
+                            <div
+                              key={`m-wheel-${m}`}
+                              onClick={() => selectItem(minuteWheelRef, idx, setSelectedMinute, m)}
+                              className={`snap-center h-[44px] flex items-center justify-center text-[21px] transition-all duration-150 cursor-pointer ${
+                                isActive 
+                                  ? 'text-slate-900 dark:text-white font-semibold scale-105' 
+                                  : 'text-slate-400 dark:text-slate-500 font-normal scale-90 opacity-60'
+                              }`}
+                            >
+                              {m}
+                            </div>
+                          );
                         })}
-                      </select>
-                    </div>
+                      </div>
 
-                    {/* AM / PM Segmented Toggle */}
-                    <div className="flex flex-col items-center ml-2">
-                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
-                        {isBn ? 'শিফট' : 'Period'}
-                      </span>
-                      <div className="flex bg-slate-100 dark:bg-[#3A3A3C] p-1 rounded-xl border border-black/5 dark:border-white/5">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedPeriod('AM')}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                            selectedPeriod === 'AM'
-                              ? 'bg-[#007AFF] text-white shadow-xs'
-                              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-                          }`}
-                        >
-                          AM
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedPeriod('PM')}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                            selectedPeriod === 'PM'
-                              ? 'bg-[#007AFF] text-white shadow-xs'
-                              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-                          }`}
-                        >
-                          PM
-                        </button>
+                      {/* Period Column */}
+                      <div 
+                        ref={periodWheelRef}
+                        onScroll={() => handleScrollWithDebounce('period', periodWheelRef, periods, setSelectedPeriod)}
+                        className="w-[80px] h-full overflow-y-auto scrollbar-none snap-y snap-mandatory py-[88px] ml-4"
+                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                      >
+                        {periods.map((p, idx) => {
+                          const isActive = p === selectedPeriod;
+                          return (
+                            <div
+                              key={`p-wheel-${p}`}
+                              onClick={() => selectItem(periodWheelRef, idx, setSelectedPeriod, p)}
+                              className={`snap-center h-[44px] flex items-center justify-center text-[21px] transition-all duration-150 cursor-pointer ${
+                                isActive 
+                                  ? 'text-slate-900 dark:text-white font-semibold scale-105' 
+                                  : 'text-slate-400 dark:text-slate-500 font-normal scale-90 opacity-60'
+                              }`}
+                            >
+                              {p}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Selected Time Indicator Banner & Safe Area Padding */}
-                <div className="px-4 pb-[calc(18px+env(safe-area-inset-bottom,18px))] pt-1">
-                  <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-white/80 dark:bg-[#2C2C2E]/80 border border-black/[0.04] dark:border-white/[0.04]">
+                <div className="px-5 pb-[calc(24px+env(safe-area-inset-bottom,24px))] pt-1">
+                  <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-white dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.04] shadow-xs">
                     <div className="flex items-center gap-2">
                       <Clock size={15} className="text-[#007AFF] dark:text-[#0A84FF]" />
-                      <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         {isBn ? 'নির্বাচিত সময়:' : 'Selected:'}
                       </span>
                     </div>

@@ -7125,20 +7125,9 @@ setShowTripDieselSubPage(false);
                 });
               }
             } else if (categoryUpper === 'SALARY' || categoryUpper === 'COMMISSION') {
-              const matchedUser = users.find(u => u.id === selectedTransaction.userId);
-              detailsList.push({
-                label: language === 'bn' ? 'কর্মচারী নাম' : 'Employee Name',
-                value: matchedUser?.name || selectedTransaction.details?.userName || 'N/A'
-              });
-              if (matchedUser?.mobileNumber) {
-                detailsList.push({
-                  label: language === 'bn' ? 'মোবাইল নম্বর' : 'Mobile Number',
-                  value: matchedUser.mobileNumber
-                });
-              }
               if (selectedTransaction.month) {
                 detailsList.push({
-                  label: language === 'bn' ? 'মাস' : 'Month',
+                  label: language === 'bn' ? 'স্যালারি মাস' : 'Salary Period',
                   value: `${displayMonth} ${displayYear}`
                 });
               }
@@ -7165,7 +7154,7 @@ setShowTripDieselSubPage(false);
                   onClick={() => setSelectedTransaction(null)}
                 />
                 <div 
-                  className="bg-theme-card w-full max-w-md h-[520px] rounded-[24px] overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_24px_60px_rgba(0,0,0,0.4)] flex flex-col relative z-10 border border-black/5 dark:border-white/10 animate-scale-in"
+                  className="bg-theme-card w-full max-w-md max-h-[90vh] sm:max-h-[85vh] h-auto rounded-[24px] overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_24px_60px_rgba(0,0,0,0.4)] flex flex-col relative z-10 border border-black/5 dark:border-white/10 animate-scale-in"
                 >
                   {/* Category Header */}
                   <div className="p-5 pb-4 flex items-center gap-3.5 border-b border-black/5 dark:border-white/5 bg-black/[0.01] dark:bg-white/[0.01]">
@@ -7193,96 +7182,274 @@ setShowTripDieselSubPage(false);
 
                   {/* Scrollable Content Container */}
                   <div className="p-5 flex-1 overflow-y-auto space-y-4">
-                    {/* Status Badge & Base Info */}
-                    <div className="flex justify-between items-center bg-slate-50 dark:bg-zinc-900/10 px-4 py-2.5 rounded-xl border border-black/[0.03] dark:border-white/[0.03]">
-                      <span className="text-[11px] font-extrabold text-text-muted uppercase tracking-wider">
-                        {language === 'bn' ? 'স্ট্যাটাস' : 'Status'}
-                      </span>
-                      <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${
-                        selectedTransaction.status === 'RECEIVED' || selectedTransaction.status === 'COMPLETED'
-                          ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
-                          : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
-                      }`}>
-                        {selectedTransaction.status === 'RECEIVED' ? (language === 'bn' ? 'রিসিভড' : 'Received') : (language === 'bn' ? 'পেন্ডিং' : 'Pending')}
-                      </span>
-                    </div>
-
-                    {/* Details Card */}
-                    <div className="bg-slate-50 dark:bg-zinc-900/35 border border-slate-100 dark:border-zinc-800/50 rounded-2xl p-4 space-y-3">
-                      {detailsList.map((item, index) => (
-                        <div key={index} className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 py-1 last:pb-0 last:border-0 border-b border-black/[0.03] dark:border-white/[0.03]">
-                          <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider shrink-0 text-left">
-                            {item.label}
+                    {(categoryUpper === 'SALARY' || categoryUpper === 'COMMISSION') ? (
+                      // Premium Structured Salary/Commission View
+                      <div className="space-y-4">
+                        {/* Elegant Card Watermark / Top Section */}
+                        <div className="relative overflow-hidden bg-gradient-to-r from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/5 dark:to-teal-500/5 rounded-2xl p-4 border border-emerald-500/10 dark:border-emerald-500/5 flex flex-col items-center justify-center text-center">
+                          <div className="absolute -right-6 -bottom-6 opacity-[0.03] dark:opacity-[0.015] pointer-events-none">
+                            <Wallet size={120} />
+                          </div>
+                          <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-1">
+                            {categoryUpper === 'SALARY' 
+                              ? (language === 'bn' ? 'সর্বমোট বেতন পরিমাণ' : 'TOTAL SALARY AMOUNT')
+                              : (language === 'bn' ? 'সর্বমোট কমিশন পরিমাণ' : 'TOTAL COMMISSION AMOUNT')
+                            }
                           </span>
-                          <span className={`text-[11px] font-black text-text-main break-words text-left sm:text-right leading-relaxed ${item.isMono ? 'font-mono' : ''}`}>
-                            {item.value}
-                          </span>
+                          <h4 className="text-3xl font-black text-text-main font-sans tracking-tight mt-1">
+                            {isIncome ? '+' : '-'} {selectedTransaction.amount.toLocaleString()} <span className="text-lg font-bold font-sans ml-0.5">{selectedCurrency}</span>
+                          </h4>
                         </div>
-                      ))}
-                    </div>
 
-                    {/* Trip List & Container Number (Render only if present) */}
-                    {tripsList.length > 0 && (
-                      <div className="bg-slate-50 dark:bg-zinc-900/35 border border-slate-100 dark:border-zinc-800/50 rounded-2xl p-4">
-                        <div className="flex justify-between items-center mb-3">
-                          <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
-                            {language === 'bn' ? 'রিসিভড ট্রিপ সমূহ' : 'Received Trips List'}
-                          </span>
-                          <span className="text-[10px] font-black bg-slate-200 dark:bg-zinc-800 text-text-main px-2 py-0.5 rounded-full">
-                            {tripsCount} {tripsCount === 1 ? (language === 'bn' ? 'ট্রিপ' : 'Trip') : (language === 'bn' ? 'ট্রিপ' : 'Trips')}
-                          </span>
+                        {/* Salary Meta Info Cards Grid */}
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* Salary Period Card */}
+                          <div className="bg-slate-50 dark:bg-zinc-900/35 border border-slate-100 dark:border-zinc-800/50 rounded-xl p-3 text-left">
+                            <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider block mb-1">
+                              {language === 'bn' ? 'বেতন মাস' : 'Salary Period'}
+                            </span>
+                            <span className="text-xs font-black text-text-main block">
+                              {selectedTransaction.month ? `${displayMonth} ${displayYear}` : (language === 'bn' ? 'তথ্য নেই' : 'N/A')}
+                            </span>
+                          </div>
+
+                          {/* Payment Status Card */}
+                          <div className="bg-slate-50 dark:bg-zinc-900/35 border border-slate-100 dark:border-zinc-800/50 rounded-xl p-3 text-left">
+                            <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider block mb-1">
+                              {language === 'bn' ? 'পেমেন্ট স্ট্যাটাস' : 'Payment Status'}
+                            </span>
+                            <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded border inline-block ${
+                              selectedTransaction.status === 'RECEIVED' || selectedTransaction.status === 'COMPLETED'
+                                ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400' 
+                                : 'bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400'
+                            }`}>
+                              {selectedTransaction.status === 'RECEIVED' ? (language === 'bn' ? 'পরিশোধিত' : 'Paid') : (language === 'bn' ? 'পেন্ডিং' : 'Pending')}
+                            </span>
+                          </div>
+
+                          {/* Transaction Reference Card */}
+                          <div className="bg-slate-50 dark:bg-zinc-900/35 border border-slate-100 dark:border-zinc-800/50 rounded-xl p-3 text-left">
+                            <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider block mb-1">
+                              {language === 'bn' ? 'রেফারেন্স আইডি' : 'Reference ID'}
+                            </span>
+                            <span className="text-xs font-black font-mono text-text-main break-all block">
+                              {selectedTransaction.transactionId || 'N/A'}
+                            </span>
+                          </div>
+
+                          {/* Date & Time Card */}
+                          <div className="bg-slate-50 dark:bg-zinc-900/35 border border-slate-100 dark:border-zinc-800/50 rounded-xl p-3 text-left">
+                            <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider block mb-1">
+                              {language === 'bn' ? 'তারিখ ও সময়' : 'Date & Time'}
+                            </span>
+                            <span className="text-xs font-black text-text-main block">
+                              {selectedTransaction.date}
+                            </span>
+                            <span className="text-[9px] font-semibold text-text-muted block mt-0.5">
+                              {selectedTransaction.time || ''}
+                            </span>
+                          </div>
+
+                          {/* Payment Category Card */}
+                          <div className="bg-slate-50 dark:bg-zinc-900/35 border border-slate-100 dark:border-zinc-800/50 rounded-xl p-3 text-left">
+                            <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider block mb-1">
+                              {language === 'bn' ? 'লেনদেনের ধরন' : 'Payment Type'}
+                            </span>
+                            <span className="text-xs font-black text-text-main flex items-center gap-1">
+                              <Wallet size={12} className="text-emerald-500 shrink-0" />
+                              {catDisplay}
+                            </span>
+                          </div>
+
+                          {/* Payment Channel Card */}
+                          <div className="bg-slate-50 dark:bg-zinc-900/35 border border-slate-100 dark:border-zinc-800/50 rounded-xl p-3 text-left">
+                            <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider block mb-1">
+                              {language === 'bn' ? 'পেমেন্ট মেথড' : 'Payment Channel'}
+                            </span>
+                            <span className="text-xs font-black text-text-main block uppercase">
+                              {selectedTransaction.method ? selectedTransaction.method.replace('_', ' ') : 'CASH'}
+                            </span>
+                          </div>
                         </div>
-                        <div className="max-h-[160px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                          {tripsList.map(t => (
-                            <div key={t.tripId} className="flex justify-between items-start py-2 border-b border-black/[0.04] dark:border-white/[0.04] last:border-0 text-[11px] gap-2">
-                              <div className="flex flex-col text-left min-w-0 flex-1">
-                                <span className="font-extrabold text-text-main break-words leading-tight">
-                                  {language === 'bn' ? 'কন্টেইনার:' : 'Cont:'} {t.containerNumber}
+
+                        {/* Online Bank Details Section (if method is ONLINE_BANK) */}
+                        {selectedTransaction.method === 'ONLINE_BANK' && (
+                          <div className="bg-slate-50 dark:bg-zinc-900/35 border border-slate-100 dark:border-zinc-800/50 rounded-xl p-3.5 space-y-2 text-left relative overflow-hidden">
+                            <div className="absolute right-3 top-3 opacity-10 pointer-events-none">
+                              <Building size={32} className="text-blue-500" />
+                            </div>
+                            <p className="text-[9px] font-black text-text-muted uppercase tracking-widest border-b border-black/5 dark:border-white/5 pb-1 mb-2">
+                              {language === 'bn' ? 'ব্যাংক লেনদেনের তথ্য' : 'Bank Transfer Details'}
+                            </p>
+                            
+                            {selectedTransaction.details?.bankName && (
+                              <div className="flex justify-between items-center text-[11px]">
+                                <span className="text-text-muted font-bold">{language === 'bn' ? 'ব্যাংক নাম' : 'Bank Name'}</span>
+                                <span className="font-black text-text-main break-words max-w-[180px] text-right">
+                                  {banks.find(b => b.id === selectedTransaction.details.bankName)?.name || selectedTransaction.details.bankName}
                                 </span>
-                                {t.subKeys.length > 0 && (
-                                  <span className="text-[9px] text-text-muted break-words leading-normal mt-0.5">
-                                    ({t.subKeys.map(sk => `${sk.label}: ${sk.amount.toLocaleString()}`).join(' | ')})
-                                  </span>
-                                )}
                               </div>
-                              <div className="font-mono font-black text-text-main shrink-0 text-right">
-                                {selectedCurrency} {t.amount.toLocaleString()}
+                            )}
+
+                            {selectedTransaction.details?.accountNumber && (
+                              <div className="flex justify-between items-center text-[11px]">
+                                <span className="text-text-muted font-bold">{language === 'bn' ? 'অ্যাকাউন্ট নম্বর' : 'Account Number'}</span>
+                                <span className="font-mono font-black text-text-main text-right tracking-wider">{selectedTransaction.details.accountNumber}</span>
                               </div>
+                            )}
+
+                            {selectedTransaction.details?.branchName && (
+                              <div className="flex justify-between items-center text-[11px]">
+                                <span className="text-text-muted font-bold">{language === 'bn' ? 'ব্রাঞ্চ নাম' : 'Branch Name'}</span>
+                                <span className="font-black text-text-main break-words max-w-[180px] text-right">
+                                  {branches.find(b => b.id === selectedTransaction.details.branchName)?.name || selectedTransaction.details.branchName}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Note field if present */}
+                        {selectedTransaction.details?.note && (
+                          <div className="bg-slate-50 dark:bg-zinc-900/35 border border-slate-100 dark:border-zinc-800/50 rounded-xl p-3 text-left">
+                            <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider block mb-1">
+                              {language === 'bn' ? 'মন্তব্য' : 'Note'}
+                            </span>
+                            <p className="text-xs font-semibold text-text-main leading-relaxed">
+                              {selectedTransaction.details.note}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Associated Paid Trips List */}
+                        {tripsList.length > 0 && (
+                          <div className="bg-slate-50 dark:bg-zinc-900/35 border border-slate-100 dark:border-zinc-800/50 rounded-xl p-3.5 space-y-2.5">
+                            <div className="flex justify-between items-center border-b border-black/5 dark:border-white/5 pb-1.5">
+                              <span className="text-[9px] font-black text-text-muted uppercase tracking-widest">
+                                {language === 'bn' ? 'পরিশোধিত ট্রিপ সমূহের তালিকা' : 'Paid Trips Breakdown'}
+                              </span>
+                              <span className="text-[9px] font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full">
+                                {tripsCount} {tripsCount === 1 ? (language === 'bn' ? 'ট্রিপ' : 'Trip') : (language === 'bn' ? 'ট্রিপ' : 'Trips')}
+                              </span>
+                            </div>
+                            <div className="max-h-[160px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                              {tripsList.map(t => (
+                                <div key={t.tripId} className="flex justify-between items-start py-2 border-b border-black/[0.04] dark:border-white/[0.04] last:border-0 text-[11px] gap-2 text-left">
+                                  <div className="flex flex-col text-left min-w-0 flex-1">
+                                    <span className="font-extrabold text-text-main break-words leading-tight flex items-center gap-1">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                      {language === 'bn' ? 'কন্টেইনার:' : 'Cont:'} {t.containerNumber}
+                                    </span>
+                                    {t.subKeys.length > 0 && (
+                                      <span className="text-[9px] text-text-muted break-words leading-normal mt-0.5 ml-2.5">
+                                        ({t.subKeys.map(sk => `${sk.label}: ${sk.amount.toLocaleString()}`).join(' | ')})
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="font-mono font-black text-text-main shrink-0 text-right">
+                                    {selectedCurrency} {t.amount.toLocaleString()}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      // Standard Transaction Details (Default Layout)
+                      <div className="space-y-4">
+                        {/* Status Badge & Base Info */}
+                        <div className="flex justify-between items-center bg-slate-50 dark:bg-zinc-900/10 px-4 py-2.5 rounded-xl border border-black/[0.03] dark:border-white/[0.03]">
+                          <span className="text-[11px] font-extrabold text-text-muted uppercase tracking-wider">
+                            {language === 'bn' ? 'স্ট্যাটাস' : 'Status'}
+                          </span>
+                          <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${
+                            selectedTransaction.status === 'RECEIVED' || selectedTransaction.status === 'COMPLETED'
+                              ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
+                              : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                          }`}>
+                            {selectedTransaction.status === 'RECEIVED' ? (language === 'bn' ? 'রিসিভড' : 'Received') : (language === 'bn' ? 'পেন্ডিং' : 'Pending')}
+                          </span>
+                        </div>
+
+                        {/* Details Card */}
+                        <div className="bg-slate-50 dark:bg-zinc-900/35 border border-slate-100 dark:border-zinc-800/50 rounded-2xl p-4 space-y-3">
+                          {detailsList.map((item, index) => (
+                            <div key={index} className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 py-1 last:pb-0 last:border-0 border-b border-black/[0.03] dark:border-white/[0.03]">
+                              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider shrink-0 text-left">
+                                {item.label}
+                              </span>
+                              <span className={`text-[11px] font-black text-text-main break-words text-left sm:text-right leading-relaxed ${item.isMono ? 'font-mono' : ''}`}>
+                                {item.value}
+                              </span>
                             </div>
                           ))}
                         </div>
-                      </div>
-                    )}
 
-                    {/* Online Bank Details Section (if method is ONLINE_BANK) */}
-                    {selectedTransaction.method === 'ONLINE_BANK' && (
-                      <div className="bg-slate-50 dark:bg-zinc-900/35 border border-slate-100 dark:border-zinc-800/50 rounded-2xl p-4 space-y-2.5 text-left">
-                        <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-black/5 dark:border-white/5 pb-1.5">
-                          {language === 'bn' ? 'ব্যাংক লেনদেনের তথ্য' : 'Bank Transfer Information'}
-                        </p>
-                        
-                        {selectedTransaction.details?.bankName && (
-                          <div className="flex justify-between items-center text-[11px]">
-                            <span className="text-text-muted font-bold">{language === 'bn' ? 'ব্যাংক নাম' : 'Bank Name'}</span>
-                            <span className="font-black text-text-main break-words max-w-[200px] text-right">
-                              {banks.find(b => b.id === selectedTransaction.details.bankName)?.name || selectedTransaction.details.bankName}
-                            </span>
+                        {/* Trip List & Container Number (Render only if present) */}
+                        {tripsList.length > 0 && (
+                          <div className="bg-slate-50 dark:bg-zinc-900/35 border border-slate-100 dark:border-zinc-800/50 rounded-2xl p-4">
+                            <div className="flex justify-between items-center mb-3">
+                              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
+                                {language === 'bn' ? 'রিসিভড ট্রিপ সমূহ' : 'Received Trips List'}
+                              </span>
+                              <span className="text-[10px] font-black bg-slate-200 dark:bg-zinc-800 text-text-main px-2 py-0.5 rounded-full">
+                                {tripsCount} {tripsCount === 1 ? (language === 'bn' ? 'ট্রিপ' : 'Trip') : (language === 'bn' ? 'ট্রিপ' : 'Trips')}
+                              </span>
+                            </div>
+                            <div className="max-h-[160px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                              {tripsList.map(t => (
+                                <div key={t.tripId} className="flex justify-between items-start py-2 border-b border-black/[0.04] dark:border-white/[0.04] last:border-0 text-[11px] gap-2">
+                                  <div className="flex flex-col text-left min-w-0 flex-1">
+                                    <span className="font-extrabold text-text-main break-words leading-tight">
+                                      {language === 'bn' ? 'কন্টেইনার:' : 'Cont:'} {t.containerNumber}
+                                    </span>
+                                    {t.subKeys.length > 0 && (
+                                      <span className="text-[9px] text-text-muted break-words leading-normal mt-0.5">
+                                        ({t.subKeys.map(sk => `${sk.label}: ${sk.amount.toLocaleString()}`).join(' | ')})
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="font-mono font-black text-text-main shrink-0 text-right">
+                                    {selectedCurrency} {t.amount.toLocaleString()}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
 
-                        {selectedTransaction.details?.accountNumber && (
-                          <div className="flex justify-between items-center text-[11px]">
-                            <span className="text-text-muted font-bold">{language === 'bn' ? 'অ্যাকাউন্ট নম্বর' : 'Account Number'}</span>
-                            <span className="font-mono font-bold text-text-main text-right">{selectedTransaction.details.accountNumber}</span>
-                          </div>
-                        )}
+                        {/* Online Bank Details Section (if method is ONLINE_BANK) */}
+                        {selectedTransaction.method === 'ONLINE_BANK' && (
+                          <div className="bg-slate-50 dark:bg-zinc-900/35 border border-slate-100 dark:border-zinc-800/50 rounded-2xl p-4 space-y-2.5 text-left">
+                            <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-black/5 dark:border-white/5 pb-1.5">
+                              {language === 'bn' ? 'ব্যাংক লেনদেনের তথ্য' : 'Bank Transfer Information'}
+                            </p>
+                            
+                            {selectedTransaction.details?.bankName && (
+                              <div className="flex justify-between items-center text-[11px]">
+                                <span className="text-text-muted font-bold">{language === 'bn' ? 'ব্যাংক নাম' : 'Bank Name'}</span>
+                                <span className="font-black text-text-main break-words max-w-[200px] text-right">
+                                  {banks.find(b => b.id === selectedTransaction.details.bankName)?.name || selectedTransaction.details.bankName}
+                                </span>
+                              </div>
+                            )}
 
-                        {selectedTransaction.details?.branchName && (
-                          <div className="flex justify-between items-center text-[11px]">
-                            <span className="text-text-muted font-bold">{language === 'bn' ? 'ব্রাঞ্চ নাম' : 'Branch Name'}</span>
-                            <span className="font-black text-text-main break-words max-w-[200px] text-right">
-                              {branches.find(b => b.id === selectedTransaction.details.branchName)?.name || selectedTransaction.details.branchName}
-                            </span>
+                            {selectedTransaction.details?.accountNumber && (
+                              <div className="flex justify-between items-center text-[11px]">
+                                <span className="text-text-muted font-bold">{language === 'bn' ? 'অ্যাকাউন্ট নম্বর' : 'Account Number'}</span>
+                                <span className="font-mono font-bold text-text-main text-right">{selectedTransaction.details.accountNumber}</span>
+                              </div>
+                            )}
+
+                            {selectedTransaction.details?.branchName && (
+                              <div className="flex justify-between items-center text-[11px]">
+                                <span className="text-text-muted font-bold">{language === 'bn' ? 'ব্রাঞ্চ নাম' : 'Branch Name'}</span>
+                                <span className="font-black text-text-main break-words max-w-[200px] text-right">
+                                  {branches.find(b => b.id === selectedTransaction.details.branchName)?.name || selectedTransaction.details.branchName}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -7292,23 +7459,25 @@ setShowTripDieselSubPage(false);
                   {/* Total Amount Panel & Button Footer */}
                   <div className="p-5 bg-slate-50 dark:bg-zinc-900/50 border-t border-black/5 dark:border-white/10 space-y-4">
                     {/* Grand Total Display */}
-                    <div className="flex justify-between items-center">
-                      <div className="text-left">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-text-muted">
-                          {language === 'bn' ? 'সর্বমোট পরিমাণ' : 'Total Amount'}
-                        </span>
-                        <p className="text-[10px] font-bold text-text-muted">
-                          {selectedTransaction.method ? selectedTransaction.method.replace('_', ' ') : 'CASH'}
-                        </p>
+                    {!(categoryUpper === 'SALARY' || categoryUpper === 'COMMISSION') && (
+                      <div className="flex justify-between items-center">
+                        <div className="text-left">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-text-muted">
+                            {language === 'bn' ? 'সর্বমোট পরিমাণ' : 'Total Amount'}
+                          </span>
+                          <p className="text-[10px] font-bold text-text-muted">
+                            {selectedTransaction.method ? selectedTransaction.method.replace('_', ' ') : 'CASH'}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-lg sm:text-xl font-black font-mono leading-none ${
+                            isIncome ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'
+                          }`}>
+                            {isIncome ? '+' : '-'} {selectedTransaction.amount.toLocaleString()} <span className="text-xs font-bold font-sans ml-0.5">{selectedCurrency}</span>
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className={`text-lg sm:text-xl font-black font-mono leading-none ${
-                          isIncome ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'
-                        }`}>
-                          {isIncome ? '+' : '-'} {selectedTransaction.amount.toLocaleString()} <span className="text-xs font-bold font-sans ml-0.5">{selectedCurrency}</span>
-                        </p>
-                      </div>
-                    </div>
+                    )}
 
                     {/* Action Buttons: Download, Edit, Delete and Close */}
                     <div className="flex gap-2">
