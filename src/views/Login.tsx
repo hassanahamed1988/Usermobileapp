@@ -732,20 +732,6 @@ const Login: React.FC = () => {
         return uUserId === input || uEmail === input || uLoginEmail === input || uId === input;
       });
 
-      const adminEmails = ['mdhassanahamed15@gmail.com', 'hassanahamed3004@gmail.com'];
-      if (!foundUser && (input === 'admin' || adminEmails.includes(input))) {
-        const emailToUse = adminEmails.includes(input) ? input : 'hassanahamed3004@gmail.com';
-        foundUser = {
-          id: 'Admin',
-          name: 'Admin',
-          email: emailToUse,
-          role: 'ADMIN',
-          status: 'ENABLED',
-          password: 'Admin',
-          mobile: '01712345678'
-        };
-      }
-
       if (!foundUser) {
         showFeedback(language === 'bn' ? 'ব্যবহারকারী পাওয়া যায়নি!' : 'User not found!', 'error');
         setEnrollLoading(false);
@@ -1055,8 +1041,6 @@ const Login: React.FC = () => {
 
     setIsLoading(true);
 
-    const adminEmails = ['mdhassanahamed15@gmail.com', 'hassanahamed3004@gmail.com'];
-
     let latestUsers: any[] = [];
     try {
       const usersCol = await getFirebaseCollection('users') || [];
@@ -1096,19 +1080,6 @@ const Login: React.FC = () => {
         const uLoginEmail = (u.loginEmail || '').toString().toLowerCase();
         return uUserId === input || uEmail === input || uLoginEmail === input || uId === input;
       });
-
-      if (!foundUser && (input === 'admin' || adminEmails.includes(input))) {
-        const emailToUse = adminEmails.includes(input) ? input : 'hassanahamed3004@gmail.com';
-        foundUser = {
-          id: 'Admin',
-          name: 'Admin',
-          email: emailToUse,
-          role: 'ADMIN',
-          status: 'ENABLED',
-          password: 'Admin',
-          avatar: 'https://picsum.photos/seed/admin/200'
-        };
-      }
 
       if (!foundUser) {
         handleFailure(t.USER_NOT_FOUND || 'User not found');
@@ -1241,28 +1212,9 @@ const Login: React.FC = () => {
         localStorage.removeItem('fleetpro_saved_password');
       }
 
-      if (foundUser.role === 'ADMIN' || input === 'admin' || foundUser.id === 'Admin') {
-        const adminDocId = foundUser.id === 'Admin' ? 'Admin' : (foundUser.id || 'Admin');
-        
+      if (foundUser.role === 'ADMIN') {
+        const adminToLogin = { ...foundUser, role: 'ADMIN' };
         setLoginTime(new Date());
-        
-        // Clean up redundant default template documents
-        deleteFirebaseDoc('users', 'Admin').catch(e => console.warn('Could not delete redundant users/Admin:', e));
-
-        const existingAdmin = allAvailableUsers.find((u: any) => u.email && ['mdhassanahamed15@gmail.com', 'hassanahamed3004@gmail.com'].includes(u.email.toLowerCase()));
-        const adminToLogin = existingAdmin ? { ...existingAdmin, role: 'ADMIN' } : {
-          id: adminDocId,
-          name: 'Admin',
-          email: foundUser.email || 'hassanahamed3004@gmail.com',
-          role: 'ADMIN',
-          status: 'ENABLED',
-          password: foundUser.password || 'Admin',
-          avatar: 'https://picsum.photos/seed/admin/200'
-        };
-
-        if (!existingAdmin) {
-          addUser(adminToLogin);
-        }
         
         const isNewDevice = !localStorage.getItem(`fleetpro_device_trusted_${adminToLogin.id}`);
         setShowAdminPinStep(false);
