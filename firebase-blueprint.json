@@ -275,6 +275,17 @@
         "streetNumber": { "type": "string" }
       },
       "required": ["id", "applicationId", "fullName", "email", "mobile", "status", "submissionDate"]
+    },
+    "UserPreferences": {
+      "title": "UserPreferences",
+      "description": "Global persistent language and currency presentation preferences per user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "language": { "type": "string" },
+        "selectedCurrency": { "type": "string" }
+      },
+      "required": ["id"]
     }
   },
   "firestore": {
@@ -341,6 +352,10 @@
     "family_maintenance": {
       "schema": "FamilyMaintenance",
       "description": "Isolated family maintenance private transactions log"
+    },
+    "user_preferences": {
+      "schema": "UserPreferences",
+      "description": "Global persistent user specific presentation preferences like language and currency"
     }
   }
 }

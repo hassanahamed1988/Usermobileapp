@@ -1497,6 +1497,34 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         })
       );
 
+      // 1b. Subscribe to own persistent preferences to restore language and currency
+      unsubscribes.push(
+        subscribeFirebaseDoc('user_preferences', state.user.id, (prefData) => {
+          if (prefData) {
+            mutate((d: any) => {
+              if (prefData.language) {
+                d.language = prefData.language;
+              }
+              if (prefData.selectedCurrency) {
+                d.selectedCurrency = prefData.selectedCurrency;
+              }
+            });
+          } else {
+            // Document does not exist in Firestore yet (brand new or first-time preference sync)
+            // Let's write the current local settings to Firestore to bootstrap/preserve them
+            const currentLang = stateRef.current.language || 'en';
+            const currentCurrency = stateRef.current.selectedCurrency || 'USD';
+            saveFirebaseDocMerge('user_preferences', state.user.id, {
+              id: state.user.id,
+              language: currentLang,
+              selectedCurrency: currentCurrency
+            }).catch((err) => {
+              console.error('Failed to bootstrap user preferences in Firestore:', err);
+            });
+          }
+        })
+      );
+
       // 2. Load trips, profiles, finances, monthlyFiles, payments, notifications from OWN subcollections
       const userSubCollections = [
         'trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices'
@@ -1878,6 +1906,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               if (brandingKeys.includes(key)) {
                 pendingBrandingSettings.current[key] = val;
                 scheduleFirebaseSync();
+              }
+
+              // Persist language and currency to Firestore user_preferences collection
+              if ((key === 'language' || key === 'selectedCurrency') && stateRef.current.user?.id) {
+                const userId = stateRef.current.user.id;
+                const updatePayload: Record<string, any> = {};
+                updatePayload[key] = val;
+                saveFirebaseDocMerge('user_preferences', userId, updatePayload).catch((err) => {
+                  console.error(`Failed to save ${key} to firestore:`, err);
+                });
               }
             };
             handlersRef.current[prop] = fn; return fn;
