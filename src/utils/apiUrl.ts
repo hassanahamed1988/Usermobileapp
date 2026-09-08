@@ -25,8 +25,8 @@ export function getApiUrl(path: string): string {
     origin.includes('10.0.2.2');
 
   if (isNativeApp) {
-    // Native apps cannot use relative paths. Use the fallback AI Studio Cloud Run backend
-    const defaultHost = 'https://gen-lang-client-0792514696.web.app';
+    // Native apps cannot use relative paths. Use the fallback backend
+    const defaultHost = 'https://fleetpromanager-1991.web.app';
     return `${defaultHost}${path}`;
   }
 
