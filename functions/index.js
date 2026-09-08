@@ -37,7 +37,7 @@ app.use(cors({ origin: true }));
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ limit: "20mb", extended: true }));
 
-app.post("/api/ocr", async (req, res) => {
+app.post(["/api/ocr", "/ocr"], async (req, res) => {
   try {
     const { image } = req.body;
     if (!image) {
@@ -130,7 +130,7 @@ CRITICAL: If any field is physically blank, empty, unwritten, or missing in the 
   }
 });
 
-app.post("/api/gemini/chat", async (req, res) => {
+app.post(["/api/gemini/chat", "/gemini/chat"], async (req, res) => {
   try {
     const { message, systemInstruction } = req.body;
     if (!message) {
