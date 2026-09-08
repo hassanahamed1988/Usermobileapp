@@ -426,7 +426,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
 
   return (
     <div 
-      className={`flex fixed inset-0 w-full h-full overflow-hidden [transition:background-color_0.2s_ease,color_0.2s_ease] ${isDarkMode ? 'dark dark-mode' : 'light'} text-text-main ${isArabic ? 'rtl' : 'ltr'} ${isEyeComfort ? 'eye-comfort' : ''} ${isDropdownOpen ? 'blur-[4px] pointer-events-none' : ''} ${wallpaper ? 'has-wallpaper' : ''} ${isAnyPopupOpen ? 'popup-open' : ''}`}
+      className={`flex fixed inset-0 w-full h-full overflow-hidden [transition:background-color_0.2s_ease,color_0.2s_ease] ${isDarkMode ? 'dark dark-mode' : 'light'} text-text-main ${isArabic ? 'rtl' : 'ltr'} ${isEyeComfort ? 'eye-comfort' : ''} ${isDropdownOpen ? 'pointer-events-none' : ''} ${wallpaper ? 'has-wallpaper' : ''} ${isAnyPopupOpen ? 'popup-open' : ''}`}
       style={{
         background: wallpaper 
           ? `url(${wallpaper}) center/cover no-repeat` 

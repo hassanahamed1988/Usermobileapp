@@ -1885,10 +1885,15 @@ const Login: React.FC = () => {
                     />
                     
                     <motion.div
-                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      initial={{ opacity: 0, y: -10, scale: 0.85 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.85 }}
+                      transition={{
+                        type: 'spring',
+                        damping: 18,
+                        stiffness: 240,
+                        mass: 0.75
+                      }}
                       className={`absolute right-0 mt-2 w-36 py-1.5 rounded-lg shadow-xl z-50 border flex flex-col ${
                         isBackgroundLight 
                           ? 'bg-white border-black/5 text-black' 

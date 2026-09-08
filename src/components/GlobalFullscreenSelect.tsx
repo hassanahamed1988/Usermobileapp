@@ -313,16 +313,34 @@ const GlobalFullscreenSelect: React.FC<GlobalFullscreenSelectProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className={`fixed top-0 left-0 right-0 bottom-0 ${isAuthScreen ? 'bg-black/40 backdrop-blur-md' : (isDarkMode ? 'bg-black/70 backdrop-blur-md' : 'bg-black/40 backdrop-blur-md')} z-[100000] global-select-backdrop`}
+            className={`fixed top-0 left-0 right-0 bottom-0 ${isAuthScreen ? 'bg-black/30 backdrop-blur-[2px]' : (isDarkMode ? 'bg-black/55 backdrop-blur-[2px]' : 'bg-black/30 backdrop-blur-[2px]')} z-[100000] global-select-backdrop`}
             onClick={onClose}
           />
           <motion.div
-            initial={isDesktop ? { opacity: 0, scale: 0.95, x: '-50%', y: '-40%' } : { y: '100%' }}
-            animate={isDesktop ? { opacity: 1, scale: 1, x: '-50%', y: '-50%' } : { y: 0 }}
-            exit={isDesktop ? { opacity: 0, scale: 0.95, x: '-50%', y: '-40%' } : { y: '100%' }}
+            initial={isDesktop 
+              ? { opacity: 0, scale: 0.85, x: '-50%', y: '-50%' } 
+              : { y: '100%' }
+            }
+            animate={isDesktop 
+              ? { opacity: 1, scale: 1, x: '-50%', y: '-50%' } 
+              : { y: 0 }
+            }
+            exit={isDesktop 
+              ? { opacity: 0, scale: 0.85, x: '-50%', y: '-50%' } 
+              : { y: '100%' }
+            }
             transition={isDesktop 
-              ? { type: 'spring', damping: 25, stiffness: 280 }
-              : { type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.28 }
+              ? {
+                  type: 'spring',
+                  damping: 24,
+                  stiffness: 260,
+                  mass: 0.95
+                }
+              : {
+                  type: 'tween',
+                  ease: [0.16, 1, 0.3, 1],
+                  duration: 0.26
+                }
             }
             className={`fixed ${isDesktop ? 'top-1/2 left-1/2 w-full max-w-md rounded-2xl' : 'left-0 right-0 bottom-0 h-auto max-h-[82vh] rounded-t-[28px] rounded-b-none'} z-[100001] flex flex-col ${isDarkMode ? 'dark' : ''} overflow-hidden shadow-[0_-10px_40px_rgba(0,0,0,0.15)] global-select-modal ${isAuthScreen ? 'login-view-modal' : ''}`}
             style={{
@@ -596,10 +614,15 @@ const GlobalFullscreenSelect: React.FC<GlobalFullscreenSelectProps> = ({
                   }}
                 />
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.92, y: 12 }}
+                  initial={{ opacity: 0, scale: 0.85, y: '5%' }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.92, y: 12 }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                  exit={{ opacity: 0, scale: 0.85, y: '5%' }}
+                  transition={{
+                    type: 'spring',
+                    damping: 18,
+                    stiffness: 240,
+                    mass: 0.75
+                  }}
                   className={`relative w-full max-w-sm rounded-2xl p-5 shadow-2xl z-10 border ${
                     isDarkMode 
                       ? 'bg-zinc-900 border-white/20 text-white shadow-black/90' 

@@ -269,6 +269,19 @@ const PaymentView: React.FC = () => {
     globalFilterMonth, setGlobalFilterMonth, globalFilterYear, setGlobalFilterYear,
     bankNames, mobileBankingWallets
   } = useStore();
+
+  useEffect(() => {
+    const currentM = new Date().getMonth() + 1;
+    const currentY = new Date().getFullYear();
+    setGlobalFilterMonth(currentM);
+    setGlobalFilterYear(currentY);
+    return () => {
+      const exitM = new Date().getMonth() + 1;
+      const exitY = new Date().getFullYear();
+      setGlobalFilterMonth(exitM);
+      setGlobalFilterYear(exitY);
+    };
+  }, [setGlobalFilterMonth, setGlobalFilterYear]);
   
   const [selectedPendingCategory, setSelectedPendingCategory] = useState<string | null>(null);
   const [selectedVehicleInspectionItem, setSelectedVehicleInspectionItem] = useState<any | null>(null);

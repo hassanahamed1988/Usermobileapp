@@ -42,8 +42,26 @@ const ConfirmationModal: React.FC = () => {
     return checkText(cfg?.title) || checkText(cfg?.message) || checkText(cfg?.confirmText);
   };
 
+  // Detect if the action is specifically an app exit action
+  const isExitAction = (cfg: ConfirmConfig | null) => {
+    if (!cfg) return false;
+    const checkText = (text?: string) => {
+      if (!text) return false;
+      const lower = text.toLowerCase();
+      return (
+        lower.includes('exit') || 
+        lower.includes('quit') ||
+        lower.includes('প্রস্থান') || 
+        lower.includes('বাহির') ||
+        lower.includes('বের হতে')
+      );
+    };
+    return checkText(cfg?.title) || checkText(cfg?.message) || checkText(cfg?.confirmText);
+  };
+
   const isLogout = isLogoutAction(config);
-  const isDarkMode = !isLogout && (storeIsDarkMode || theme === 'night-mode' || appThemeMode === 'dark');
+  const isExit = isExitAction(config);
+  const isDarkMode = storeIsDarkMode || theme === 'night-mode' || appThemeMode === 'dark';
   const isLightWhite = appThemeMode === 'light';
   
   const currentThemeObj = THEMES.find(t => t.id === theme) || THEMES[0];
@@ -88,38 +106,50 @@ const ConfirmationModal: React.FC = () => {
           />
 
           {isLogout ? (
-            /* iOS Action Sheet (Bottom Sheet) for Logout */
+            /* iPhone iOS Action Sheet (Bottom Sheet) for Logout */
             <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 26, stiffness: 300 }}
-              className="relative w-full max-w-md mx-auto flex flex-col gap-2 z-10"
+              initial={{ y: '100%', opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0 }}
+              transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.26 }}
+              className="relative w-full max-w-[370px] mx-auto flex flex-col gap-2.5 z-10 mb-4 px-4 pb-safe"
             >
-              <div className={`w-full rounded-[14px] overflow-hidden ${
-                isDarkMode ? 'bg-[#1c1c1e]/90 text-white' : 'bg-[#f2f2f7]/95 text-black'
-              } backdrop-blur-[20px]`}>
-                {/* Header */}
-                <div className={`px-4 py-4 text-center border-b ${isDarkMode ? 'border-white/10' : 'border-black/10'}`}>
-                  <h3 className={`text-[13px] font-semibold tracking-wide ${isDarkMode ? 'text-neutral-400' : 'text-neutral-500'}`}>
+              <div className={`w-full rounded-[14px] overflow-hidden backdrop-blur-xl ${
+                isDarkMode 
+                  ? 'bg-[#1c1c1e]/75 border border-white/10 text-white' 
+                  : 'bg-[#f9f9f9]/85 border border-black/5 text-black'
+              }`}>
+                {/* Header with small, clean text */}
+                <div className={`px-4 py-3.5 text-center border-b ${
+                  isDarkMode ? 'border-white/10' : 'border-black/10'
+                }`}>
+                  <h3 className={`text-[13px] font-semibold tracking-wide ${
+                    isDarkMode ? 'text-neutral-400' : 'text-neutral-500'
+                  }`}>
                     {config.title || (isBn ? 'লগআউট নিশ্চিতকরণ' : isArabic ? 'تأكيد تسجيل الخروج' : 'Logout Confirmation')}
                   </h3>
-                  <p className={`text-[13px] leading-snug mt-1 px-1 font-normal opacity-90 ${isDarkMode ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                    {config.message}
-                  </p>
+                  {config.message && (
+                    <p className={`text-[13px] leading-snug mt-1.5 px-2 font-normal ${
+                      isDarkMode ? 'text-neutral-400/80' : 'text-neutral-500/80'
+                    }`}>
+                      {config.message}
+                    </p>
+                  )}
                 </div>
 
                 {/* Logout Action Buttons */}
                 {config.onSecondaryConfirm ? (
-                  <div className={`flex flex-col w-full divide-y ${isDarkMode ? 'divide-white/15' : 'divide-black/10'}`}>
+                  <div className={`flex flex-col w-full divide-y ${
+                    isDarkMode ? 'divide-white/10' : 'divide-black/10'
+                  }`}>
                     <button
                       type="button"
                       onClick={() => {
                         config.onConfirm();
                         closeConfirm();
                       }}
-                      className={`w-full py-4 text-[20px] font-normal transition-colors cursor-pointer ${
-                        isDarkMode ? 'active:bg-white/10 text-[#ff453a]' : 'active:bg-black/10 text-[#FF3B30]'
+                      className={`w-full h-[57px] flex items-center justify-center text-[18px] md:text-[20px] font-normal transition-colors cursor-pointer ${
+                        isDarkMode ? 'text-[#ff453a] active:bg-white/10' : 'text-[#ff3b30] active:bg-black/5'
                       }`}
                     >
                       {config.confirmText || (isBn ? 'লগআউট ও প্রস্থান' : 'Logout & Exit')}
@@ -130,8 +160,8 @@ const ConfirmationModal: React.FC = () => {
                         config.onSecondaryConfirm?.();
                         closeConfirm();
                       }}
-                      className={`w-full py-4 text-[20px] font-normal transition-colors cursor-pointer ${
-                        isDarkMode ? 'text-[#0a84ff] active:bg-white/10' : 'text-[#007AFF] active:bg-black/10'
+                      className={`w-full h-[57px] flex items-center justify-center text-[18px] md:text-[20px] font-normal transition-colors cursor-pointer ${
+                        isDarkMode ? 'text-[#0a84ff] active:bg-white/10' : 'text-[#007aff] active:bg-black/5'
                       }`}
                     >
                       {config.secondaryConfirmText || (isBn ? 'শুধুমাত্র প্রস্থান' : 'Just Exit')}
@@ -144,8 +174,8 @@ const ConfirmationModal: React.FC = () => {
                       config.onConfirm();
                       closeConfirm();
                     }}
-                    className={`w-full py-4 text-[20px] font-normal transition-colors cursor-pointer ${
-                      isDarkMode ? 'active:bg-white/10 text-[#ff453a]' : 'active:bg-black/10 text-[#FF3B30]'
+                    className={`w-full h-[57px] flex items-center justify-center text-[18px] md:text-[20px] font-normal transition-colors cursor-pointer ${
+                      isDarkMode ? 'text-[#ff453a] active:bg-white/10' : 'text-[#ff3b30] active:bg-black/5'
                     }`}
                   >
                     {config.confirmText || (isBn ? 'লগআউট' : 'Logout')}
@@ -153,15 +183,17 @@ const ConfirmationModal: React.FC = () => {
                 )}
               </div>
 
-              {/* Cancel Button separated for Action Sheet style */}
-              <div className={`w-full rounded-[14px] overflow-hidden ${
-                isDarkMode ? 'bg-[#1c1c1e]/90' : 'bg-white/95'
-              } backdrop-blur-[20px]`}>
+              {/* Cancel Button - Separated iOS Action Sheet Style */}
+              <div className={`w-full rounded-[14px] overflow-hidden backdrop-blur-xl ${
+                isDarkMode 
+                  ? 'bg-[#1c1c1e]/75 border border-white/10' 
+                  : 'bg-white/85 border border-black/5'
+              }`}>
                 <button
                   type="button"
                   onClick={closeConfirm}
-                  className={`w-full py-4 text-[20px] font-semibold transition-colors cursor-pointer ${
-                    isDarkMode ? 'text-[#0a84ff] active:bg-white/10' : 'text-[#007AFF] active:bg-black/10'
+                  className={`w-full h-[57px] flex items-center justify-center text-[18px] md:text-[20px] font-semibold transition-colors cursor-pointer ${
+                    isDarkMode ? 'text-[#0a84ff] active:bg-white/10' : 'text-[#007aff] active:bg-black/5'
                   }`}
                 >
                   {config.cancelText || (isBn ? 'বাতিল' : isArabic ? 'إلغاء' : 'Cancel')}
@@ -169,40 +201,42 @@ const ConfirmationModal: React.FC = () => {
               </div>
             </motion.div>
           ) : (
-            /* iOS Alert Dialog Box (Default) */
+            /* iPhone iOS Native Alert Dialog Box (Default & Exit) */
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-              className={`relative w-[275px] max-w-[90%] mx-auto flex flex-col overflow-hidden rounded-[14px] shadow-[0_8px_30px_rgba(0,0,0,0.22)] border ${
+              transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+              className={`relative w-[270px] max-w-[85%] mx-auto flex flex-col overflow-hidden rounded-[14px] shadow-[0_8px_30px_rgba(0,0,0,0.25)] backdrop-blur-2xl border ${
                 isDarkMode 
-                  ? 'border-white/10 bg-[#1c1c1e]/82 text-white' 
-                  : 'border-black/10 bg-[#f2f2f7]/85 text-black'
-              } backdrop-blur-[20px]`}
+                  ? 'border-white/10 bg-[#1e1e1e]/85 text-white' 
+                  : 'border-black/5 bg-[#f9f9f9]/90 text-black'
+              }`}
             >
               {/* Header / Content Section */}
               <div className="px-4 pt-5 pb-4 text-center">
-                <h3 className={`text-[17px] font-semibold leading-tight tracking-tight ${
+                <h3 className={`text-[17px] font-semibold leading-snug tracking-tight ${
                   isDarkMode ? 'text-white' : 'text-black'
                 }`}>
                   {config.title || (isBn ? 'নিশ্চিতকরণ' : isArabic ? 'تأكيد' : 'Confirmation')}
                 </h3>
-                <p className={`text-[13px] leading-snug mt-1.5 px-1 font-normal opacity-90 ${
-                  isDarkMode ? 'text-neutral-300' : 'text-neutral-600'
-                }`}>
-                  {config.message}
-                </p>
+                {config.message && (
+                  <p className={`text-[13px] leading-snug mt-1.5 px-1 font-normal ${
+                    isDarkMode ? 'text-neutral-400' : 'text-neutral-600'
+                  }`}>
+                    {config.message}
+                  </p>
+                )}
               </div>
 
               {/* Hairline top border for buttons */}
-              <div className={`h-[0.5px] w-full ${isDarkMode ? 'bg-white/15' : 'bg-black/10'}`} />
+              <div className={`h-[0.5px] w-full ${isDarkMode ? 'bg-white/10' : 'bg-black/10'}`} />
               
               {/* Action Buttons Section */}
               {config.onSecondaryConfirm ? (
-                // 3 Buttons -> Stacked vertically
+                // 3 Buttons -> Stacked vertically (e.g., Logout & Exit, Just Exit, Cancel)
                 <div className={`flex flex-col w-full divide-y ${
-                  isDarkMode ? 'divide-white/15' : 'divide-black/10'
+                  isDarkMode ? 'divide-white/10' : 'divide-black/10'
                 }`}>
                   <button
                     type="button"
@@ -211,11 +245,11 @@ const ConfirmationModal: React.FC = () => {
                       closeConfirm();
                     }}
                     className={`w-full py-3 text-[17px] font-semibold transition-colors cursor-pointer ${
-                      isDarkMode ? 'active:bg-white/10' : 'active:bg-black/10'
+                      isDarkMode ? 'active:bg-white/10' : 'active:bg-black/5'
                     } ${
                       isConfirmDestructive 
-                        ? (isDarkMode ? 'text-[#ff453a]' : 'text-[#FF3B30]') 
-                        : (isDarkMode ? 'text-[#0a84ff]' : 'text-[#007AFF]')
+                        ? (isDarkMode ? 'text-[#ff453a]' : 'text-[#ff3b30]') 
+                        : (isDarkMode ? 'text-[#0a84ff]' : 'text-[#007aff]')
                     }`}
                   >
                     {config.confirmText || (isBn ? 'লগআউট ও প্রস্থান' : 'Logout & Exit')}
@@ -227,7 +261,7 @@ const ConfirmationModal: React.FC = () => {
                       closeConfirm();
                     }}
                     className={`w-full py-3 text-[17px] font-normal transition-colors cursor-pointer ${
-                      isDarkMode ? 'text-[#0a84ff] active:bg-white/10' : 'text-[#007AFF] active:bg-black/10'
+                      isDarkMode ? 'text-[#0a84ff] active:bg-white/10' : 'text-[#007aff] active:bg-black/5'
                     }`}
                   >
                     {config.secondaryConfirmText || (isBn ? 'শুধুমাত্র প্রস্থান' : 'Just Exit')}
@@ -236,7 +270,7 @@ const ConfirmationModal: React.FC = () => {
                     type="button"
                     onClick={closeConfirm}
                     className={`w-full py-3 text-[17px] font-semibold transition-colors cursor-pointer ${
-                      isDarkMode ? 'text-[#0a84ff] active:bg-white/10' : 'text-[#007AFF] active:bg-black/10'
+                      isDarkMode ? 'text-[#0a84ff] active:bg-white/10' : 'text-[#007aff] active:bg-black/5'
                     }`}
                   >
                     {config.cancelText || (isBn ? 'বাতিল' : isArabic ? 'إلغاء' : 'Cancel')}
@@ -249,14 +283,14 @@ const ConfirmationModal: React.FC = () => {
                     type="button"
                     onClick={closeConfirm}
                     className={`flex-1 h-full flex items-center justify-center text-[17px] font-normal transition-colors cursor-pointer select-none ${
-                      isDarkMode ? 'text-[#0a84ff] active:bg-white/10' : 'text-[#007AFF] active:bg-black/10'
+                      isDarkMode ? 'text-[#0a84ff] active:bg-white/10' : 'text-[#007aff] active:bg-black/5'
                     }`}
                   >
-                    {config.cancelText || (isBn ? 'বাতিল' : isArabic ? 'لا' : 'No')}
+                    {config.cancelText || (isBn ? 'না' : isArabic ? 'لا' : 'No')}
                   </button>
                   
                   {/* Hairline vertical divider */}
-                  <div className={`w-[0.5px] h-full ${isDarkMode ? 'bg-white/15' : 'bg-black/10'}`} />
+                  <div className={`w-[0.5px] h-full ${isDarkMode ? 'bg-white/10' : 'bg-black/10'}`} />
                   
                   <button
                     type="button"
@@ -265,11 +299,11 @@ const ConfirmationModal: React.FC = () => {
                       closeConfirm();
                     }}
                     className={`flex-1 h-full flex items-center justify-center text-[17px] font-semibold transition-colors cursor-pointer select-none ${
-                      isDarkMode ? 'active:bg-white/10' : 'active:bg-black/10'
+                      isDarkMode ? 'active:bg-white/10' : 'active:bg-black/5'
                     } ${
-                      isConfirmDestructive 
-                        ? (isDarkMode ? 'text-[#ff453a]' : 'text-[#FF3B30]') 
-                        : (isDarkMode ? 'text-[#0a84ff]' : 'text-[#007AFF]')
+                      isConfirmDestructive || isExit
+                        ? (isDarkMode ? 'text-[#ff453a]' : 'text-[#ff3b30]') 
+                        : (isDarkMode ? 'text-[#0a84ff]' : 'text-[#007aff]')
                     }`}
                   >
                     {config.confirmText || (isBn ? (isConfirmDestructive ? 'ডিলিট' : 'হ্যাঁ') : isArabic ? 'نعم' : 'Yes')}

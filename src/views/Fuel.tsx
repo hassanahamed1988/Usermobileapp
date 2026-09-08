@@ -18,6 +18,19 @@ export default function FuelView() {
     user, allFuels, addFuel, updateFuel, removeFuel, payments, language, setView, primaryColor, isNightMode, confirmAction, showFeedback, selectedCurrency, wallpaper, backgroundColor, globalFilterMonth, setGlobalFilterMonth, globalFilterYear, setGlobalFilterYear
   } = useStore();
 
+  React.useEffect(() => {
+    const currentM = new Date().getMonth() + 1;
+    const currentY = new Date().getFullYear();
+    setGlobalFilterMonth(currentM);
+    setGlobalFilterYear(currentY);
+    return () => {
+      const exitM = new Date().getMonth() + 1;
+      const exitY = new Date().getFullYear();
+      setGlobalFilterMonth(exitM);
+      setGlobalFilterYear(exitY);
+    };
+  }, [setGlobalFilterMonth, setGlobalFilterYear]);
+
   const t = TRANSLATIONS[language] || TRANSLATIONS.en;
 
   // Bilingual translation support

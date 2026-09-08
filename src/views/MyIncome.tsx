@@ -340,6 +340,19 @@ const PendingBreakdownPage = ({ data, total, onClose, currency, isDark, wallpape
   };
 
   useEffect(() => {
+    const currentM = new Date().getMonth() + 1;
+    const currentY = new Date().getFullYear();
+    setGlobalFilterMonth(currentM);
+    setGlobalFilterYear(currentY);
+    return () => {
+      const exitM = new Date().getMonth() + 1;
+      const exitY = new Date().getFullYear();
+      setGlobalFilterMonth(exitM);
+      setGlobalFilterYear(exitY);
+    };
+  }, [setGlobalFilterMonth, setGlobalFilterYear]);
+
+  useEffect(() => {
     if (!selectedCategory) {
       setDetailedItems([]);
       return;

@@ -55,6 +55,19 @@ const Dashboard: React.FC = () => {
   const [purchases, setPurchases] = React.useState<any[]>([]);
 
   React.useEffect(() => {
+    const currentM = new Date().getMonth() + 1;
+    const currentY = new Date().getFullYear();
+    setGlobalFilterMonth(currentM);
+    setGlobalFilterYear(currentY);
+    return () => {
+      const exitM = new Date().getMonth() + 1;
+      const exitY = new Date().getFullYear();
+      setGlobalFilterMonth(exitM);
+      setGlobalFilterYear(exitY);
+    };
+  }, [setGlobalFilterMonth, setGlobalFilterYear]);
+
+  React.useEffect(() => {
     const unsubscribePurchases = subscribeFirebaseCollectionGroup('Purchase', (data) => setPurchases(data));
     return () => {
       unsubscribePurchases();

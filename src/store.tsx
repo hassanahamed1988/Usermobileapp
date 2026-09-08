@@ -773,7 +773,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     stateRef.current = next;
     setState(next);
     try { 
-       const { confirmConfig, customBackAction, ...restToSave } = next;
+       const { confirmConfig, customBackAction, globalFilterMonth, globalFilterYear, ...restToSave } = next;
        localStorage.setItem('fleetpro_state', JSON.stringify(restToSave)); 
     } catch {}
   }, []);

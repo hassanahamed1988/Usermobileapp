@@ -127,6 +127,20 @@ import PartnerProfileCard from '@/components/PartnerProfileCard';
 
 export default function Purchase() {
   const { language ,user ,isNightMode ,users ,showFeedback ,appThemeMode ,backgroundColor ,wallpaper ,confirmAction ,currentView ,setView ,goBack ,theme ,isDarkMode: storeIsDarkMode ,globalFilterMonth ,setGlobalFilterMonth ,globalFilterYear ,setGlobalFilterYear ,countries ,banks ,branches ,walletPaymentMethods } = useStore();
+
+  React.useEffect(() => {
+    const currentM = new Date().getMonth() + 1;
+    const currentY = new Date().getFullYear();
+    setGlobalFilterMonth(currentM);
+    setGlobalFilterYear(currentY);
+    return () => {
+      const exitM = new Date().getMonth() + 1;
+      const exitY = new Date().getFullYear();
+      setGlobalFilterMonth(exitM);
+      setGlobalFilterYear(exitY);
+    };
+  }, [setGlobalFilterMonth, setGlobalFilterYear]);
+
   const isDarkMode = storeIsDarkMode || theme === 'night-mode' || isNightMode || appThemeMode === 'dark';
   const currentLanguage = language || 'en';
   const t = (key: keyof typeof TRANSLATIONS['en']) => {
