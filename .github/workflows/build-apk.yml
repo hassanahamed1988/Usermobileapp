@@ -75,6 +75,8 @@ jobs:
       - name: Build APK with Gradle
         run: |
           cd android
+          # Ensure a fresh, non-corrupted gradle-wrapper.jar is always present
+          curl -sSLo gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/v8.14.3/gradle/wrapper/gradle-wrapper.jar
           chmod +x gradlew
           ./gradlew assembleDebug
 
