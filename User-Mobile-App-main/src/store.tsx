@@ -1655,7 +1655,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               url.includes('gen-lang-client-') ||
               (url.includes('.run.app') && !url.includes('fleetpromanager-1991'));
               
+            // NOTE: capacitor.config.ts uses androidScheme: 'https', so on a real
+            // APK window.location.origin is "https://localhost", not "capacitor:"
+            // or "file:". Capacitor.isNativePlatform() is the reliable check.
             const isNative = typeof window !== 'undefined' && (
+              Capacitor.isNativePlatform() ||
               window.location.origin.startsWith('capacitor:') || 
               window.location.origin.startsWith('file:') ||
               window.location.origin === 'null'

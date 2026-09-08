@@ -1,3 +1,5 @@
+import { Capacitor } from '@capacitor/core';
+
 /**
  * Utility to resolve API endpoints dynamically.
  * Helps mobile builds (Capacitor/APK) connect to the correct absolute Cloud Run backend URL
@@ -6,17 +8,22 @@
 export function getApiUrl(path: string): string {
   const origin = window.location.origin || '';
 
+  // Reliable native-platform detection. NOTE: capacitor.config.ts sets
+  // androidScheme: 'https', so on a real APK window.location.origin is
+  // "https://localhost" — it will NOT start with "capacitor:" or "file:"
+  // and will NOT be "null". Capacitor.isNativePlatform() is the correct
+  // check regardless of androidScheme/webview configuration.
+  const isNativeApp =
+    Capacitor.isNativePlatform() ||
+    origin.startsWith('capacitor:') ||
+    origin.startsWith('file:') ||
+    origin === 'null' ||
+    origin.includes('10.0.2.2');
+
   // 1. Check if a custom API Base URL is saved in localStorage (from Settings)
   const savedBase = localStorage.getItem('API_BASE_URL');
   if (savedBase) {
     let base = savedBase.trim().replace(/\/+$/, '');
-
-    // Detect if running natively inside Capacitor, Cordova, or offline file
-    const isNativeApp = 
-      origin.startsWith('capacitor:') || 
-      origin.startsWith('file:') || 
-      origin === 'null' ||
-      origin.includes('10.0.2.2');
 
     // If we are on native platform and the savedBase is an AI Studio / development preview host,
     // we MUST ignore it, because it is meant only for the browser-based AI Studio preview.
@@ -38,13 +45,6 @@ export function getApiUrl(path: string): string {
     }
     return `${base}${path}`;
   }
-
-  // 2. Detect if running natively inside Capacitor, Cordova, or offline file
-  const isNativeApp = 
-    origin.startsWith('capacitor:') || 
-    origin.startsWith('file:') || 
-    origin === 'null' ||
-    origin.includes('10.0.2.2');
 
   if (isNativeApp) {
     // Native apps cannot use relative paths. Use the fallback backend
