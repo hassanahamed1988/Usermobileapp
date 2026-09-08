@@ -27,7 +27,7 @@ jobs:
 
       - name: Deploy to Firebase
         env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GEN_LANG_CLIENT_0792514696 }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_FLEETPROMANAGER_1991 }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           echo "$FIREBASE_SERVICE_ACCOUNT" > firebase-key.json
