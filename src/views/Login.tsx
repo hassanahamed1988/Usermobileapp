@@ -3625,7 +3625,7 @@ const Login: React.FC = () => {
                 {activeTab === 'signin' ? (
                   <div 
                     style={loginCardStyle}
-                    className={`w-full login-card-container border-t ${loginCardIsDark ? 'border-white/10 shadow-[0_-15px_50px_rgba(0,0,0,0.6)]' : 'border-black/10 shadow-[0_-10px_40px_rgba(0,0,0,0.08)]'} rounded-t-[24px] rounded-b-none border-x-0 border-b-0 p-6 sm:p-8 pb-6 md:pb-8 mt-auto md:border-t-0 md:rounded-2xl md:border md:shadow-2xl md:my-auto md:max-w-md md:mx-auto`}
+                    className={`w-full login-card-container border-t ${loginCardIsDark ? 'border-white/10 shadow-[0_-15px_50px_rgba(0,0,0,0.6)]' : 'border-black/10 shadow-[0_-10px_40px_rgba(0,0,0,0.08)]'} rounded-t-[24px] rounded-b-none border-x-0 border-b-0 p-6 sm:p-8 pb-[calc(36px+env(safe-area-inset-bottom,16px))] md:pb-8 mt-auto md:border-t-0 md:rounded-2xl md:border md:shadow-2xl md:my-auto md:max-w-md md:mx-auto`}
                   >
                     {/* iOS Bottom Sheet Drag Handle */}
                     {!showForgotPassword && !showForgotUsername && !showFingerprintEnrollModal && (

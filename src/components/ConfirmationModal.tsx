@@ -94,7 +94,7 @@ const ConfirmationModal: React.FC = () => {
   return createPortal(
     <AnimatePresence>
       {config?.isOpen && (
-        <div className={`fixed inset-0 z-[99999] flex ${isLogout ? 'items-end justify-center pb-safe p-4' : 'items-center justify-center p-6'} font-sans select-none`}>
+        <div className={`fixed inset-0 z-[99999] flex ${isLogout ? 'items-end justify-center pb-[calc(16px+env(safe-area-inset-bottom,16px))] p-4' : 'items-center justify-center p-6'} font-sans select-none`}>
           {/* Overlay Background with smooth fade */}
           <motion.div 
             initial={{ opacity: 0 }}
@@ -112,7 +112,7 @@ const ConfirmationModal: React.FC = () => {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0 }}
               transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.26 }}
-              className="relative w-full max-w-[370px] mx-auto flex flex-col gap-2.5 z-10 mb-4 px-4 pb-safe"
+              className="relative w-full max-w-[370px] mx-auto flex flex-col gap-2.5 z-10 mb-4 px-4 pb-[calc(16px+env(safe-area-inset-bottom,16px))]"
             >
               <div className={`w-full rounded-[14px] overflow-hidden backdrop-blur-xl ${
                 isDarkMode 

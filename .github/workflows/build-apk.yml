@@ -1,13 +1,13 @@
 name: Build Android APK
 
 on:
-  workflow_dispatch: # This allows manual triggering from the Actions tab
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout code
@@ -20,7 +20,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci || npm install --legacy-peer-deps
 
       - name: Build web app
         run: npm run build
@@ -30,45 +30,33 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '21'
-          cache: 'gradle'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Add Android platform
+      - name: Configure Firebase (google-services.json)
         run: |
-          if [ ! -f "android/gradlew" ]; then
-            rm -rf android
-            npx cap add android
-          fi
-
-      - name: Sync Capacitor
-        run: |
-          npx cap sync
           cat << 'EOF' > google-services.json
           {
             "project_info": {
-              "project_number": "606498539967",
-              "project_id": "gen-lang-client-0792514696",
-              "storage_bucket": "gen-lang-client-0792514696.firebasestorage.app"
+              "project_number": "1070292426921",
+              "project_id": "fleetpromanager-1991",
+              "storage_bucket": "fleetpromanager-1991.firebasestorage.app"
             },
             "client": [
               {
                 "client_info": {
-                  "mobilesdk_app_id": "1:606498539967:android:com.transportmanager.app",
+                  "mobilesdk_app_id": "1:1070292426921:android:com.transportmanager.app",
                   "android_client_info": {
                     "package_name": "com.transportmanager.app"
                   }
                 },
                 "oauth_client": [
                   {
-                    "client_id": "606498539967-661f1dp7al1ta8qhi2vgkvb85jrhccck.apps.googleusercontent.com",
+                    "client_id": "1070292426921-qhasb3cm3v3skiqobdhfgpopk1c5rpb9.apps.googleusercontent.com",
                     "client_type": 3
                   }
                 ],
                 "api_key": [
                   {
-                    "current_key": "AIzaSyBwI0Eu-gHOU16KDT5bBAl_-LO6K3ruBTU"
+                    "current_key": "AIzaSyAWqkAdzqXwPql2FnSKy6dOutDHLUx7CcY"
                   }
                 ],
                 "services": {
@@ -81,32 +69,31 @@ jobs:
             "configuration_version": "1"
           }
           EOF
-          mkdir -p android/app/src/debug android/app/src/release
+          mkdir -p android/app
           cp google-services.json android/app/google-services.json
-          cp google-services.json android/app/src/debug/google-services.json
-          cp google-services.json android/app/src/release/google-services.json
 
-      - name: Fix Gradle Wrapper
-        run: |
-          mkdir temp-wrapper
-          cd temp-wrapper
-          touch settings.gradle
-          gradle wrapper --gradle-version 8.14.3
-          cp gradle/wrapper/gradle-wrapper.jar ../android/gradle/wrapper/
-          cp gradle/wrapper/gradle-wrapper.properties ../android/gradle/wrapper/
-          cd ..
-          rm -rf temp-wrapper
+      - name: Sync Capacitor
+        run: npx cap sync
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Build APK with Gradle
-        env:
-          GRADLE_OPTS: -Dorg.gradle.internal.http.connectionTimeout=120000 -Dorg.gradle.internal.http.socketTimeout=120000
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug.apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Deploy to Firebase App Distribution
+        uses: w9jds/firebase-action@v2.2.0
+        with:
+          args: appdistribution:distribute android/app/build/outputs/apk/debug/app-debug.apk --app "${{ secrets.FIREBASE_APP_ID_ANDROID || '1:1070292426921:android:com.transportmanager.app' }}" --groups "testers"
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        continue-on-error: true
