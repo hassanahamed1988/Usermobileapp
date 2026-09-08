@@ -1648,7 +1648,22 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       unsubscribes.push(
         subscribeFirebaseDoc('settings', 'backend', (docData) => {
           if (docData && docData.url) {
-            localStorage.setItem('API_BASE_URL', docData.url);
+            const url = docData.url.trim();
+            const isDevUrl = 
+              url.includes('ais-dev-') || 
+              url.includes('ais-pre-') || 
+              url.includes('gen-lang-client-') ||
+              (url.includes('.run.app') && !url.includes('fleetpromanager-1991'));
+              
+            const isNative = typeof window !== 'undefined' && (
+              window.location.origin.startsWith('capacitor:') || 
+              window.location.origin.startsWith('file:') ||
+              window.location.origin === 'null'
+            );
+            
+            if (!(isNative && isDevUrl)) {
+              localStorage.setItem('API_BASE_URL', url);
+            }
           }
         })
       );

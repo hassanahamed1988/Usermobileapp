@@ -10,6 +10,28 @@ export function getApiUrl(path: string): string {
   const savedBase = localStorage.getItem('API_BASE_URL');
   if (savedBase) {
     let base = savedBase.trim().replace(/\/+$/, '');
+
+    // Detect if running natively inside Capacitor, Cordova, or offline file
+    const isNativeApp = 
+      origin.startsWith('capacitor:') || 
+      origin.startsWith('file:') || 
+      origin === 'null' ||
+      origin.includes('10.0.2.2');
+
+    // If we are on native platform and the savedBase is an AI Studio / development preview host,
+    // we MUST ignore it, because it is meant only for the browser-based AI Studio preview.
+    const isDevelopmentHost = 
+      base.includes('ais-dev-') || 
+      base.includes('ais-pre-') || 
+      base.includes('gen-lang-client-') ||
+      (base.includes('.run.app') && !base.includes('fleetpromanager-1991'));
+
+    if (isNativeApp && isDevelopmentHost) {
+      // Ignore development host on native apps and use default production host
+      const defaultHost = 'https://fleetpromanager-1991.web.app';
+      return `${defaultHost}${path}`;
+    }
+
     // Force HTTPS if hitting a Cloud Run domain
     if (base.includes('.run.app') && base.startsWith('http://')) {
       base = base.replace('http://', 'https://');
