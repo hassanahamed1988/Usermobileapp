@@ -746,7 +746,7 @@ const Settings: React.FC = () => {
                       <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-2 font-black uppercase">
                         Current Effective API Endpoint:
                         <code className="block bg-gray-100 dark:bg-zinc-850 p-2 rounded mt-1 font-mono break-all text-xs text-[var(--primary)] font-normal normal-case">
-                          {tempApiUrl.trim() || 'https://gen-lang-client-0792514696.web.app'}
+                          {tempApiUrl.trim() || 'https://fleetpromanager-1991.web.app'}
                         </code>
                       </p>
                     </div>
