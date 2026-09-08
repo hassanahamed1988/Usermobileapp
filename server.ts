@@ -244,7 +244,7 @@ Follow these extraction maps strictly:
 CRITICAL: If any field is physically blank, empty, unwritten, or missing in the document, you MUST set that field to "" (empty string). Do NOT invent, assume, simulate, or guess metadata. Be absolute and accurate. Only fill fields where written or printed content exists.`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
+        model: "gemini-3.8-flash",
         contents: [imagePart, { text: prompt }],
         config: {
           responseMimeType: "application/json",
@@ -327,7 +327,7 @@ Extract the list of items purchased. For each item, extract its name, price, qua
 If price or quantity is missing, estimate it from the total or return what is available.`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
+        model: "gemini-3.8-flash",
         contents: [imagePart, { text: prompt }],
         config: {
           responseMimeType: "application/json",
@@ -389,7 +389,7 @@ If price or quantity is missing, estimate it from the total or return what is av
       });
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.6-flash",
+        model: "gemini-3.8-flash",
         contents: message,
         config: systemInstruction ? { systemInstruction } : undefined,
       });
