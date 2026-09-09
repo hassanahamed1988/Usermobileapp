@@ -466,7 +466,7 @@ const Settings: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <MenuItem 
                 icon={<UserIcon />} 
-                title="My Profile" 
+                title={t.MY_PROFILE} 
                 subtitle={language === 'bn' ? 'ব্যক্তিগত প্রোফাইল তথ্য দেখুন' : 'View and edit your personal details'}
                 onClick={() => {
                   setSelectedUser(null);
@@ -476,7 +476,7 @@ const Settings: React.FC = () => {
               />
               <MenuItem 
                 icon={<Palette />} 
-                title="App Theme" 
+                title={t.APP_THEME} 
                 subtitle={language === 'bn' ? 'লাইট, ডার্ক বা নাইট মোড নির্বাচন করুন' : 'Choose light, dark, or night mode'}
                 onClick={() => {
                   setNavigationDirection('forward');
@@ -506,7 +506,7 @@ const Settings: React.FC = () => {
               />
               <MenuItem 
                 icon={<Shield />} 
-                title="Security & Password" 
+                title={t.SECURITY_PASSWORD} 
                 subtitle={language === 'bn' ? 'লগইন পাসওয়ার্ড পরিবর্তন ও আপডেট করুন' : 'Update your login password'}
                 onClick={() => {
                   setNavigationDirection('forward');
@@ -526,7 +526,7 @@ const Settings: React.FC = () => {
               />
               <MenuItem 
                 icon={<ZoomIn />} 
-                title="Screen Zoom" 
+                title={t.SCREEN_ZOOM} 
                 subtitle={language === 'bn' ? 'ডিসপ্লে ইন্টারফেসের স্কেল পরিবর্তন করুন' : 'Adjust display interface scale'}
                 onClick={() => {
                   setNavigationDirection('forward');
@@ -536,7 +536,7 @@ const Settings: React.FC = () => {
               />
               <MenuItem 
                 icon={<SettingsIcon />} 
-                title="Typography" 
+                title={t.TYPOGRAPHY} 
                 subtitle={language === 'bn' ? 'অ্যাপের ফন্ট এবং ফন্ট সাইজ কাস্টমাইজ করুন' : 'Customize app fonts and sizes'}
                 onClick={() => {
                   setNavigationDirection('forward');
@@ -546,7 +546,7 @@ const Settings: React.FC = () => {
               />
               <MenuItem 
                 icon={<Globe />} 
-                title="Language" 
+                title={t.LANGUAGE} 
                 subtitle={language === 'bn' ? 'বাংলা, ইংরেজি, আরবি, হিন্দি' : language === 'ar' ? 'العربية، الإنجليزية، البنغالية، الهندية' : language === 'hi' ? 'हिन्दी, अंग्रेज़ी, बांग्ला, अरबी' : 'Bangla, English, Arabic, Hindi'}
                 onClick={() => {
                   setNavigationDirection('forward');
@@ -556,7 +556,7 @@ const Settings: React.FC = () => {
               />
               <MenuItem 
                 icon={<CreditCard />} 
-                title="Currency" 
+                title={t.CURRENCY} 
                 subtitle={language === 'bn' ? 'বিডিটি, কিউএআর, ইউএসডি' : 'BDT, QAR, USD'}
                 onClick={() => {
                   setNavigationDirection('forward');
@@ -576,7 +576,7 @@ const Settings: React.FC = () => {
               />
               <MenuItem 
                 icon={<Database />} 
-                title="Data Backup" 
+                title={t.DATA_BACKUP} 
                 subtitle={language === 'bn' ? 'অফলাইনে ডাটাবেস এক্সপোর্ট এবং ইম্পোর্ট করুন' : 'Export and import database offline'}
                 onClick={() => {
                   setNavigationDirection('forward');

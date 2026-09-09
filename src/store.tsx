@@ -11,6 +11,7 @@ import { where } from 'firebase/firestore';
 import { parseExpiryDate, isExpired, isExpiringSoon } from './utils/dateUtils';
 import { decryptSensitiveFields } from './utils/security';
 import { WORLD_COUNTRIES, scanAndDetectCountry } from './utils/countryUtils';
+import { translateDigits, formatNumber, formatDate, formatTime } from './utils/formatUtils';
 import fleetproLogo from './assets/logo.png';
 import defaultLoginWallpaper from './assets/login_wallpaper.png';
 
@@ -336,6 +337,10 @@ export interface StoreState {
   setGlobalFilterMonth: (month: number | 'ALL') => void;
   globalFilterYear: number | 'ALL';
   setGlobalFilterYear: (year: number | 'ALL') => void;
+  translateDigits: (value: string | number | undefined | null) => string;
+  formatNumber: (num: number | string | undefined | null, options?: Intl.NumberFormatOptions) => string;
+  formatDate: (dateVal: string | Date | undefined | null) => string;
+  formatTime: (timeStr: string | undefined | null) => string;
 }
 
 const getAffectedTripIds = (payment: any, state: any) => {
@@ -1755,6 +1760,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const value = useMemo(() => {
     return new Proxy(state, {
       get(target, prop) {
+        if (prop === 'translateDigits') {
+          return (val: string | number | undefined | null) => translateDigits(val, target.language);
+        }
+        if (prop === 'formatNumber') {
+          return (num: number | string | undefined | null, options?: Intl.NumberFormatOptions) => formatNumber(num, target.language, options);
+        }
+        if (prop === 'formatDate') {
+          return (dateVal: string | Date | undefined | null) => formatDate(dateVal, target.language);
+        }
+        if (prop === 'formatTime') {
+          return (timeStr: string | undefined | null) => formatTime(timeStr, target.language);
+        }
+
         if (typeof prop === 'string' && handlersRef.current[prop]) return handlersRef.current[prop];
         
         // Theme/wallpaper/background/color values are read straight off the

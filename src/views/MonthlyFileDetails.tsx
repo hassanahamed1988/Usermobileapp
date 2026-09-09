@@ -3332,7 +3332,7 @@ const MonthlyFileDetails: React.FC = () => {
             <div className="flex-1 overflow-y-auto px-global pt-global space-y-6 pb-[140px] md:pb-6">
               
               {/* Card 1: Dates & Times */}
-              <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-none border border-gray-100/80 dark:border-white/5 overflow-hidden flex flex-col relative w-full">
+              <div className="bg-theme-card rounded-2xl shadow-sm border border-gray-100/80 dark:border-white/5 overflow-hidden flex flex-col relative w-full">
                 {/* Top Section */}
                 <div className="relative border-l-[6px] border-[#117651] p-5 flex flex-col bg-[#f0f9f4] dark:bg-emerald-950/20 border-b border-gray-100 dark:border-zinc-800">
                    {/* Street Map Background Watermark */}
@@ -3380,7 +3380,7 @@ const MonthlyFileDetails: React.FC = () => {
               </div>
 
               {/* Card 2: Origin & Destination */}
-              <div className="bg-[#fcfdfd] dark:bg-zinc-900/90 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-none p-6 relative overflow-hidden border-l-[6px] border-[#e7f7ed] dark:border-green-900/40 min-h-[140px]">
+              <div className="bg-theme-card rounded-2xl shadow-sm p-6 relative overflow-hidden border-l-[6px] border-[#e7f7ed] dark:border-green-900/40 min-h-[140px]">
                 {/* World Map Backdrop with Curved Shipping Routes */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.25] dark:opacity-35 z-0 flex items-center justify-center">
                   <svg className="w-full h-full min-w-[340px]" viewBox="0 0 340 140" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -3441,7 +3441,7 @@ const MonthlyFileDetails: React.FC = () => {
               </div>
 
               {/* Card 3: Shipment Info */}
-              <div className="bg-white dark:bg-zinc-900/90 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-none p-6 relative overflow-hidden border-l-[6px] border-[#bfdbfe] dark:border-blue-900/50">
+              <div className="bg-theme-card rounded-2xl shadow-sm p-6 relative overflow-hidden border-l-[6px] border-[#bfdbfe] dark:border-blue-900/50">
                 {/* Ship and Containers Watermark */}
                 <div className="absolute bottom-0 right-0 opacity-[0.25] dark:opacity-35 pointer-events-none z-0">
                   <svg width="220" height="90" viewBox="0 0 220 90" fill="none" xmlns="http://www.w3.org/2000/svg">

@@ -45,11 +45,164 @@ import FloatingInput from '@/components/FloatingInput';
 import { PaymentManager } from '../services/PaymentManager';
 import { getContrastColor } from '../utils/colorUtils';
 import { subscribeFirebaseCollection, subscribeFirebaseCollectionGroup } from '../services/firebase';
+import { translateDigits, formatNumber, formatDate, formatTime } from '../utils/formatUtils';
+
+const LOCAL_TRANSLATIONS: Record<string, Record<string, string>> = {
+  en: {
+    REASON_VEHICLE_INSPECTION: 'Vehicle Inspection',
+    REASON_GENERATOR_AUXILIARY: 'Generator Auxiliary',
+    REASON_EMERGENCY_BREAKDOWN: 'Emergency Breakdown',
+    REASON_SPECIAL_ROUTE_ALLOWANCE: 'Special Route Allowance',
+    REASON_PUMP_OVERCHARGE: 'Pump Overcharge',
+    REASON_AC_RADIATOR_ISSUE: 'AC / Radiator Issue',
+    VEHICLE_TRUCK: 'Truck',
+    VEHICLE_LIGHT_TRUCK: 'Light Truck',
+    VEHICLE_MEDIUM_TRUCK: 'Medium Truck',
+    VEHICLE_TRAILER: 'Trailer',
+    VEHICLE_HEAVY_EQUIPMENT: 'Heavy Equipment',
+    VEHICLE_GENERATOR: 'Generator',
+    LEAVE_SETTLEMENT: 'Settlement',
+    FILL_ALL_FIELDS: 'Please fill all fields.',
+    VALID_AMOUNT: 'Please enter a valid amount.',
+    EXTRA_FUEL_ADDED: 'Extra Fuel added successfully!',
+    ALL_MONTH: 'All Month',
+    ALL_YEARS: 'All Years',
+    NET_BALANCE: 'Net Balance',
+    DEDUCTION: 'Deduction',
+    SALARY: 'Salary',
+    ADVANCE: 'Advance',
+    BONUS: 'Bonus',
+    FRIDAY: 'Friday',
+    EXTRA_FUEL: 'Extra Fuel',
+    EXTRA_FUEL_FORM: 'Extra Fuel Form',
+    ADD_COMPANY_EXTRA_FUEL: 'Add company extra fuel transaction',
+    COMPANY_NAME: 'Company Name',
+    REASON: 'Reason',
+    VEHICLE_TYPE: 'Vehicle Type',
+    VEHICLE_NUMBER: 'Vehicle Number',
+    AMOUNT: 'Amount',
+    SUBMIT: 'Submit',
+    SELECT_REASON: 'Select Reason',
+    SELECT_VEHICLE_TYPE: 'Select Vehicle Type',
+  },
+  bn: {
+    REASON_VEHICLE_INSPECTION: 'ভেইকেল ইন্সপেকশন (Vehicle Inspection)',
+    REASON_GENERATOR_AUXILIARY: 'অক্সিলিয়ারি জেনারেটর (Generator Auxiliary)',
+    REASON_EMERGENCY_BREAKDOWN: 'জরুরী ব্রেকডাউন (Emergency Breakdown)',
+    REASON_SPECIAL_ROUTE_ALLOWANCE: 'विशेष রুট ভাতা (Special Route Allowance)',
+    REASON_PUMP_OVERCHARGE: 'পাম্প ওভারচার্জ (Pump Overcharge)',
+    REASON_AC_RADIATOR_ISSUE: 'এসি / রেডিয়েটর সমস্যা (AC / Radiator Issue)',
+    VEHICLE_TRUCK: 'ট্রাক (Truck)',
+    VEHICLE_LIGHT_TRUCK: 'লাইট ট্রাক (Light Truck)',
+    VEHICLE_MEDIUM_TRUCK: 'মিডিয়াম ট্রাক (Medium Truck)',
+    VEHICLE_TRAILER: 'ট্রেইলার (Trailer)',
+    VEHICLE_HEAVY_EQUIPMENT: 'ভারী যন্ত্রপাতি (Heavy Equipment)',
+    VEHICLE_GENERATOR: 'জেনারেটর (Generator)',
+    LEAVE_SETTLEMENT: 'নিষ্পত্তি',
+    FILL_ALL_FIELDS: 'দয়া করে সবগুলো ঘর পূরণ করুন।',
+    VALID_AMOUNT: 'দয়া করে সঠিক অ্যামাউন্ট লিখুন।',
+    EXTRA_FUEL_ADDED: 'এক্সট্রা ফিউল সফলভাবে যোগ করা হয়েছে!',
+    ALL_MONTH: 'সব মাস',
+    ALL_YEARS: 'সব বছর',
+    NET_BALANCE: 'নেট ব্যালেন্স',
+    DEDUCTION: 'ডিডাকশন',
+    SALARY: 'স্যালারি',
+    ADVANCE: 'অ্যাডভান্স',
+    BONUS: 'বোনাস',
+    FRIDAY: 'শুক্রবার',
+    EXTRA_FUEL: 'এক্সট্রা ফিউল',
+    EXTRA_FUEL_FORM: 'এক্সট্রা ফিউল ফরম',
+    ADD_COMPANY_EXTRA_FUEL: 'কোম্পানি ট্রানজেকশন যুক্ত করুন',
+    COMPANY_NAME: 'কোম্পানির নাম',
+    REASON: 'রিজন / কারণ',
+    VEHICLE_TYPE: 'ভেইকেল টাইপ',
+    VEHICLE_NUMBER: 'ভেইকেল নাম্বার',
+    AMOUNT: 'অ্যামাউন্ট / টাকা',
+    SUBMIT: 'সাবমিট করুন',
+    SELECT_REASON: 'রিজন সিলেক্ট করুন',
+    SELECT_VEHICLE_TYPE: 'ভেইকেল টাইপ সিলেক্ট করুন',
+  },
+  ar: {
+    REASON_VEHICLE_INSPECTION: 'فحص المركبة (Vehicle Inspection)',
+    REASON_GENERATOR_AUXILIARY: 'المولد المساعد (Generator Auxiliary)',
+    REASON_EMERGENCY_BREAKDOWN: 'عطل طارئ (Emergency Breakdown)',
+    REASON_SPECIAL_ROUTE_ALLOWANCE: 'بدل طريق خاص (Special Route Allowance)',
+    REASON_PUMP_OVERCHARGE: 'زيادة رسوم المضخة (Pump Overcharge)',
+    REASON_AC_RADIATOR_ISSUE: 'مشكلة التكييف / الرديتر (AC / Radiator Issue)',
+    VEHICLE_TRUCK: 'شاحنة (Truck)',
+    VEHICLE_LIGHT_TRUCK: 'شاحنة خفيفة (Light Truck)',
+    VEHICLE_MEDIUM_TRUCK: 'شاحنة متوسطة (Medium Truck)',
+    VEHICLE_TRAILER: 'مقطورة (Trailer)',
+    VEHICLE_HEAVY_EQUIPMENT: 'معدات ثقيلة (Heavy Equipment)',
+    VEHICLE_GENERATOR: 'مولد كهربائي (Generator)',
+    LEAVE_SETTLEMENT: 'التسوية',
+    FILL_ALL_FIELDS: 'يرجى ملء جميع الحقول.',
+    VALID_AMOUNT: 'يرجى إدخال مبلغ صحيح.',
+    EXTRA_FUEL_ADDED: 'تم إضافة الوقود الإضافي بنجاح!',
+    ALL_MONTH: 'كل الأشهر',
+    ALL_YEARS: 'كل السنوات',
+    NET_BALANCE: 'صافي الرصيد',
+    DEDUCTION: 'خصم',
+    SALARY: 'الراتب',
+    ADVANCE: 'سلفة',
+    BONUS: 'مكافأة',
+    FRIDAY: 'الجمعة',
+    EXTRA_FUEL: 'الوقود الإضافي',
+    EXTRA_FUEL_FORM: 'نموذج الوقود الإضافي',
+    ADD_COMPANY_EXTRA_FUEL: 'إضافة معاملة وقود إضافي للشركة',
+    COMPANY_NAME: 'اسم الشركة',
+    REASON: 'السبب',
+    VEHICLE_TYPE: 'نوع المركبة',
+    VEHICLE_NUMBER: 'رقم المركبة',
+    AMOUNT: 'المبلغ',
+    SUBMIT: 'إرسال',
+    SELECT_REASON: 'اختر السبب',
+    SELECT_VEHICLE_TYPE: 'اختر نوع المركبة',
+  },
+  hi: {
+    REASON_VEHICLE_INSPECTION: 'वाहन निरीक्षण (Vehicle Inspection)',
+    REASON_GENERATOR_AUXILIARY: 'जनरेटर सहायक (Generator Auxiliary)',
+    REASON_EMERGENCY_BREAKDOWN: 'आपातकालीन ब्रेकडाउन (Emergency Breakdown)',
+    REASON_SPECIAL_ROUTE_ALLOWANCE: 'विशेष मार्ग भत्ता (Special Route Allowance)',
+    REASON_PUMP_OVERCHARGE: 'पंप ओवरचार्ज (Pump Overcharge)',
+    REASON_AC_RADIATOR_ISSUE: 'एसी / रेडिएटर समस्या (AC / Radiator Issue)',
+    VEHICLE_TRUCK: 'ट्रक (Truck)',
+    VEHICLE_LIGHT_TRUCK: 'हल्का ट्रक (Light Truck)',
+    VEHICLE_MEDIUM_TRUCK: 'मध्यम ट्रक (Medium Truck)',
+    VEHICLE_TRAILER: 'ट्रेलर (Trailer)',
+    VEHICLE_HEAVY_EQUIPMENT: 'भारी उपकरण (Heavy Equipment)',
+    VEHICLE_GENERATOR: 'जनरेटर (Generator)',
+    LEAVE_SETTLEMENT: 'निपटान',
+    FILL_ALL_FIELDS: 'कृपया सभी फ़ील्ड भरें।',
+    VALID_AMOUNT: 'कृपया एक वैध राशि दर्ज करें।',
+    EXTRA_FUEL_ADDED: 'अतिरिक्त ईंधन सफलतापूर्वक जोड़ा गया!',
+    ALL_MONTH: 'सभी महीने',
+    ALL_YEARS: 'सभी वर्ष',
+    NET_BALANCE: 'शुद्ध शेष',
+    DEDUCTION: 'कटौती',
+    SALARY: 'वेतन',
+    ADVANCE: 'अग्रिम',
+    BONUS: 'बोनस',
+    FRIDAY: 'शुक्रवार',
+    EXTRA_FUEL: 'अतिरिक्त ईंधन',
+    EXTRA_FUEL_FORM: 'अतिरिक्त ईंधन फॉर्म',
+    ADD_COMPANY_EXTRA_FUEL: 'कंपनी अतिरिक्त ईंधन लेनदेन जोड़ें',
+    COMPANY_NAME: 'कंपनी का नाम',
+    REASON: 'कारण',
+    VEHICLE_TYPE: 'वाहन का प्रकार',
+    VEHICLE_NUMBER: 'वाहन संख्या',
+    AMOUNT: 'राशि',
+    SUBMIT: 'जमा करें',
+    SELECT_REASON: 'कारण चुनें',
+    SELECT_VEHICLE_TYPE: 'वाहन का प्रकार चुनें',
+  }
+};
 
 const Dashboard: React.FC = () => {
   const { language, setView, setCurrentFile, addMonthlyFile, user, publicMenuItems, isDarkMode: storeIsDarkMode, isNightMode, appThemeMode, setIsLoadingView, setEditingTrip, appGrid, dashboardOrder, setDashboardOrder, resetSystem, confirmAction, setActiveSection, currentThemeObj, companies, payments, trips, monthlyFiles, currencies, selectedCurrency, setIsEntryFormOpen, globalFilterMonth, setGlobalFilterMonth, globalFilterYear, setGlobalFilterYear, addTrip, showFeedback } = useStore();
   const isDarkMode = storeIsDarkMode || isNightMode || appThemeMode === 'dark';
   const t = TRANSLATIONS[language];
+  const localT = LOCAL_TRANSLATIONS[language] || LOCAL_TRANSLATIONS.en;
   const primaryColor = currentThemeObj?.primary || '#10b981';
 
   const [purchases, setPurchases] = React.useState<any[]>([]);
@@ -97,22 +250,22 @@ const Dashboard: React.FC = () => {
   }, [showExtraFuelModal, setIsEntryFormOpen]);
 
   const reasonOptions = React.useMemo(() => [
-    { label: language === 'bn' ? 'ভেইকেল ইন্সপেকশন (Vehicle Inspection)' : 'Vehicle Inspection', value: 'Vehicle Inspection', icon: '🔍' },
-    { label: language === 'bn' ? 'অক্সিলিয়ারি জেনারেটর (Generator Auxiliary)' : 'Generator Auxiliary', value: 'Generator Auxiliary', icon: '⚙️' },
-    { label: language === 'bn' ? 'জরুরী ব্রেকডাউন (Emergency Breakdown)' : 'Emergency Breakdown', value: 'Emergency Breakdown', icon: '🚨' },
-    { label: language === 'bn' ? 'विशेष রুট ভাতা (Special Route Allowance)' : 'Special Route Allowance', value: 'Special Route Allowance', icon: '🛣️' },
-    { label: language === 'bn' ? 'পাম্প ওভারচার্জ (Pump Overcharge)' : 'Pump Overcharge', value: 'Pump Overcharge', icon: '⛽' },
-    { label: language === 'bn' ? 'এসি / রেডিয়েটর সমস্যা (AC / Radiator Issue)' : 'AC / Radiator Issue', value: 'AC / Radiator Issue', icon: '❄️' }
-  ], [language]);
+    { label: localT.REASON_VEHICLE_INSPECTION, value: 'Vehicle Inspection', icon: '🔍' },
+    { label: localT.REASON_GENERATOR_AUXILIARY, value: 'Generator Auxiliary', icon: '⚙️' },
+    { label: localT.REASON_EMERGENCY_BREAKDOWN, value: 'Emergency Breakdown', icon: '🚨' },
+    { label: localT.REASON_SPECIAL_ROUTE_ALLOWANCE, value: 'Special Route Allowance', icon: '🛣️' },
+    { label: localT.REASON_PUMP_OVERCHARGE, value: 'Pump Overcharge', icon: '⛽' },
+    { label: localT.REASON_AC_RADIATOR_ISSUE, value: 'AC / Radiator Issue', icon: '❄️' }
+  ], [localT]);
 
   const vehicleTypeOptions = React.useMemo(() => [
-    { label: language === 'bn' ? 'ট্রাক (Truck)' : 'Truck', value: 'Truck', icon: '🚚' },
-    { label: language === 'bn' ? 'লাইট ট্রাক (Light Truck)' : 'Light Truck', value: 'Light Truck', icon: '🛻' },
-    { label: language === 'bn' ? 'মিডিয়াম ট্রাক (Medium Truck)' : 'Medium Truck', value: 'Medium Truck', icon: '🚛' },
-    { label: language === 'bn' ? 'ট্রেইলার (Trailer)' : 'Trailer', value: 'Trailer', icon: '🚊' },
-    { label: language === 'bn' ? 'ভারী যন্ত্রপাতি (Heavy Equipment)' : 'Heavy Equipment', value: 'Heavy Equipment', icon: '🚜' },
-    { label: language === 'bn' ? 'জেনারেটর (Generator)' : 'Generator', value: 'Generator', icon: '⚡' }
-  ], [language]);
+    { label: localT.VEHICLE_TRUCK, value: 'Truck', icon: '🚚' },
+    { label: localT.VEHICLE_LIGHT_TRUCK, value: 'Light Truck', icon: '🛻' },
+    { label: localT.VEHICLE_MEDIUM_TRUCK, value: 'Medium Truck', icon: '🚛' },
+    { label: localT.VEHICLE_TRAILER, value: 'Trailer', icon: '🚊' },
+    { label: localT.VEHICLE_HEAVY_EQUIPMENT, value: 'Heavy Equipment', icon: '🚜' },
+    { label: localT.VEHICLE_GENERATOR, value: 'Generator', icon: '⚡' }
+  ], [localT]);
 
   const selectedYear = globalFilterYear;
   const setSelectedYear = setGlobalFilterYear;
@@ -142,9 +295,10 @@ const Dashboard: React.FC = () => {
   const [showMonthSelect, setShowMonthSelect] = React.useState(false);
 
   const months = React.useMemo(() => {
+    const localeMap = { en: 'en-US', bn: 'bn-BD', ar: 'ar-SA', hi: 'hi-IN' };
     return Array.from({ length: 12 }, (_, i) => 
       new Date(0, i).toLocaleString(
-        language === 'bn' ? 'bn-BD' : language === 'ar' ? 'ar-SA' : 'en-US', 
+        localeMap[language] || 'en-US', 
         { month: 'long' }
       )
     );
@@ -215,7 +369,7 @@ const Dashboard: React.FC = () => {
     // resolve translation label
     let label = t[m.labelKey as keyof typeof t] || m.labelKey || m.id;
     if (m.id === 'LEAVE_SETTLEMENT') {
-      label = language === 'bn' ? 'নিষ্পত্তি' : (language === 'ar' ? 'التسوية' : 'Settlement');
+      label = localT.LEAVE_SETTLEMENT;
     }
 
     // attach action handlers if any
@@ -299,13 +453,13 @@ const Dashboard: React.FC = () => {
   const handleExtraFuelSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!extraFuelCompany || !extraFuelReason || !extraFuelVehicleType || !extraFuelVehicleNumber || !extraFuelAmount) {
-      showFeedback(language === 'bn' ? 'দয়া করে সবগুলো ঘর পূরণ করুন।' : 'Please fill all fields.', 'error');
+      showFeedback(localT.FILL_ALL_FIELDS, 'error');
       return;
     }
 
     const amt = Number(extraFuelAmount);
     if (isNaN(amt) || amt <= 0) {
-      showFeedback(language === 'bn' ? 'দয়া করে সঠিক অ্যামাউন্ট লিখুন।' : 'Please enter a valid amount.', 'error');
+      showFeedback(localT.VALID_AMOUNT, 'error');
       return;
     }
 
@@ -357,7 +511,7 @@ const Dashboard: React.FC = () => {
 
     addTrip(newTrip);
 
-    showFeedback(language === 'bn' ? 'এক্সট্রা ফিউল সফলভাবে যোগ করা হয়েছে!' : 'Extra Fuel added successfully!', 'success');
+    showFeedback(localT.EXTRA_FUEL_ADDED, 'success');
 
     // Reset states and close modal
     setExtraFuelReason('');
@@ -388,14 +542,14 @@ const Dashboard: React.FC = () => {
                     onClick={() => setShowMonthSelect(true)}
                     className="bg-white/20 hover:bg-white/30 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 shadow-lg"
                   >
-                    {selectedMonth === 'ALL' ? (language === 'bn' ? 'সব মাস' : 'All Month') : months[selectedMonth - 1]}
+                    {selectedMonth === 'ALL' ? localT.ALL_MONTH : months[selectedMonth - 1]}
                     <ChevronDown size={10} className="text-white/70" />
                   </button>
                   <button 
                     onClick={() => setShowYearSelect(true)}
                     className="bg-white/20 hover:bg-white/30 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 shadow-lg"
                   >
-                    {selectedYear === 'ALL' ? (language === 'bn' ? 'সব বছর' : 'All Years') : selectedYear}
+                    {selectedYear === 'ALL' ? localT.ALL_YEARS : selectedYear}
                     <ChevronDown size={10} className="text-white/70" />
                   </button>
                 </div>
@@ -421,12 +575,12 @@ const Dashboard: React.FC = () => {
                     <div className="flex items-center gap-1.5 mb-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-white/60 shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>
                       <span className="text-[8px] md:text-[9px] lg:text-[10px] font-black uppercase tracking-wider text-emerald-100 whitespace-nowrap">
-                        {language === 'bn' ? 'নেট ব্যালেন্স' : 'Net Balance'}
+                        {localT.NET_BALANCE}
                       </span>
                     </div>
                     <div className="flex items-baseline gap-1.5">
                       <span className="text-[10px] md:text-[11px] lg:text-[12px] font-black text-emerald-100/70">{currency.code}</span>
-                      <span className="text-xl md:text-2xl lg:text-3xl font-black tracking-tighter text-white drop-shadow-sm">{totals.net.toLocaleString()}</span>
+                      <span className="text-xl md:text-2xl lg:text-3xl font-black tracking-tighter text-white drop-shadow-sm">{formatNumber(totals.net, language)}</span>
                     </div>
                   </div>
                 </button>
@@ -447,13 +601,13 @@ const Dashboard: React.FC = () => {
                     <div className="flex items-center gap-1.5 mb-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-white/60 shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>
                       <span className="text-[8px] md:text-[9px] lg:text-[10px] font-black uppercase tracking-wider text-rose-100 whitespace-nowrap">
-                        {language === 'bn' ? 'ডিডাকশন' : 'Deduction'}
+                        {localT.DEDUCTION}
                       </span>
                     </div>
                     <div className="flex items-baseline gap-1.5">
                       <span className="text-[10px] md:text-[11px] lg:text-[12px] font-black text-rose-100/70">{currency.code}</span>
                       <span className="text-xl md:text-2xl lg:text-3xl font-black tracking-tighter text-white drop-shadow-sm">
-                        {totals.deduction.toLocaleString()}
+                        {formatNumber(totals.deduction, language)}
                       </span>
                     </div>
                   </div>
@@ -476,14 +630,14 @@ const Dashboard: React.FC = () => {
                     onClick={() => setShowMonthSelect(true)}
                     className="bg-white/20 hover:bg-white/30 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 shadow-lg"
                   >
-                    {selectedMonth === 'ALL' ? (language === 'bn' ? 'সব মাস' : 'All Month') : months[selectedMonth - 1]}
+                    {selectedMonth === 'ALL' ? localT.ALL_MONTH : months[selectedMonth - 1]}
                     <ChevronDown size={10} className="text-white/70" />
                   </button>
                   <button 
                     onClick={() => setShowYearSelect(true)}
                     className="bg-white/20 hover:bg-white/30 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 shadow-lg"
                   >
-                    {selectedYear === 'ALL' ? (language === 'bn' ? 'সব বছর' : 'All Years') : selectedYear}
+                    {selectedYear === 'ALL' ? localT.ALL_YEARS : selectedYear}
                     <ChevronDown size={10} className="text-white/70" />
                   </button>
                 </div>
@@ -506,7 +660,7 @@ const Dashboard: React.FC = () => {
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-[10px] md:text-[11px] lg:text-[12px] font-black text-white/50">{currency.code}</span>
                     <span className="text-xl md:text-2xl lg:text-3xl font-black tracking-tighter text-white drop-shadow-sm">
-                      {approvedPurchasesTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {formatNumber(approvedPurchasesTotal, language, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                 </button>
@@ -524,7 +678,7 @@ const Dashboard: React.FC = () => {
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-[10px] md:text-[11px] lg:text-[12px] font-black text-white/50">{currency.code}</span>
                     <span className="text-xl md:text-2xl lg:text-3xl font-black tracking-tighter text-white drop-shadow-sm">
-                      {pendingPurchasesTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {formatNumber(pendingPurchasesTotal, language, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                 </button>
@@ -537,7 +691,7 @@ const Dashboard: React.FC = () => {
                   <span className="text-[8px] md:text-[9px] lg:text-[10px] font-black uppercase tracking-widest text-white/30">Total Purchase</span>
                 </div>
                 <span className="text-[10px] md:text-[12px] lg:text-[13px] font-black text-white/70 tracking-widest">
-                  {currency.code} {(approvedPurchasesTotal + pendingPurchasesTotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {currency.code} {formatNumber(approvedPurchasesTotal + pendingPurchasesTotal, language, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
             </div>
@@ -583,8 +737,8 @@ const Dashboard: React.FC = () => {
           setShowYearSelect(false);
         }}
         options={[
-          { label: language === 'bn' ? 'সব বছর' : 'All Years', value: 'ALL' },
-          ...years.map(y => ({ label: String(y), value: String(y) }))
+          { label: localT.ALL_YEARS, value: 'ALL' },
+          ...years.map(y => ({ label: translateDigits(y, language), value: String(y) }))
         ]}
         title={t.SELECT_YEAR || 'Select Year'}
         selectedValue={String(selectedYear)}
@@ -597,7 +751,7 @@ const Dashboard: React.FC = () => {
           setShowMonthSelect(false);
         }}
         options={[
-          { label: language === 'bn' ? 'সব মাস' : 'All Month', value: 'ALL' },
+          { label: localT.ALL_MONTH, value: 'ALL' },
           ...months.map(m => ({ label: m, value: m }))
         ]}
         title={t.SELECT_MONTH || 'Select Month'}
@@ -627,11 +781,11 @@ const Dashboard: React.FC = () => {
           }
         }}
         options={[
-          { label: language === 'bn' ? 'স্যালারি' : 'Salary', value: 'SALARY' },
-          { label: language === 'bn' ? 'অগ্রিম' : 'Advance', value: 'ADVANCE' },
-          { label: language === 'bn' ? 'বোনাস' : 'Bonus', value: 'BONUS' },
-          { label: language === 'bn' ? 'শুক্রবার' : 'Friday', value: 'FRIDAY' },
-          { label: language === 'bn' ? 'এক্সট্রা ফিউল' : 'Extra Fuel', value: 'EXTRA_FUEL' }
+          { label: localT.SALARY, value: 'SALARY' },
+          { label: localT.ADVANCE, value: 'ADVANCE' },
+          { label: localT.BONUS, value: 'BONUS' },
+          { label: localT.FRIDAY, value: 'FRIDAY' },
+          { label: localT.EXTRA_FUEL, value: 'EXTRA_FUEL' }
         ]}
         title={t.ADD_MONEY_TITLE || t.ADD_MONEY || 'Add Money'}
         searchable={false}
@@ -668,10 +822,10 @@ const Dashboard: React.FC = () => {
                 <div className="flex justify-between items-center px-6 py-4 border-b border-black/5 dark:border-white/10 flex-shrink-0">
                   <div>
                     <h3 className="text-lg font-black tracking-tight">
-                      {language === 'bn' ? 'এক্সট্রা ফিউল ফরম' : 'Extra Fuel Form'}
+                      {localT.EXTRA_FUEL_FORM}
                     </h3>
                     <p className="text-xs text-text-muted opacity-80 mt-0.5">
-                      {language === 'bn' ? 'কোম্পানি ট্রানজেকশন যুক্ত করুন' : 'Add company extra fuel transaction'}
+                      {localT.ADD_COMPANY_EXTRA_FUEL}
                     </p>
                   </div>
                   <button 
@@ -687,7 +841,7 @@ const Dashboard: React.FC = () => {
                 <form onSubmit={handleExtraFuelSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
                   {/* Company Name (Read-Only) */}
                   <FloatingInput 
-                    label={language === 'bn' ? 'কোম্পানির নাম' : 'Company Name'} 
+                    label={localT.COMPANY_NAME} 
                     value={extraFuelCompany} 
                     onChange={() => {}} 
                     readOnly={true}
@@ -697,7 +851,7 @@ const Dashboard: React.FC = () => {
                   {/* Reason (Dropdown) */}
                   <div onClick={() => setShowReasonSelect(true)} className="cursor-pointer">
                     <FloatingInput 
-                      label={language === 'bn' ? 'রিজন / কারণ' : 'Reason'} 
+                      label={localT.REASON} 
                       value={
                         reasonOptions.find(o => o.value === extraFuelReason)?.label || extraFuelReason || ''
                       } 
@@ -710,7 +864,7 @@ const Dashboard: React.FC = () => {
                   {/* Vehicle Type (Dropdown) */}
                   <div onClick={() => setShowVehicleTypeSelect(true)} className="cursor-pointer">
                     <FloatingInput 
-                      label={language === 'bn' ? 'ভেইকেল টাইপ' : 'Vehicle Type'} 
+                      label={localT.VEHICLE_TYPE} 
                       value={
                         vehicleTypeOptions.find(o => o.value === extraFuelVehicleType)?.label || extraFuelVehicleType || ''
                       } 
@@ -722,7 +876,7 @@ const Dashboard: React.FC = () => {
 
                   {/* Vehicle Number (Text Input) */}
                   <FloatingInput 
-                    label={language === 'bn' ? 'ভেইকেল নাম্বার' : 'Vehicle Number'} 
+                    label={localT.VEHICLE_NUMBER} 
                     value={extraFuelVehicleNumber} 
                     onChange={(v) => setExtraFuelVehicleNumber(v)} 
                     icon={<Hash size={18} />}
@@ -730,7 +884,7 @@ const Dashboard: React.FC = () => {
 
                   {/* Amount (Numeric Input) */}
                   <FloatingInput 
-                    label={language === 'bn' ? 'অ্যামাউন্ট / টাকা' : 'Amount'} 
+                    label={localT.AMOUNT} 
                     value={extraFuelAmount} 
                     onChange={(v) => setExtraFuelAmount(v)}
                     type="text"
@@ -745,7 +899,7 @@ const Dashboard: React.FC = () => {
                       className="w-full h-14 bg-cyan-500 hover:bg-cyan-600 text-white font-black rounded-xl shadow-lg active:scale-95 duration-200 transition-all uppercase text-sm tracking-wider flex items-center justify-center gap-2"
                     >
                       <Plus size={18} />
-                      {language === 'bn' ? 'সাবমিট করুন' : 'Submit'}
+                      {localT.SUBMIT}
                     </button>
                   </div>
                 </form>
@@ -765,7 +919,7 @@ const Dashboard: React.FC = () => {
           setShowReasonSelect(false);
         }}
         options={reasonOptions}
-        title={language === 'bn' ? 'রিজন সিলেক্ট করুন' : 'Select Reason'}
+        title={localT.SELECT_REASON}
         searchable={true}
       />
 
@@ -778,7 +932,7 @@ const Dashboard: React.FC = () => {
           setShowVehicleTypeSelect(false);
         }}
         options={vehicleTypeOptions}
-        title={language === 'bn' ? 'ভেইকেল টাইপ সিলেক্ট করুন' : 'Select Vehicle Type'}
+        title={localT.SELECT_VEHICLE_TYPE}
         searchable={true}
       />
     </div>
