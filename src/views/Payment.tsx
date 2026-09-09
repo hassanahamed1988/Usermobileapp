@@ -4008,7 +4008,7 @@ setShowReceivedBreakdown(false);
                               tripMonthAndYear: item.tripMonthAndYear
                             });
                           }}
-                          className="group bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-750/80 border border-slate-100 dark:border-white/5 rounded-2xl p-4 flex items-center justify-between shadow-sm hover:shadow-md hover:-translate-y-[1px] transition-all duration-200 ease-out w-full cursor-pointer pointer-events-auto relative overflow-hidden"
+                          className="group bg-theme-card border border-black/5 dark:border-white/5 rounded-[10px] p-4 flex items-center justify-between shadow-sm hover:shadow-md hover:-translate-y-[1px] transition-all duration-200 ease-out w-full cursor-pointer pointer-events-auto relative overflow-hidden"
                         >
                           {/* Inner content wrapper */}
                           <div className="flex items-center gap-4 min-w-0 w-full">
@@ -5445,7 +5445,11 @@ setShowPendingBreakdown(false);
                     <div className="py-20 text-center text-text-muted">No transactions for this category</div>
                   ) : (
                     categoryTransactions.map(p => (
-                      <div key={p.id} className="bg-theme-card p-4 rounded-[10px] tx-history-card border border-black/5 dark:border-white/5 flex items-center justify-between">
+                      <div 
+                        key={p.id} 
+                        className="bg-theme-card p-4 rounded-[10px] tx-history-card border border-black/5 dark:border-white/5 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between cursor-pointer"
+                        onClick={() => setSelectedTransaction(p)}
+                      >
                         <div>
                           <p className="text-xs font-black text-text-main uppercase">{(p.method || 'CASH').replace('_', ' ')}</p>
                           <p className="text-[10px] font-bold text-text-main uppercase">
@@ -7063,86 +7067,100 @@ setShowTripDieselSubPage(false);
             const displayYear = selectedTransaction.year || '';
 
             // Build dynamic data attributes list based on Category
-            const detailsList: { label: string; value: string; isMono?: boolean }[] = [];
+            const detailsList: { label: string; value: string; isMono?: boolean; icon?: React.ReactNode }[] = [];
 
             // 1. Common Transaction Identity Fields
             detailsList.push({
               label: language === 'bn' ? 'ট্রানজেকশন আইডি' : 'Transaction ID',
               value: selectedTransaction.transactionId || 'N/A',
-              isMono: true
+              isMono: true,
+              icon: <Hash size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
             });
             
             detailsList.push({
               label: language === 'bn' ? 'তারিখ ও সময়' : 'Date & Time',
-              value: `${selectedTransaction.date} • ${selectedTransaction.time || ''}`
+              value: `${selectedTransaction.date} • ${selectedTransaction.time || ''}`,
+              icon: <Calendar size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
             });
 
             // 2. Category Specific Fields
             if (categoryUpper === 'USER RENEW') {
               detailsList.push({
                 label: language === 'bn' ? 'ইউজার নাম' : 'User Name',
-                value: selectedTransaction.details?.userName || 'N/A'
+                value: selectedTransaction.details?.userName || 'N/A',
+                icon: <UserIcon size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
               });
               if (selectedTransaction.details?.duration) {
                 detailsList.push({
                   label: language === 'bn' ? 'মেয়াদ কাল' : 'Duration',
-                  value: selectedTransaction.details?.duration
+                  value: selectedTransaction.details?.duration,
+                  icon: <Clock size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                 });
               }
               if (selectedTransaction.details?.previousExpiryDate) {
                 detailsList.push({
                   label: language === 'bn' ? 'পূর্ববর্তী মেয়াদ' : 'Prev Expiry',
-                  value: selectedTransaction.details?.previousExpiryDate
+                  value: selectedTransaction.details?.previousExpiryDate,
+                  icon: <Calendar size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                 });
               }
               if (selectedTransaction.details?.newExpiryDate) {
                 detailsList.push({
                   label: language === 'bn' ? 'নতুন মেয়াদ' : 'New Expiry',
-                  value: selectedTransaction.details?.newExpiryDate
+                  value: selectedTransaction.details?.newExpiryDate,
+                  icon: <Calendar size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                 });
               }
             } else if (categoryUpper === 'VEHICLE INSPECTION' || categoryUpper === 'EXTRA FUEL' || categoryUpper === 'EXTRA_FUEL') {
               detailsList.push({
                 label: language === 'bn' ? 'যানবাহন নম্বর' : 'Vehicle Number',
-                value: selectedTransaction.details?.vehicleNumber || selectedTransaction.vehicleNumber || 'N/A'
+                value: selectedTransaction.details?.vehicleNumber || selectedTransaction.vehicleNumber || 'N/A',
+                icon: <Car size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
               });
               detailsList.push({
                 label: language === 'bn' ? 'পরিদর্শনের স্থান/টাইপ' : 'Inspection Place/Type',
-                value: selectedTransaction.details?.deliveryPlace || selectedTransaction.details?.vehicleType || 'N/A'
+                value: selectedTransaction.details?.deliveryPlace || selectedTransaction.details?.vehicleType || 'N/A',
+                icon: <MapPin size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
               });
               if (selectedTransaction.details?.extraDieselReason) {
                 detailsList.push({
                   label: language === 'bn' ? 'এক্সট্রা ডিজেল' : 'Extra Diesel',
-                  value: selectedTransaction.details?.extraDieselReason
+                  value: selectedTransaction.details?.extraDieselReason,
+                  icon: <Fuel size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                 });
               } else if (selectedTransaction.details?.note) {
                 detailsList.push({
                   label: language === 'bn' ? 'কারণ / বিবরণ' : 'Reason / Note',
-                  value: selectedTransaction.details?.note || 'N/A'
+                  value: selectedTransaction.details?.note || 'N/A',
+                  icon: <FileText size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                 });
               }
             } else if (categoryUpper === 'ADVANCE') {
               detailsList.push({
                 label: language === 'bn' ? 'অ্যাডভান্স টাইপ' : 'Advance Type',
-                value: selectedTransaction.details?.advanceType || 'N/A'
+                value: selectedTransaction.details?.advanceType || 'N/A',
+                icon: <Coins size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
               });
               if (selectedTransaction.details?.advanceReason) {
                 detailsList.push({
                   label: language === 'bn' ? 'কারণ' : 'Reason',
-                  value: selectedTransaction.details?.advanceReason
+                  value: selectedTransaction.details?.advanceReason,
+                  icon: <FileText size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                 });
               }
               if (selectedTransaction.details?.companyName) {
                 detailsList.push({
                   label: language === 'bn' ? 'কোম্পানি নাম' : 'Company Name',
-                  value: selectedTransaction.details?.companyName
+                  value: selectedTransaction.details?.companyName,
+                  icon: <Building size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                 });
               }
             } else if (categoryUpper === 'SALARY' || categoryUpper === 'COMMISSION') {
               if (selectedTransaction.month) {
                 detailsList.push({
                   label: language === 'bn' ? 'স্যালারি মাস' : 'Salary Period',
-                  value: `${displayMonth} ${displayYear}`
+                  value: `${displayMonth} ${displayYear}`,
+                  icon: <Calendar size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                 });
               }
             } else {
@@ -7150,7 +7168,8 @@ setShowTripDieselSubPage(false);
               if (selectedTransaction.type === 'INCOME') {
                 detailsList.push({
                   label: language === 'bn' ? 'সোর্স নাম' : 'Source Name',
-                  value: getSourceName()
+                  value: getSourceName(),
+                  icon: <Building size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                 });
               } else {
                 // Deduction/Expense fallback details: Remove Source Name, show relevant fields
@@ -7158,19 +7177,22 @@ setShowTripDieselSubPage(false);
                 if (txnUser) {
                   detailsList.push({
                     label: language === 'bn' ? 'কর্মচারী / ব্যবহারকারী' : 'Employee / User',
-                    value: txnUser.name
+                    value: txnUser.name,
+                    icon: <UserIcon size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                   });
                 }
                 
                 detailsList.push({
                   label: language === 'bn' ? 'পেমেন্ট মেথড' : 'Payment Method',
-                  value: selectedTransaction.method ? selectedTransaction.method.replace('_', ' ') : 'CASH'
+                  value: selectedTransaction.method ? selectedTransaction.method.replace('_', ' ') : 'CASH',
+                  icon: <CreditCard size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                 });
 
                 if (selectedTransaction.details?.serviceName) {
                   detailsList.push({
                     label: language === 'bn' ? 'সার্ভিস নাম' : 'Service Name',
-                    value: selectedTransaction.details.serviceName
+                    value: selectedTransaction.details.serviceName,
+                    icon: <Tag size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                   });
                 }
               }
@@ -7185,7 +7207,8 @@ setShowTripDieselSubPage(false);
             ) {
               detailsList.push({
                 label: language === 'bn' ? 'মন্তব্য' : 'Note',
-                value: selectedTransaction.details.note
+                value: selectedTransaction.details.note,
+                icon: <FileText size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
               });
             }
 
@@ -7231,55 +7254,78 @@ setShowTripDieselSubPage(false);
                       </button>
                     </div>
 
-                    {/* Top Centered Section: Animated Tick Circle, Category, Amount & Status */}
+                    {/* Top Centered Section: Animated Tick/Clock Circle, Category, Amount & Status */}
                     <div className="flex flex-col items-center justify-center text-center">
-                      {/* Live Animated Success Tick Mark Ring */}
-                      <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border-2 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.25)] mb-2.5">
-                        <motion.svg 
-                          className="w-6 h-6 text-emerald-500" 
-                          viewBox="0 0 24 24" 
-                          fill="none" 
-                          stroke="currentColor" 
-                          strokeWidth="3.5" 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round"
-                        >
-                          <motion.path 
-                            d="M20 6L9 17L4 12" 
-                            initial={{ pathLength: 0 }} 
-                            animate={{ pathLength: 1 }} 
-                            transition={{ duration: 0.5, ease: "easeInOut", delay: 0.15 }} 
-                          />
-                        </motion.svg>
-                      </div>
+                      {/* Live Animated Success Tick Mark or Clock Ring */}
+                      {(() => {
+                        const isPaid = selectedTransaction.status === 'RECEIVED' || selectedTransaction.status === 'COMPLETED';
+                        if (isPaid) {
+                          return (
+                            <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border-2 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.25)] mb-2.5">
+                              <motion.svg 
+                                className="w-6 h-6 text-emerald-500" 
+                                viewBox="0 0 24 24" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                strokeWidth="3.5" 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round"
+                              >
+                                <motion.path 
+                                  d="M20 6L9 17L4 12" 
+                                  initial={{ pathLength: 0 }} 
+                                  animate={{ pathLength: 1 }} 
+                                  transition={{ duration: 0.5, ease: "easeInOut", delay: 0.15 }} 
+                                />
+                              </motion.svg>
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-500/10 border-2 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.25)] mb-2.5">
+                              <Clock size={20} className="text-amber-500 animate-pulse" />
+                            </div>
+                          );
+                        }
+                      })()}
 
-                      {/* Category Label */}
-                      <span className="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-zinc-400 mb-1">
-                        {catDisplay}
-                      </span>
+                      {(() => {
+                        const isPaid = selectedTransaction.status === 'RECEIVED' || selectedTransaction.status === 'COMPLETED';
+                        const amountBgClass = isPaid
+                          ? 'bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/10 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400'
+                          : 'bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/10 dark:border-amber-500/20 text-amber-700 dark:text-amber-400';
 
-                      {/* Money Amount in the Center */}
-                      <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight font-sans my-1 flex items-baseline justify-center gap-1">
-                        <span className="text-slate-400 dark:text-zinc-500 font-semibold">{isIncome ? '+' : '-'}</span>
-                        <span>{selectedTransaction.amount.toLocaleString()}</span>
-                        <span className="text-xs sm:text-sm font-bold text-slate-400 dark:text-zinc-500 tracking-normal ml-0.5">{selectedCurrency}</span>
-                      </h2>
+                        return (
+                          <div className={`w-full rounded-2xl p-4 border flex flex-col items-center justify-center text-center my-3 ${amountBgClass}`}>
+                            <span className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1.5">
+                              {catDisplay}
+                            </span>
+                            
+                            {/* Money Amount in the Center */}
+                            <h2 className="text-3xl sm:text-4xl font-black tracking-tight font-sans flex items-baseline justify-center gap-1.5 leading-tight">
+                              <span className="opacity-60 font-semibold">{isIncome ? '+' : '-'}</span>
+                              <span>{selectedTransaction.amount.toLocaleString()}</span>
+                              <span className="text-xs sm:text-sm font-bold opacity-60 tracking-normal ml-0.5">{selectedCurrency}</span>
+                            </h2>
 
-                      {/* Status Badge */}
-                      <div className="mt-2">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
-                          selectedTransaction.status === 'RECEIVED' || selectedTransaction.status === 'COMPLETED'
-                            ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                            : 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${
-                            selectedTransaction.status === 'RECEIVED' || selectedTransaction.status === 'COMPLETED'
-                              ? 'bg-emerald-500 animate-pulse'
-                              : 'bg-amber-500'
-                          }`} />
-                          {selectedTransaction.status === 'RECEIVED' ? (language === 'bn' ? 'পরিশোধিত' : 'Paid') : (language === 'bn' ? 'পেন্ডিং' : 'Pending')}
-                        </span>
-                      </div>
+                            {/* Status Badge inside the card */}
+                            <div className="mt-2.5">
+                              <span className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                                isPaid
+                                  ? 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                                  : 'bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${
+                                  isPaid
+                                    ? 'bg-emerald-500 animate-pulse'
+                                    : 'bg-amber-500'
+                                }`} />
+                                {selectedTransaction.status === 'RECEIVED' ? (language === 'bn' ? 'পরিশোধিত' : 'Paid') : (language === 'bn' ? 'পেন্ডিং' : 'Pending')}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Subtle Divider Line */}
@@ -7290,48 +7336,63 @@ setShowTripDieselSubPage(false);
                       {(categoryUpper === 'SALARY' || categoryUpper === 'COMMISSION') ? (
                         <>
                           {selectedTransaction.month && (
-                            <div className="flex justify-between items-start py-1 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
-                              <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider shrink-0">
-                                {language === 'bn' ? 'বেতন মাস' : 'Salary Period'}
-                              </span>
+                            <div className="flex items-center justify-between gap-3 py-2 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Calendar size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                                <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">
+                                  {language === 'bn' ? 'বেতন মাস' : 'Salary Period'}
+                                </span>
+                              </div>
                               <span className="text-xs font-black text-slate-800 dark:text-zinc-200 text-right">
                                 {displayMonth} {displayYear}
                               </span>
                             </div>
                           )}
 
-                          <div className="flex justify-between items-start py-1 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
-                            <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider shrink-0">
-                              {language === 'bn' ? 'রেফারেন্স আইডি' : 'Reference ID'}
-                            </span>
+                          <div className="flex items-center justify-between gap-3 py-2 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Hash size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                              <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">
+                                {language === 'bn' ? 'রেফারেন্স আইডি' : 'Reference ID'}
+                              </span>
+                            </div>
                             <span className="text-xs font-black font-mono text-slate-800 dark:text-zinc-200 text-right">
                               {selectedTransaction.transactionId || 'N/A'}
                             </span>
                           </div>
 
-                          <div className="flex justify-between items-start py-1 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
-                            <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider shrink-0">
-                              {language === 'bn' ? 'তারিখ ও সময়' : 'Date & Time'}
-                            </span>
+                          <div className="flex items-center justify-between gap-3 py-2 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Clock size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                              <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">
+                                {language === 'bn' ? 'তারিখ ও সময়' : 'Date & Time'}
+                              </span>
+                            </div>
                             <span className="text-xs font-black text-slate-800 dark:text-zinc-200 text-right">
                               {selectedTransaction.date} {selectedTransaction.time ? `• ${selectedTransaction.time}` : ''}
                             </span>
                           </div>
 
-                          <div className="flex justify-between items-start py-1 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
-                            <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider shrink-0">
-                              {language === 'bn' ? 'পেমেন্ট মেথড' : 'Payment Method'}
-                            </span>
+                          <div className="flex items-center justify-between gap-3 py-2 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <CreditCard size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                              <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">
+                                {language === 'bn' ? 'পেমেন্ট মেথড' : 'Payment Method'}
+                              </span>
+                            </div>
                             <span className="text-xs font-black text-slate-800 dark:text-zinc-200 text-right uppercase">
                               {selectedTransaction.method ? selectedTransaction.method.replace('_', ' ') : 'CASH'}
                             </span>
                           </div>
 
                           {selectedTransaction.details?.note && (
-                            <div className="flex justify-between items-start py-1 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
-                              <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider shrink-0">
-                                {language === 'bn' ? 'মন্তব্য' : 'Note'}
-                              </span>
+                            <div className="flex items-center justify-between gap-3 py-2 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <FileText size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                                <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">
+                                  {language === 'bn' ? 'মন্তব্য' : 'Note'}
+                                </span>
+                              </div>
                               <span className="text-xs font-semibold text-slate-800 dark:text-zinc-200 text-right max-w-[65%] leading-relaxed">
                                 {selectedTransaction.details.note}
                               </span>
@@ -7342,11 +7403,14 @@ setShowTripDieselSubPage(false);
                         detailsList.map((item, index) => (
                           <div 
                             key={index} 
-                            className="flex items-start justify-between gap-3 py-1.5 border-b border-slate-100/80 dark:border-zinc-800/60 last:border-0 text-left"
+                            className="flex items-center justify-between gap-3 py-2 border-b border-slate-100/80 dark:border-zinc-800/60 last:border-0 text-left"
                           >
-                            <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider shrink-0 pt-0.5">
-                              {item.label}
-                            </span>
+                            <div className="flex items-center gap-2 min-w-0">
+                              {item.icon}
+                              <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">
+                                {item.label}
+                              </span>
+                            </div>
                             <span className={`text-xs font-black text-slate-800 dark:text-zinc-200 text-right break-words max-w-[65%] leading-relaxed ${item.isMono ? 'font-mono' : ''}`}>
                               {item.value}
                             </span>
@@ -7518,34 +7582,54 @@ setShowTripDieselSubPage(false);
             {/* Modal Body */}
             <div className="p-5 overflow-y-auto space-y-4 flex-1 text-left bg-theme-card">
               {/* Trip Metadata */}
-              <div className={`rounded-2xl p-4 space-y-2 border ${isDarkMode ? 'bg-[#252525] border-[#ebebeb]/30 text-text-main' : 'bg-[#ebebeb] border-zinc-300 text-zinc-950'}`}>
-                <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className={isDarkMode ? 'text-text-muted' : 'text-zinc-600'}>{language === 'bn' ? 'ইন্সপেকশন ডেট' : 'Inspection Date'}</span>
-                  <span className="font-bold">
+              <div className={`rounded-2xl p-4 space-y-3 border ${isDarkMode ? 'bg-[#252525] border-[#ebebeb]/30 text-text-main' : 'bg-[#ebebeb] border-zinc-300 text-zinc-950'}`}>
+                {/* Inspection Date */}
+                <div className="flex items-center justify-between text-xs font-semibold py-0.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Calendar size={14} className={isDarkMode ? 'text-text-muted shrink-0' : 'text-zinc-600 shrink-0'} />
+                    <span className={`truncate ${isDarkMode ? 'text-text-muted' : 'text-zinc-600'}`}>{language === 'bn' ? 'ইন্সপেকশন ডেট' : 'Inspection Date'}</span>
+                  </div>
+                  <span className="font-bold shrink-0">
                     {selectedVehicleInspectionItem.date || selectedVehicleInspectionItem.details?.loadingDate || 'N/A'}
                   </span>
                 </div>
                 
                 <div className={`h-px my-1 ${isDarkMode ? 'bg-[#ebebeb]/30' : 'bg-zinc-300/60'}`} />
-                <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className={isDarkMode ? 'text-text-muted' : 'text-zinc-600'}>{language === 'bn' ? 'গাড়ী নম্বর' : 'Vehicle Number'}</span>
-                  <span className="font-bold">
+                
+                {/* Vehicle Number */}
+                <div className="flex items-center justify-between text-xs font-semibold py-0.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Car size={14} className={isDarkMode ? 'text-text-muted shrink-0' : 'text-zinc-600 shrink-0'} />
+                    <span className={`truncate ${isDarkMode ? 'text-text-muted' : 'text-zinc-600'}`}>{language === 'bn' ? 'গাড়ী নম্বর' : 'Vehicle Number'}</span>
+                  </div>
+                  <span className="font-bold shrink-0">
                     {selectedVehicleInspectionItem.details?.vehicleNumber || selectedVehicleInspectionItem.vehicleNumber || 'N/A'}
                   </span>
                 </div>
+                
                 <div className={`h-px my-1 ${isDarkMode ? 'bg-[#ebebeb]/30' : 'bg-zinc-300/60'}`} />
-                <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className={isDarkMode ? 'text-text-muted' : 'text-zinc-600'}>{language === 'bn' ? 'ভেইকেল টাইপ' : 'Vehicle Type'}</span>
-                  <span className="font-bold">
+                
+                {/* Vehicle Type */}
+                <div className="flex items-center justify-between text-xs font-semibold py-0.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Truck size={14} className={isDarkMode ? 'text-text-muted shrink-0' : 'text-zinc-600 shrink-0'} />
+                    <span className={`truncate ${isDarkMode ? 'text-text-muted' : 'text-zinc-600'}`}>{language === 'bn' ? 'ভেইকেল টাইপ' : 'Vehicle Type'}</span>
+                  </div>
+                  <span className="font-bold shrink-0">
                     {selectedVehicleInspectionItem.details?.deliveryPlace || selectedVehicleInspectionItem.details?.vehicleType || 'N/A'}
                   </span>
                 </div>
+                
                 {selectedVehicleInspectionItem.details?.extraDieselReason && (
                   <>
                     <div className={`h-px my-1 ${isDarkMode ? 'bg-[#ebebeb]/30' : 'bg-zinc-300/60'}`} />
-                    <div className="flex items-center justify-between text-xs font-semibold">
-                      <span className={isDarkMode ? 'text-text-muted' : 'text-zinc-600'}>{language === 'bn' ? 'এক্সট্রা ডিজেল' : 'Extra Diesel'}</span>
-                      <span className="font-bold">
+                    {/* Extra Diesel Reason */}
+                    <div className="flex items-center justify-between text-xs font-semibold py-0.5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Fuel size={14} className={isDarkMode ? 'text-text-muted shrink-0' : 'text-zinc-600 shrink-0'} />
+                        <span className={`truncate ${isDarkMode ? 'text-text-muted' : 'text-zinc-600'}`}>{language === 'bn' ? 'এক্সট্রা ডিজেল' : 'Extra Diesel'}</span>
+                      </div>
+                      <span className="font-bold shrink-0">
                         {selectedVehicleInspectionItem.details.extraDieselReason}
                       </span>
                     </div>
@@ -7559,34 +7643,51 @@ setShowTripDieselSubPage(false);
                   {language === 'bn' ? 'বকেয়া আইটেম সমূহ' : 'Dues Sub-items'}
                 </span>
                 
-                {/* Outstanding Details Box */}
-                <div className={`rounded-2xl p-4 border flex items-center justify-between gap-3 ${isDarkMode ? 'bg-[#252525] border-[#ebebeb]/30' : 'bg-[#ebebeb] border-zinc-300'}`}>
-                  {(() => {
-                    const pendingAmount = selectedVehicleInspectionItem.pending || selectedVehicleInspectionItem.amount || 0;
-                    const isPaid = selectedVehicleInspectionItem.pending === 0 || selectedVehicleInspectionItem.status === 'RECEIVED' || selectedVehicleInspectionItem.status === 'PAID' || selectedVehicleInspectionItem.isPaid === true;
-                    return (
-                      <>
+                {(() => {
+                  const pendingAmount = selectedVehicleInspectionItem.pending || selectedVehicleInspectionItem.amount || 0;
+                  const isPaid = selectedVehicleInspectionItem.pending === 0 || selectedVehicleInspectionItem.status === 'RECEIVED' || selectedVehicleInspectionItem.status === 'PAID' || selectedVehicleInspectionItem.isPaid === true;
+                  
+                  const amountBgClass = isPaid
+                    ? (isDarkMode ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-100 text-emerald-700')
+                    : (isDarkMode ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 'bg-amber-50 border-amber-100 text-amber-700');
+
+                  return (
+                    <div className="space-y-3 w-full">
+                      {/* Status row */}
+                      <div className={`rounded-2xl p-4 border flex items-center justify-between gap-3 ${isDarkMode ? 'bg-[#252525] border-[#ebebeb]/30' : 'bg-[#ebebeb] border-zinc-300'}`}>
                         <div className="flex items-center gap-2.5 min-w-0">
                           {isPaid ? (
-                            <div className="w-4 h-4 rounded-full border-2 border-emerald-500 bg-emerald-500 flex items-center justify-center shrink-0 text-white">
-                              <Check size={10} strokeWidth={4} />
+                            <div className="w-5 h-5 rounded-full border-2 border-emerald-500 bg-emerald-500 flex items-center justify-center shrink-0 text-white">
+                              <Check size={12} strokeWidth={4} />
                             </div>
                           ) : (
-                            <Clock size={16} className="text-orange-500 shrink-0" />
+                            <Clock size={18} className="text-orange-500 shrink-0" />
                           )}
                           <span className="text-xs font-black text-text-main block truncate leading-tight">
-                            {isPaid 
-                              ? (language === 'bn' ? 'পেইড' : 'Paid') 
-                              : (language === 'bn' ? 'পেন্ডিং ব্যালেন্স' : 'Pending balance')}
+                            {language === 'bn' ? 'পেমেন্ট স্ট্যাটাস' : 'Payment Status'}
                           </span>
                         </div>
-                        <span className={`font-extrabold text-xs ${isPaid ? 'text-emerald-500' : 'text-rose-500 dark:text-rose-400'}`}>
+                        <span className={`font-black text-xs px-2.5 py-1 rounded-full ${isPaid ? 'bg-emerald-500/15 text-emerald-500' : 'bg-rose-500/15 text-rose-500'}`}>
+                          {isPaid 
+                            ? (language === 'bn' ? 'পেইড' : 'Paid') 
+                            : (language === 'bn' ? 'পেন্ডিং' : 'Pending')}
+                        </span>
+                      </div>
+
+                      {/* Full width amount box with soft background color */}
+                      <div className={`rounded-2xl p-4 border flex flex-col items-center justify-center text-center w-full ${amountBgClass}`}>
+                        <span className="text-[10px] font-black uppercase tracking-wider mb-1 opacity-80">
+                          {isPaid 
+                            ? (language === 'bn' ? 'পরিশোধিত এমাউন্ট' : 'Paid Amount') 
+                            : (language === 'bn' ? 'বকেয়া এমাউন্ট' : 'Pending Amount')}
+                        </span>
+                        <span className="text-xl font-extrabold tracking-tight">
                           {pendingAmount.toLocaleString()} {selectedCurrency}
                         </span>
-                      </>
-                    );
-                  })()}
-                </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
