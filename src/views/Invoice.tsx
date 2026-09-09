@@ -621,9 +621,7 @@ const InvoiceView: React.FC = () => {
         <div className="lg:col-span-5 flex flex-col gap-6">
           
           {/* SEARCH & FILTERS PANEL */}
-          <div className={`p-5 rounded-2xl border transition-all invoice-panel shadow-none ${
-            isDark ? 'bg-[#121212] border-white/5' : 'bg-white'
-          }`}>
+          <div className="p-5 bg-theme-card rounded-[10px] border border-[var(--dynamic-card-border)] shadow-[var(--dynamic-card-shadow)] transition-all invoice-panel">
             <h3 className="font-extrabold text-xs uppercase tracking-wider mb-4 flex items-center gap-2 text-text-main">
               <Sliders size={16} className="text-[#a855f7]" />
               {isBn ? 'ফিল্টার এবং অনুসন্ধান' : 'Filter & Search Trips'}
@@ -645,9 +643,7 @@ const InvoiceView: React.FC = () => {
           </div>
 
           {/* TRIPS LIST */}
-          <div className={`p-5 rounded-2xl border transition-all invoice-panel shadow-none ${
-            isDark ? 'bg-[#121212] border-white/5' : 'bg-white'
-          }`}>
+          <div className="p-5 bg-theme-card rounded-[10px] border border-[var(--dynamic-card-border)] shadow-[var(--dynamic-card-shadow)] transition-all invoice-panel">
             <div className="flex justify-between items-center mb-3">
               <h3 className="font-extrabold text-xs uppercase tracking-wider text-text-main flex items-center gap-2">
                 <FileCheck size={16} className="text-emerald-500" />
@@ -727,9 +723,7 @@ const InvoiceView: React.FC = () => {
           </div>
 
           {/* EDITABLE BILLING SETTINGS */}
-          <div className={`p-5 rounded-2xl border transition-all invoice-panel shadow-none ${
-            isDark ? 'bg-[#121212] border-white/5' : 'bg-white'
-          }`}>
+          <div className="p-5 bg-theme-card rounded-[10px] border border-[var(--dynamic-card-border)] shadow-[var(--dynamic-card-shadow)] transition-all invoice-panel">
             <h3 className="font-extrabold text-xs uppercase tracking-wider mb-4 text-text-main flex items-center gap-2">
               <Sliders size={16} className="text-[#a855f7]" />
               {isBn ? 'ইনভয়েস ইনফরমেশন কাস্টমাইজ' : 'Customize Billing Details'}
@@ -798,9 +792,7 @@ const InvoiceView: React.FC = () => {
           </div>
 
           {!activePreviewTrip ? (
-            <div className={`p-12 rounded-3xl border border-dashed flex flex-col items-center justify-center text-center min-h-[500px] transition-all ${
-              isDark ? 'bg-black/10 border-white/10' : 'bg-gray-50 border-gray-200'
-            }`}>
+            <div className="p-12 bg-theme-card rounded-[10px] border border-dashed border-[var(--dynamic-card-border)] shadow-[var(--dynamic-card-shadow)] flex flex-col items-center justify-center text-center min-h-[500px] transition-all">
               <FileText className="text-text-muted opacity-30 animate-bounce mb-4" size={56} />
               <h4 className="font-bold text-lg text-text-main">
                 {isBn ? 'কোন ট্রিপ সিলেক্ট করা হয়নি' : 'No Trip Selected'}
