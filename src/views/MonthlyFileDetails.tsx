@@ -2975,8 +2975,8 @@ const MonthlyFileDetails: React.FC = () => {
                      <div className="overflow-hidden flex-1 min-w-0">
                        {isExtraFuel ? (
                          <>
-                           <div className="flex items-center gap-2 mb-1 flex-wrap">
-                             <h3 className="font-bold text-[12px] text-[#001F3F] dark:text-white transition-colors uppercase truncate">
+                           <div className="flex items-center gap-2 mb-1 min-w-0">
+                             <h3 className="font-bold text-[10px] text-[#001F3F] dark:text-white transition-colors uppercase truncate min-w-0">
                                {trip.extraDieselReason || (language === 'bn' ? 'এক্সট্রা ফিউল' : 'Extra Fuel')}
                              </h3>
                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
@@ -3001,8 +3001,8 @@ const MonthlyFileDetails: React.FC = () => {
                          </>
                        ) : (
                          <>
-                           <div className="flex items-center gap-2 mb-1 flex-wrap">
-                             <h3 className="font-bold text-[12px] text-[#001F3F] dark:text-white transition-colors uppercase truncate">
+                           <div className="flex items-center gap-2 mb-1 min-w-0">
+                             <h3 className="font-bold text-[10px] text-[#001F3F] dark:text-white transition-colors uppercase truncate min-w-0">
                                {trip.companyName || 'Unknown Customer'}
                              </h3>
                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
@@ -3030,8 +3030,8 @@ const MonthlyFileDetails: React.FC = () => {
                    </div>
                    
                    <div className="flex items-center gap-2 shrink-0 ml-2">
-                     <span className="text-[12px] sm:text-[13px] font-black font-mono text-[#001F3F] dark:text-white tracking-tight whitespace-nowrap">
-                       {currency.code} {tripAmount.toLocaleString()}
+                     <span className="text-[12px] sm:text-[13px] font-black text-[#001F3F] dark:text-white tracking-tight whitespace-nowrap">
+                       {`${currency.code} ${tripAmount.toLocaleString()}`}
                      </span>
                      <ChevronRight size={20} className="text-[#8B5E3C] transition-colors shrink-0" />
                    </div>
