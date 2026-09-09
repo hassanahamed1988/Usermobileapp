@@ -248,12 +248,12 @@ const Dashboard: React.FC = () => {
     } else if (m.id === 'THEME') {
       action = () => {
         setView('SETTINGS');
-        setTimeout(() => setActiveSection('THEME_SETTINGS'), 0);
+        setActiveSection('THEME_SETTINGS');
       };
     } else if (m.id === 'SECURITY') {
       action = () => {
         setView('SETTINGS');
-        setTimeout(() => setActiveSection('SECURITY'), 0);
+        setActiveSection('SECURITY');
       };
     } else if (m.id === 'RESET_SYSTEM') {
       action = () => setView('RESET_BREAKDOWN');
