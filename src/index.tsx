@@ -216,8 +216,6 @@ root.render(
       }
 
       /* Elegant Bottom-Heavy Soft Glow Focusing Styles (No Outer Borders) */
-      .settings-active-container div.bg-theme-card,
-      .settings-active-container div.bg-white,
       .floating-focus-card,
       .dashboard-card-glow {
         border: none !important;
@@ -226,12 +224,6 @@ root.render(
                     0 20px 40px -16px rgba(0, 0, 0, 0.05) !important;
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
       }
-      .dark .settings-active-container div.bg-theme-card,
-      .dark-mode .settings-active-container div.bg-theme-card,
-      .dark-theme .settings-active-container div.bg-theme-card,
-      .dark .settings-active-container div.bg-white,
-      .dark-mode .settings-active-container div.bg-white,
-      .dark-theme .settings-active-container div.bg-white,
       .dark .floating-focus-card,
       .dark-mode .floating-focus-card,
       .dark-theme .floating-focus-card,

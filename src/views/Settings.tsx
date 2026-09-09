@@ -1379,8 +1379,8 @@ const Settings: React.FC = () => {
             )}
 
             {(activeSection === 'MULTI_COLOR_SETTINGS' || activeSection === 'MULTI_COLOR_SETTINGS_APP') && (
-              <div className="space-y-6">
-                <div className="p-6 bg-white dark:bg-[#121214] rounded-2xl space-y-4 dashboard-card-glow relative z-10 scale-[1.02] transition-colors duration-300">
+              <div className="space-y-4">
+                <div className="p-4 bg-theme-card rounded-[10px] border-[var(--dynamic-card-border)] shadow-[var(--dynamic-card-shadow)] space-y-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Smartphone size={18} className="text-[var(--primary)]" />
                     <p className="text-xs font-black text-text-main uppercase">
@@ -1424,7 +1424,7 @@ const Settings: React.FC = () => {
                 </div>
 
                 {/* Popular Presets in a SEPARATE Card */}
-                <div className="p-6 bg-white dark:bg-[#121214] rounded-2xl space-y-4 dashboard-card-glow relative z-10 scale-[1.02] transition-colors duration-300">
+                <div className="p-4 bg-theme-card rounded-[10px] border-[var(--dynamic-card-border)] shadow-[var(--dynamic-card-shadow)] space-y-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Palette size={18} className="text-[var(--primary)]" />
                     <p className="text-xs font-black text-text-main uppercase">
