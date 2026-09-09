@@ -2,6 +2,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('fleetpro_state');
+          var wallpaper = '';
+          if (saved) {
+            var state = JSON.parse(saved);
+            wallpaper = state.loginWallpaper || state.wallpaper;
+          }
+          if (!wallpaper) {
+            wallpaper = '/src/assets/login_wallpaper.png';
+          }
+          var style = document.createElement('style');
+          style.id = 'instant-wallpaper-style';
+          style.innerHTML = 'html, body, #root { background: url("' + wallpaper + '") center center / cover no-repeat fixed !important; }';
+          document.head.appendChild(style);
+        } catch (e) {
+          console.error('Instant wallpaper load failed:', e);
+        }
+      })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">

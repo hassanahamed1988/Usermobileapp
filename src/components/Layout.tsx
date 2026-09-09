@@ -346,7 +346,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
     { id: 'FUEL', icon: <Fuel size={26} />, label: t.FUEL || 'Fuel', show: !!user, color: '#f97316' },
     { id: 'DOWNLOAD', icon: <Download size={26} />, label: t.DOWNLOAD || 'Download', show: !!user, color: '#6366f1' },
     { id: 'TRIP_MANAGEMENT', icon: <Truck size={26} />, label: t.TRIP_MANAGEMENT, show: isAdmin || tripManagementItems.length > 0, isAccordion: true, subItems: tripManagementItems, isOpen: isTripManagementOpen, toggle: () => setIsTripManagementOpen(!isTripManagementOpen), color: '#facc15' },
-    { id: 'VEHICLES', icon: <Car size={26} />, label: language === 'bn' ? 'যানবাহন' : 'Vehicle', show: !isAdmin, isAccordion: true, subItems: vehicleItems, isOpen: isVehicleOpen, toggle: () => setIsVehicleOpen(!isVehicleOpen), color: '#3b82f6' },
+    { id: 'VEHICLES', icon: <Car size={26} />, label: language === 'bn' ? 'যানবাহন ব্যবস্থাপনা' : 'Vehicle Management', show: !isAdmin, isAccordion: true, subItems: vehicleItems, isOpen: isVehicleOpen, toggle: () => setIsVehicleOpen(!isVehicleOpen), color: '#3b82f6' },
     { id: 'PARTNER_ACCOUNT', icon: <UserPlus size={26} />, label: 'Partner Account', show: isAdmin || partnerAccountItems.length > 0, isAccordion: true, subItems: partnerAccountItems, isOpen: isPartnerAccountOpen, toggle: () => setIsPartnerAccountOpen(!isPartnerAccountOpen), color: '#8b5cf6' },
     { id: 'PRAYER_TIMES', icon: <Clock size={26} />, label: t.PRAYER_TIMES, show: true, color: '#06b6d4' },
     { id: 'SUPPORT', icon: <LifeBuoy size={26} />, label: t.SUPPORT, show: true, color: '#f472b6' },

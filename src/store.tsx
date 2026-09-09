@@ -2315,7 +2315,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 }
               });
               const configCols = ['locations', 'countries', 'companies', 'nationalities', 'containerTypes', 'loadingTypes', 'idTypes', 'extraDieselReasons', 'advanceReasons', 'emptyReturnYards', 'banks', 'branches', 'routingNumbers', 'currencies', 'genders', 'religions', 'professions', 'postOffices', 'policeStations', 'cities', 'states', 'walletIncomeSources', 'walletDeductionReasons', 'walletPaymentMethods', 'bankNames', 'mobileBankingWallets', 'relationships', 'loanPurposes'];
-              if (updatedItem && ['users', 'trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'loans', 'loanPayments'].includes(key)) {
+              if (updatedItem && ['users', 'trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices'].includes(key)) {
                 if (key === 'users') {
                   const coll = updatedItem.role === 'ADMIN' ? 'admins' : 'users';
                   saveFirebaseDoc(coll, updatedItem.id, updatedItem);
