@@ -94,7 +94,7 @@ Follow these extraction maps strictly:
 CRITICAL: If any field is physically blank, empty, unwritten, or missing in the document, you MUST set that field to "" (empty string). Do NOT invent, assume, simulate, or guess metadata. Be absolute and accurate. Only fill fields where written or printed content exists.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
+      model: "gemini-3.5-flash",
       contents: [imagePart, { text: prompt }],
       config: {
         responseMimeType: "application/json",
@@ -149,7 +149,7 @@ app.post(["/api/gemini/chat", "/gemini/chat"], async (req, res) => {
     });
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
+      model: "gemini-3.5-flash",
       contents: message,
       config: systemInstruction ? { systemInstruction } : undefined,
     });
