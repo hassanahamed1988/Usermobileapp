@@ -30,15 +30,15 @@ var import_genai = require("@google/genai");
 
 // firebase-applet-config.json
 var firebase_applet_config_default = {
-  projectId: "gen-lang-client-0792514696",
-  appId: "1:606498539967:web:1ade816267853908e5b90a",
-  apiKey: "AIzaSyBwI0Eu-gHOU16KDT5bBAl_-LO6K3ruBTU",
-  authDomain: "gen-lang-client-0792514696.firebaseapp.com",
+  projectId: "fleetpromanager-1991",
+  appId: "1:1070292426921:web:a344e2e7128396d039c9b8",
+  apiKey: "AIzaSyAWqkAdzqXwPql2FnSKy6dOutDHLUx7CcY",
+  authDomain: "fleetpromanager-1991.firebaseapp.com",
   firestoreDatabaseId: "fleetpromanager",
-  storageBucket: "gen-lang-client-0792514696.firebasestorage.app",
-  messagingSenderId: "606498539967",
+  storageBucket: "fleetpromanager-1991.firebasestorage.app",
+  messagingSenderId: "1070292426921",
   measurementId: "",
-  oAuthClientId: "606498539967-661f1dp7al1ta8qhi2vgkvb85jrhccck.apps.googleusercontent.com",
+  oAuthClientId: "1070292426921-qhasb3cm3v3skiqobdhfgpopk1c5rpb9.apps.googleusercontent.com",
   recaptchaSiteKey: ""
 };
 
@@ -107,6 +107,138 @@ async function startServer() {
     } catch (error) {
       console.error("Error updating user password:", error);
       res.status(500).json({ error: error.message });
+    }
+  });
+  app.post("/api/application/submit", async (req, res) => {
+    try {
+      const formData = req.body;
+      const timestamp = Date.now();
+      const randomDigits = Math.floor(1e3 + Math.random() * 9e3);
+      const applicationId = `APP-${timestamp}-${randomDigits}`;
+      const submissionDate = (/* @__PURE__ */ new Date()).toLocaleString("en-US", { timeZone: "Asia/Qatar" }) || (/* @__PURE__ */ new Date()).toLocaleString();
+      const createdAt = (/* @__PURE__ */ new Date()).toISOString();
+      const { initializeApp, getApps } = await import("firebase/app");
+      const { initializeFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } = await import("firebase/firestore");
+      const apps = getApps();
+      const serverApp = apps.length > 0 ? apps[0] : initializeApp(firebase_applet_config_default);
+      const serverDb = initializeFirestore(serverApp, { experimentalForceLongPolling: true }, firebase_applet_config_default.firestoreDatabaseId || "(default)");
+      const usersCol = collection(serverDb, "users");
+      if (formData.mobile) {
+        const mobileMatch = await getDocs(query(usersCol, where("mobile", "==", formData.mobile)));
+        if (!mobileMatch.empty) {
+          res.status(409).json({ error: "An account already exists with this mobile number" });
+          return;
+        }
+      }
+      if (formData.email) {
+        const emailMatch = await getDocs(query(usersCol, where("email", "==", formData.email)));
+        if (!emailMatch.empty) {
+          res.status(409).json({ error: "An account already exists with this email" });
+          return;
+        }
+      }
+      let userId = "";
+      let isUnique = false;
+      while (!isUnique) {
+        userId = Math.floor(1e6 + Math.random() * 9e6).toString();
+        const existing = await getDoc(doc(serverDb, "users", userId));
+        isUnique = !existing.exists();
+      }
+      const accountType = formData.accountType || "PERSONAL";
+      const mobile = formData.mobile || "";
+      const country = formData.country || "";
+      const addressLine1 = formData.addressLine1 || "";
+      const newUser = {
+        id: userId,
+        userId,
+        applicationId,
+        name: formData.fullName || "",
+        fullName: formData.fullName || "",
+        email: formData.email || "",
+        mobile,
+        mobileNumber: mobile,
+        countryCode: formData.countryCode || "+974",
+        accountType,
+        // Both PERSONAL and COMPANY self-registrations become a plain
+        // mobile-app USER. Admin-panel access is never granted from a
+        // public signup form — that's only ever created deliberately by
+        // an existing admin, via the web admin app's own "New Admin"
+        // form. Getting this wrong would also silently break the fix
+        // above: ADMIN-role accounts are excluded from every list in the
+        // web admin (including Pending) and live in a different
+        // Firestore collection entirely, so this registration would once
+        // again become invisible to any admin.
+        role: "USER",
+        status: "PENDING",
+        nationality: formData.nationality || "",
+        religion: formData.religion || "",
+        gender: formData.gender || "",
+        dob: formData.dob || "",
+        profession: formData.profession || "",
+        companyName: formData.companyName || "",
+        country,
+        presentCountry: country,
+        area: addressLine1,
+        addressLine1,
+        city: formData.city || "",
+        state: formData.state || "",
+        zoneNumber: formData.zoneNumber || "",
+        buildingNumber: formData.buildingNumber || "",
+        streetNumber: formData.streetNumber || "",
+        submissionDate,
+        createdAt,
+        registrationDate: createdAt,
+        statusTimestamp: createdAt
+      };
+      await setDoc(doc(serverDb, "users", userId), newUser);
+      console.log(`Successfully saved registration request to 'users' collection with id: ${userId} (application ${applicationId})`);
+      res.json({
+        success: true,
+        applicationId,
+        application: newUser
+      });
+    } catch (error) {
+      console.error("Error submitting application request:", error);
+      res.status(500).json({ error: error.message || "Failed to submit application request" });
+    }
+  });
+  app.get("/api/application/status/:id", async (req, res) => {
+    try {
+      const applicationId = req.params.id;
+      if (!applicationId) {
+        res.status(400).json({ error: "Application ID is required" });
+        return;
+      }
+      const { initializeApp, getApps } = await import("firebase/app");
+      const { initializeFirestore, collection, query, where, getDocs } = await import("firebase/firestore");
+      const apps = getApps();
+      const serverApp = apps.length > 0 ? apps[0] : initializeApp(firebase_applet_config_default);
+      const serverDb = initializeFirestore(serverApp, { experimentalForceLongPolling: true }, firebase_applet_config_default.firestoreDatabaseId || "(default)");
+      const q = query(collection(serverDb, "users"), where("applicationId", "==", applicationId));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        res.status(404).json({ error: "Application request not found" });
+        return;
+      }
+      const data = snap.docs[0].data();
+      const { password, ...safeData } = data;
+      const statusMap = {
+        PENDING: "PENDING",
+        ENABLED: "APPROVED",
+        DISABLED: "REJECTED",
+        BLOCKED: "REJECTED"
+      };
+      res.json({
+        success: true,
+        application: {
+          ...safeData,
+          status: statusMap[data.status] || data.status,
+          updatedAt: data.statusTimestamp || data.updatedAt
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching application status:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch application status" });
     }
   });
   app.post("/api/ocr", async (req, res) => {
