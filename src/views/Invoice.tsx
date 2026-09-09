@@ -205,9 +205,10 @@ const InvoiceView: React.FC = () => {
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         return (
-          (t.invoiceNo && t.invoiceNo.toLowerCase().includes(q)) ||
-          (t.containerNo && t.containerNo.toLowerCase().includes(q)) ||
-          (t.vehicleNo && t.vehicleNo.toLowerCase().includes(q)) ||
+          (t.invoiceNumber && t.invoiceNumber.toLowerCase().includes(q)) ||
+          (t.containerNumber && t.containerNumber.toLowerCase().includes(q)) ||
+          (t.bayanNumber && t.bayanNumber.toLowerCase().includes(q)) ||
+          (t.vehicleNumber && t.vehicleNumber.toLowerCase().includes(q)) ||
           (t.companyName && t.companyName.toLowerCase().includes(q))
         );
       }
@@ -638,7 +639,7 @@ const InvoiceView: React.FC = () => {
               <InvoiceInput label={isBn ? 'কোম্পানি' : 'Client / Company'} type="select" value={selectedCompany} onChange={e => setSelectedCompany(e.target.value)} isDark={isDark} options={[{value: 'ALL', label: isBn ? 'সকল কোম্পানি' : 'All Companies'}, ...companiesList.map(name => ({value: name, label: name}))]} />
 
               {/* Search text query */}
-              <InvoiceInput label={isBn ? 'অনুসন্ধান করুন' : 'Search container, invoice, vehicle'} type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="e.g. MSKU9045, Truck, Invoice No..." icon={<Search size={16} />} isDark={isDark} />
+              <InvoiceInput label={isBn ? 'অনুসন্ধান করুন' : 'Search container, invoice, bayan, vehicle'} type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder={isBn ? 'যেমন: MSKU9045, Bayan No, Invoice No...' : 'e.g. MSKU9045, Bayan No, Invoice No...'} icon={<Search size={16} />} isDark={isDark} />
             </div>
           </div>
 
