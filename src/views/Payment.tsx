@@ -2268,7 +2268,7 @@ setShowUserRenewSelection(false);
               value={formNote}
               onChange={(e) => setFormNote(e.target.value)}
               placeholder=" "
-              className="peer w-full h-24 px-4 py-3 rounded-lg bg-transparent border border-black/30 dark:border-white/30 text-xs font-bold text-text-main focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none resize-none transition-all duration-200"
+              className="peer w-full h-24 px-4 py-3 rounded-lg bg-transparent border border-slate-300 dark:border-zinc-600 text-xs font-bold text-text-main focus:ring-1 focus:ring-[var(--primary)] focus:border-[var(--primary)] outline-none resize-none transition-colors duration-200"
             />
             <label 
               htmlFor="formNote"
