@@ -36,6 +36,14 @@ jobs:
           else
             npx cap sync
           fi
+          
+      - name: Generate Native Icons
+        run: |
+          mkdir -p assets
+          cp public/logo.png assets/icon.png
+          cp public/logo.png assets/logo.png
+          cp public/logo.png assets/icon-only.png
+          npx @capacitor/assets generate --android
 
       - name: Configure Firebase (google-services.json)
         run: |
