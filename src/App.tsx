@@ -855,19 +855,27 @@ const ViewContainer: React.FC = () => {
     }, [theme, fontStyle, fontSize, fontBold, backgroundColor, wallpaper, loginWallpaper, isNightMode, isEyeComfort, appThemeMode, headerBg, navBg, primaryColor, isAppLoading, user, currentView]);
 
     if (isAppLoading) {
-      return (
-        <div className="fixed inset-0 z-[999999999] flex flex-col items-center justify-center bg-[#000000] transition-colors duration-350 overflow-hidden allow-animation">
-          {/* Ambient Glowing Color Orbs (Beautiful Multiple Design Background Colors) */}
-          <div className="absolute top-[-10%] left-[-10%] w-[80vw] h-[80vw] bg-cyan-500/10 rounded-full blur-[100px] animate-pulse pointer-events-none" style={{ animationDuration: '8s' }} />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[80vw] h-[80vw] bg-violet-600/10 rounded-full blur-[100px] animate-pulse pointer-events-none" style={{ animationDuration: '10s' }} />
-          <div className="absolute top-[30%] left-[10%] w-[60vw] h-[60vw] bg-fuchsia-500/8 rounded-full blur-[120px] animate-pulse pointer-events-none" style={{ animationDuration: '12s' }} />
+      const effectiveLoginWallpaper = loginWallpaper || wallpaper || defaultLoginWallpaper;
+      const isBackgroundLight = effectiveLoginWallpaper
+        ? (appThemeMode === 'light' && theme !== 'night-mode')
+        : (loginBackgroundColor ? getContrastColor(loginBackgroundColor) === '#000000' : false);
+      const finalTextColor = isBackgroundLight ? '#0f172a' : '#ffffff';
 
+      return (
+        <div 
+          className="fixed inset-0 z-[999999999] flex flex-col items-center justify-center overflow-hidden allow-animation"
+          style={{
+            backgroundImage: effectiveLoginWallpaper ? `url(${effectiveLoginWallpaper})` : undefined,
+            backgroundPosition: 'center',
+            backgroundSize: 'cover',
+            backgroundRepeat: 'no-repeat',
+            backgroundColor: loginBackgroundColor || '#0f172a',
+            color: finalTextColor,
+          }}
+        >
           <div className="relative flex flex-col items-center justify-center animate-scale-in">
             {/* Concentric Rotating Multi-Colored Rings around the centered Logo */}
             <div className="relative w-48 h-48 mb-8 flex items-center justify-center">
-              {/* Core Pulse Glow */}
-              <div className="absolute w-[100px] h-[100px] bg-cyan-500/10 rounded-full blur-xl animate-pulse-ring" />
-
               {/* Ring 1 (Outer Ring - Amber & Rose Accented) */}
               <div className="absolute w-[164px] h-[164px] rounded-full border border-t-amber-400 border-b-rose-500 border-l-transparent border-r-transparent animate-spin-cw-slow opacity-80" />
 
@@ -897,18 +905,22 @@ const ViewContainer: React.FC = () => {
 
             {/* Glowing Text Header */}
             <div className="relative mb-1">
-              <h1 className="text-4xl font-extrabold tracking-[0.25em] text-white uppercase bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-slate-400">
+              <h1 className={`text-4xl font-extrabold tracking-[0.25em] uppercase bg-clip-text text-transparent drop-shadow-md ${
+                isBackgroundLight 
+                  ? 'bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700' 
+                  : 'bg-gradient-to-r from-white via-slate-100 to-slate-400'
+              }`}>
                 FleetPro
               </h1>
             </div>
             
-            <p className="text-xs font-black tracking-[0.6em] text-cyan-400 uppercase opacity-90 mb-10">
+            <p className="text-xs font-black tracking-[0.6em] text-cyan-400 uppercase drop-shadow opacity-95 mb-10">
               Manager
             </p>
 
             {/* Premium Illuminated Progress Indicator */}
             <div className="flex flex-col items-center w-60">
-              <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden relative shadow-inner">
+              <div className={`w-full h-1.5 rounded-full overflow-hidden relative shadow-inner ${isBackgroundLight ? 'bg-slate-300/80 backdrop-blur-sm' : 'bg-black/40 backdrop-blur-sm'}`}>
                 <div 
                   className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-400 via-blue-500 to-fuchsia-500 transition-all duration-300 ease-out shadow-[0_0_12px_rgba(6,182,212,0.8)]"
                   style={{ width: `${loadingProgress}%` }}
@@ -917,10 +929,10 @@ const ViewContainer: React.FC = () => {
                 </div>
               </div>
               <div className="mt-3.5 flex items-center justify-between w-full px-1">
-                <span className="text-[9px] font-black tracking-widest text-slate-500 uppercase">
+                <span className={`text-[9px] font-black tracking-widest uppercase drop-shadow ${isBackgroundLight ? 'text-slate-700' : 'text-slate-300'}`}>
                   Connecting...
                 </span>
-                <span className="text-[10px] font-black tracking-widest text-cyan-400">
+                <span className="text-[10px] font-black tracking-widest text-cyan-400 drop-shadow">
                   {loadingProgress}%
                 </span>
               </div>
@@ -929,8 +941,8 @@ const ViewContainer: React.FC = () => {
 
           {/* Bottom Attribution */}
           <div className="absolute bottom-10 flex flex-col items-center gap-2">
-            <div className="w-6 h-[1px] bg-slate-800"></div>
-            <div className="text-[9px] font-black tracking-[0.3em] text-slate-500 uppercase">
+            <div className={`w-6 h-[1px] ${isBackgroundLight ? 'bg-slate-400/60' : 'bg-slate-500/60'}`}></div>
+            <div className={`text-[9px] font-black tracking-[0.3em] uppercase drop-shadow ${isBackgroundLight ? 'text-slate-700' : 'text-slate-300'}`}>
               Powering Logistics Excellence
             </div>
           </div>

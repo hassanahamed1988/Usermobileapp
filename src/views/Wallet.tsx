@@ -1057,7 +1057,7 @@ const Wallet: React.FC = () => {
 
   if (!isLoaded) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-[#121212]">
+      <div className="w-full h-full flex items-center justify-center" style={{ background: 'transparent' }}>
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--accent)]" />
       </div>
     );

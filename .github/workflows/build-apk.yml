@@ -44,6 +44,7 @@ jobs:
           cp public/logo.png assets/logo.png
           cp public/logo.png assets/icon-only.png
           npx @capacitor/assets generate --android
+          node fix_android_icons.cjs
 
       - name: Configure Firebase (google-services.json)
         run: |
