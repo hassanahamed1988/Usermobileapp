@@ -1232,7 +1232,15 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
       const isRenew = p.category ? p.category.toLowerCase().includes('renew') : false;
       const isExtraFuel = p.category ? p.category.toLowerCase().includes('extra fuel') : false;
       const isVehicleInspection = p.category ? p.category.toLowerCase().includes('vehicle inspection') : false;
-      return yearMatch && monthMatch && dateMatch && isReceived && !isDiesel && !isRenew && !isExtraFuel && !isVehicleInspection;
+      
+      const isDieselAdv = p.category?.toLowerCase().includes('advance') && (
+        (() => {
+          const reason = (p.details?.advanceReason || p.details?.serviceName || p.serviceName || '').toLowerCase();
+          return reason.includes('diesel') || reason.includes('ডিজেল') || reason.includes('fuel') || reason.includes('ফুয়েল');
+        })()
+      );
+
+      return yearMatch && monthMatch && dateMatch && isReceived && !isDiesel && !isRenew && !isExtraFuel && !isVehicleInspection && !isDieselAdv;
     });
   }, [payments, selectedYear, selectedMonth, selectedDate]);
 
@@ -1274,6 +1282,15 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
       const isWithinDate = yearMatch && monthMatch && dateMatch;
 
       const pAmount = Number(p.amount) || 0;
+
+      // Exclude if it is an advance taken for diesel / fuel
+      const isDieselAdv = p.category?.toLowerCase().includes('advance') && (
+        (() => {
+          const reason = (p.details?.advanceReason || p.details?.serviceName || p.serviceName || '').toLowerCase();
+          return reason.includes('diesel') || reason.includes('ডিজেল') || reason.includes('fuel') || reason.includes('ফুয়েল');
+        })()
+      );
+      if (isDieselAdv) return;
 
       if (p.type === 'INCOME') {
         if (p.status === 'RECEIVED') {
@@ -1526,7 +1543,14 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
       
       const typeMatch = isIncome ? p.type === 'INCOME' && p.status === 'RECEIVED' : p.type === 'DEDUCTION';
       
-      return yearMatch && monthMatch && catMatch && typeMatch;
+      const isDieselAdv = p.category?.toLowerCase().includes('advance') && (
+        (() => {
+          const reason = (p.details?.advanceReason || p.details?.serviceName || p.serviceName || '').toLowerCase();
+          return reason.includes('diesel') || reason.includes('ডিজেল') || reason.includes('fuel') || reason.includes('ফুয়েল');
+        })()
+      );
+
+      return yearMatch && monthMatch && catMatch && typeMatch && !isDieselAdv;
     }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return (

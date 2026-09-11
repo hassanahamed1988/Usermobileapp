@@ -319,6 +319,15 @@ const Dashboard: React.FC = () => {
       const monthMatch = selectedMonth === 'ALL' ? true : Number(p.month) === Number(selectedMonth);
       if (!yearMatch || !monthMatch || p.category === 'User Renew') return;
 
+      // Exclude if it is an advance taken for diesel / fuel
+      const isDieselAdv = p.category?.toLowerCase().includes('advance') && (
+        (() => {
+          const reason = (p.details?.advanceReason || p.details?.serviceName || p.serviceName || '').toLowerCase();
+          return reason.includes('diesel') || reason.includes('ডিজেল') || reason.includes('fuel') || reason.includes('ফুয়েল');
+        })()
+      );
+      if (isDieselAdv) return;
+
       const pAmount = Number(p.amount) || 0;
       if (p.type === 'INCOME') {
         if (p.status === 'RECEIVED') {
