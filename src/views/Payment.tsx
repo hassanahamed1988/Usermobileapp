@@ -401,6 +401,47 @@ const PaymentView: React.FC = () => {
   const [receivedSubpageFilterMonth, setReceivedSubpageFilterMonth] = useState<number | 'ALL'>('ALL');
   const [receivedSubpageFilterYear, setReceivedSubpageFilterYear] = useState<number | 'ALL'>('ALL');
 
+  const getAdvanceTargetCategory = (p: any): string | null => {
+    if ((p.category || '').toUpperCase() !== 'ADVANCE') return null;
+    const reason = (p.details?.advanceReason || p.details?.serviceName || p.details?.note || '').toLowerCase();
+    if (reason.includes('diesel') || reason.includes('ডিজেল')) return 'Trip Diesel';
+    if (reason.includes('salary') || reason.includes('স্যালারি')) return 'Salary';
+    if (reason.includes('commission') || reason.includes('কমিশন')) return 'Commission';
+    if (reason.includes('friday') || reason.includes('ফ্রাইডে')) return 'Friday';
+    if (reason.includes('bonus') || reason.includes('বোনাস')) return 'Bonus';
+    if (reason.includes('overtime') || reason.includes('ওভারটাইম')) return 'Overtime';
+    if (reason.includes('extra fuel') || reason.includes('এক্সট্রা ফুয়েল') || reason.includes('extra_fuel')) return 'Extra Fuel';
+    return null;
+  };
+
+  const getCategoryAdvanceAmount = (paymentList: Payment[], category: string, month: number | 'ALL', year: number | 'ALL'): number => {
+    return paymentList
+      .filter(p => {
+        if ((p.category || '').toUpperCase() !== 'ADVANCE') return false;
+        if (p.details?.advanceType !== 'TAKEN') return false;
+        if (p.status !== 'RECEIVED') return false;
+        
+        const monthMatch = month === 'ALL' ? true : Number(p.month) === Number(month);
+        const yearMatch = year === 'ALL' ? true : Number(p.year) === Number(year);
+        if (!monthMatch || !yearMatch) return false;
+
+        const targetCat = getAdvanceTargetCategory(p);
+        if (!targetCat) return false;
+
+        // Normalize matching categories
+        let matchedCat = targetCat;
+        if (category.toUpperCase() === 'EXTRA FUEL' || category.toUpperCase() === 'EXTRA_FUEL') {
+          category = 'EXTRA FUEL';
+        }
+        if (matchedCat.toUpperCase() === 'EXTRA FUEL' || matchedCat.toUpperCase() === 'EXTRA_FUEL') {
+          matchedCat = 'EXTRA FUEL';
+        }
+
+        return matchedCat.toUpperCase() === category.toUpperCase();
+      })
+      .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  };
+
   const filteredDetailedPendingItems = useMemo(() => {
     return detailedPendingItems.filter(item => {
       if (pendingFilterMonth !== 'ALL') {
@@ -749,9 +790,27 @@ const PaymentView: React.FC = () => {
       
       const pCat = (p.category || '').toUpperCase();
       if (normCategory === 'VEHICLE INSPECTION') {
-        return pCat === 'EXTRA FUEL' || pCat === 'EXTRA_FUEL';
+        if (pCat === 'EXTRA FUEL' || pCat === 'EXTRA_FUEL') return true;
+        if (pCat === 'ADVANCE' && p.details?.advanceType === 'TAKEN') {
+          const target = getAdvanceTargetCategory(p);
+          return target === 'Extra Fuel';
+        }
+        return false;
       }
-      return pCat === normCategory;
+
+      if (pCat === normCategory) return true;
+
+      if (pCat === 'ADVANCE' && p.details?.advanceType === 'TAKEN') {
+        const target = getAdvanceTargetCategory(p);
+        if (target && target.toUpperCase() === normCategory) {
+          return true;
+        }
+        if (!target && normCategory === 'OTHERS') {
+          return true;
+        }
+      }
+
+      return false;
     });
 
     let items: any[] = [];
@@ -899,6 +958,7 @@ const PaymentView: React.FC = () => {
           (p.details?.invoiceNumber && matchStr(t.invoiceNumber, p.details.invoiceNumber))
         );
 
+        const isAdvance = (p.category || '').toUpperCase() === 'ADVANCE';
         items.push({
           id: p.id,
           paymentId: p.id,
@@ -913,11 +973,18 @@ const PaymentView: React.FC = () => {
           loadingPlace: trip?.loadingPlace || p.details?.loadingPlace || 'N/A',
           deliveryPlace: trip?.deliveryPlace || p.details?.deliveryPlace || 'N/A',
           loadingDate: trip?.loadingDate || p.details?.loadingDate || 'N/A',
-          companyName: trip?.companyName || p.details?.companyName || 'N/A',
-          note: p.details?.serviceName || p.details?.bankName || p.details?.note || '',
+          companyName: isAdvance ? (p.details?.advanceReason || p.details?.serviceName || p.details?.note || 'Advance Taken') : (trip?.companyName || p.details?.companyName || 'N/A'),
+          note: isAdvance ? (language === 'bn' ? 'অগ্রিম পেমেন্ট' : 'Advance Payment') : (p.details?.serviceName || p.details?.bankName || p.details?.note || ''),
           month: p.month,
           year: p.year,
-          tripMonthAndYear: p.details?.tripMonthAndYear || 'N/A'
+          tripMonthAndYear: p.details?.tripMonthAndYear || 'N/A',
+          tripId: isAdvance ? p.id : (trip?.id || p.details?.tripId || ''),
+          tripDieselAllocations: (normCategory === 'TRIP DIESEL') ? {
+            dieselPaid: Number(p.amount) || 0,
+            generatorDieselPaid: 0,
+            extraDieselPaid: 0,
+            bonusPaid: 0
+          } : null
         });
       }
     });
@@ -1182,6 +1249,7 @@ setShowUserRenewSelection(false);
   const [advanceType, setAdvanceType] = useState<'TAKEN' | 'RETURNED'>('TAKEN');
   const [advanceReason, setAdvanceReason] = useState('');
   const [showAdvanceReasonSelect, setShowAdvanceReasonSelect] = useState(false);
+  const [isPurposeDropdownOpen, setIsPurposeDropdownOpen] = useState(false);
   const [advanceAmount, setAdvanceAmount] = useState('');
   const [isAmountFocused, setIsAmountFocused] = useState(false);
   const [isReasonFocused, setIsReasonFocused] = useState(false);
@@ -1862,7 +1930,17 @@ setShowUserRenewSelection(false);
           const pAmount = Number(p.amount) || 0;
           if (p.type === 'INCOME') {
             if (catKey === 'ADVANCE' && p.details?.advanceType !== 'RETURNED') {
-              breakdown[catKey].received -= pAmount;
+              const reason = (p.details?.advanceReason || p.details?.serviceName || '').toLowerCase();
+              const hasTarget = reason.includes('diesel') || reason.includes('ডিজেল') ||
+                             reason.includes('salary') || reason.includes('স্যালারি') ||
+                             reason.includes('commission') || reason.includes('কমিশন') ||
+                             reason.includes('friday') || reason.includes('ফ্রাইডে') ||
+                             reason.includes('bonus') || reason.includes('বোনাস') ||
+                             reason.includes('overtime') || reason.includes('ওভারটাইম') ||
+                             reason.includes('extra fuel') || reason.includes('এক্সট্রা ফুয়েল') || reason.includes('extra_fuel');
+              if (!hasTarget) {
+                breakdown[catKey].received -= pAmount;
+              }
             } else {
               breakdown[catKey].received += pAmount;
             }
@@ -1893,6 +1971,35 @@ setShowUserRenewSelection(false);
         const amount = Number(cat.totalPending) || 0;
         breakdown[catKey].pending += amount;
       });
+    });
+
+    // 3. For any Advance TAKEN, deduct its amount from the target category's pending balance
+    // and add its amount to the target category's received balance!
+    payments.forEach(p => {
+      const monthMatch = selectedMonth === 'ALL' ? true : Number(p.month) === Number(selectedMonth);
+      const yearMatch = selectedYear === 'ALL' ? true : Number(p.year) === Number(selectedYear);
+      if (monthMatch && yearMatch) {
+        if ((p.category || '').toUpperCase() === 'ADVANCE' && p.details?.advanceType === 'TAKEN' && p.status === 'RECEIVED') {
+          const reason = (p.details?.advanceReason || p.details?.serviceName || '').toLowerCase();
+          let targetCatKey = '';
+          if (reason.includes('diesel') || reason.includes('ডিজেল')) targetCatKey = 'TRIP DIESEL';
+          else if (reason.includes('salary') || reason.includes('স্যালারি')) targetCatKey = 'SALARY';
+          else if (reason.includes('commission') || reason.includes('কমিশন')) targetCatKey = 'COMMISSION';
+          else if (reason.includes('friday') || reason.includes('ফ্রাইডে')) targetCatKey = 'FRIDAY';
+          else if (reason.includes('bonus') || reason.includes('বোনাস')) targetCatKey = 'BONUS';
+          else if (reason.includes('overtime') || reason.includes('ওভারটাইম')) targetCatKey = 'OVERTIME';
+          else if (reason.includes('extra fuel') || reason.includes('এক্সট্রা ফুয়েল') || reason.includes('extra_fuel')) targetCatKey = 'EXTRA FUEL';
+
+          if (targetCatKey) {
+            const pAmount = Number(p.amount) || 0;
+            if (!breakdown[targetCatKey]) {
+              breakdown[targetCatKey] = { pending: 0, received: 0 };
+            }
+            breakdown[targetCatKey].pending -= pAmount;
+            breakdown[targetCatKey].received += pAmount;
+          }
+        }
+      }
     });
 
     return breakdown;
@@ -2403,7 +2510,7 @@ setShowUserRenewSelection(false);
                     return true;
                   });
 
-                  const totalAmountNum = selectedPendingCategory?.toUpperCase() === 'SALARY'
+                  const rawTotalAmountNum = selectedPendingCategory?.toUpperCase() === 'SALARY'
                     ? filteredSalaryMonths.reduce((acc, m) => acc + (m.salary?.total || 0), 0)
                     : selectedPendingCategory?.toUpperCase() === 'COMMISSION'
                     ? filteredCommissionMonths.reduce((acc, m) => acc + (m.commission?.total || 0), 0)
@@ -2413,6 +2520,9 @@ setShowUserRenewSelection(false);
                         }
                         return acc + (Number(item.pending) || 0);
                       }, 0);
+
+                  const categoryAdvanceAmount = getCategoryAdvanceAmount(payments, selectedPendingCategory || '', pendingFilterMonth, pendingFilterYear);
+                  const totalAmountNum = rawTotalAmountNum - categoryAdvanceAmount;
 
                   const monthsList = [
                     { value: 1, label: language === 'bn' ? 'জানুয়ারি' : 'January' },
@@ -3809,6 +3919,11 @@ setShowReceivedBreakdown(false);
                     const isCommissionItem = selectedReceivedCategory?.toUpperCase() === 'COMMISSION';
                     const isExtraFuelItem = selectedReceivedCategory?.toUpperCase() === 'EXTRA FUEL' || selectedReceivedCategory?.toUpperCase() === 'EXTRA_FUEL';
                     
+                    const isAdvanceItem = (item.category || '').toUpperCase() === 'ADVANCE';
+                    const displayTitle = (isAdvanceItem && item.companyName && item.companyName !== 'N/A' && item.companyName !== 'Unknown')
+                      ? `${getCategoryDisplayLabel(selectedReceivedCategory, language)} (${item.companyName})`
+                      : getCategoryDisplayLabel(selectedReceivedCategory, language);
+
                     const sourceName = item.details?.companyName || item.companyName || (item.label && !/^\d{13}$/.test(item.label) ? item.label : '') || 'Unknown Company';
                     
                     const getSalaryForShort = () => {
@@ -4043,7 +4158,7 @@ setShowReceivedBreakdown(false);
                                 <>
                                   <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                                     <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate">
-                                      {getCategoryDisplayLabel(selectedReceivedCategory, language)}
+                                      {displayTitle}
                                     </span>
                                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-500/10 shrink-0">
                                       <Check size={8} className="stroke-[3]" />
@@ -4070,7 +4185,7 @@ setShowReceivedBreakdown(false);
                                 <>
                                   <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                                     <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate">
-                                      {getCategoryDisplayLabel(selectedReceivedCategory, language)}
+                                      {displayTitle}
                                     </span>
                                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-500/10 shrink-0">
                                       <Check size={8} className="stroke-[3]" />
@@ -4099,7 +4214,7 @@ setShowReceivedBreakdown(false);
                                 <>
                                   <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                                     <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate">
-                                      {getCategoryDisplayLabel(selectedReceivedCategory, language)}
+                                      {displayTitle}
                                     </span>
                                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-500/10 shrink-0">
                                       <Check size={8} className="stroke-[3]" />
@@ -4130,7 +4245,7 @@ setShowReceivedBreakdown(false);
                                 <>
                                   <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                                     <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate">
-                                      {getCategoryDisplayLabel(selectedReceivedCategory, language)}
+                                      {displayTitle}
                                     </span>
                                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-500/10 shrink-0">
                                       <Check size={8} className="stroke-[3]" />
@@ -4169,7 +4284,7 @@ setShowReceivedBreakdown(false);
                                 <>
                                   <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                                     <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate">
-                                      {getCategoryDisplayLabel(selectedReceivedCategory, language)}
+                                      {displayTitle}
                                     </span>
                                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-500/10 shrink-0">
                                       <Check size={8} className="stroke-[3]" />
@@ -4646,7 +4761,22 @@ setShowReceivedBreakdown(false);
                       if (p.status === 'RECEIVED') {
                         if (p.type === 'INCOME') {
                           if (catKey.toUpperCase() === 'ADVANCE' && p.details?.advanceType !== 'RETURNED') {
-                            receivedAmount = -pAmount;
+                            const reason = (p.details?.advanceReason || p.details?.serviceName || p.details?.note || '').toLowerCase();
+                            let targetCat = '';
+                            if (reason.includes('diesel') || reason.includes('ডিজেল')) targetCat = 'Trip Diesel';
+                            else if (reason.includes('salary') || reason.includes('স্যালারি')) targetCat = 'Salary';
+                            else if (reason.includes('commission') || reason.includes('কমিশন')) targetCat = 'Commission';
+                            else if (reason.includes('friday') || reason.includes('ফ্রাইডে')) targetCat = 'Friday';
+                            else if (reason.includes('bonus') || reason.includes('বোনাস')) targetCat = 'Bonus';
+                            else if (reason.includes('overtime') || reason.includes('ওভারটাইম')) targetCat = 'Others';
+                            else if (reason.includes('extra fuel') || reason.includes('এক্সট্রা ফুয়েল') || reason.includes('extra_fuel')) targetCat = 'Vehicle Inspection';
+                            
+                            if (targetCat) {
+                              catKey = targetCat;
+                              receivedAmount = pAmount;
+                            } else {
+                              receivedAmount = -pAmount;
+                            }
                           } else {
                             receivedAmount = pAmount;
                           }
@@ -4889,16 +5019,33 @@ setShowPendingBreakdown(false);
                     });
                   });
 
-                  let totalExcessDieselAdvance = 0;
-                  matchingPending.forEach(currentMonthPending => {
-                    currentMonthPending.categories.forEach((cat: any) => {
-                      cat.items.forEach((item: any) => {
-                        if (item.id?.startsWith('ADV-DIESEL-ADJUST-') || item.label?.includes('Excess Diesel')) {
-                          totalExcessDieselAdvance += Math.abs(item.pending || 0);
+                  // Subtract all categorized advances taken from their respective pending balances in localBreakdown
+                  payments.forEach(p => {
+                    const monthMatch = pendingListFilterMonth === 'ALL' ? true : Number(p.month) === Number(pendingListFilterMonth);
+                    const yearMatch = pendingListFilterYear === 'ALL' ? true : Number(p.year) === Number(pendingListFilterYear);
+                    if (monthMatch && yearMatch) {
+                      if ((p.category || '').toUpperCase() === 'ADVANCE' && p.details?.advanceType === 'TAKEN' && p.status === 'RECEIVED') {
+                        const reason = (p.details?.advanceReason || p.details?.serviceName || p.details?.note || '').toLowerCase();
+                        let targetKey = 'Others';
+                        if (reason.includes('diesel') || reason.includes('ডিজেল')) targetKey = 'Trip Diesel';
+                        else if (reason.includes('salary') || reason.includes('স্যালারি')) targetKey = 'Salary';
+                        else if (reason.includes('commission') || reason.includes('কমিশন')) targetKey = 'Commission';
+                        else if (reason.includes('friday') || reason.includes('ফ্রাইডে')) targetKey = 'Friday';
+                        else if (reason.includes('bonus') || reason.includes('বোনাস')) targetKey = 'Bonus';
+                        else if (reason.includes('overtime') || reason.includes('ওভারটাইম')) targetKey = 'Others';
+                        else if (reason.includes('extra fuel') || reason.includes('এক্সট্রা ফুয়েল') || reason.includes('extra_fuel')) targetKey = 'Vehicle Inspection';
+
+                        const pAmount = Number(p.amount) || 0;
+                        if (localBreakdown[targetKey] !== undefined) {
+                          localBreakdown[targetKey] -= pAmount;
+                        } else {
+                          localBreakdown['Others'] -= pAmount;
                         }
-                      });
-                    });
+                      }
+                    }
                   });
+
+                  let totalExcessDieselAdvance = 0;
 
                   const filteredEntries = Object.entries(localBreakdown).filter(([category, amount]) => {
                     const defaultCategories = ['Salary', 'Commission', 'Trip Diesel', 'Friday', 'Bonus', 'Vehicle Inspection', 'Others'];
@@ -5504,44 +5651,31 @@ setShowPendingBreakdown(false);
 
       {/* Entry Form Modal */}
       {isEntryFormOpen && formCategory?.toUpperCase() === 'ADVANCE' ? createPortal(
-        <div id="payment_advance_dialog" className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
-          <style>{`
-            #advance_amount_input, 
-            #payment_advance_amount_input, 
-            #advance_reason_select, 
-            #payment_advance_reason_select {
-              background-color: transparent !important;
-              background: transparent !important;
-            }
-          `}</style>
+        <div id="payment_advance_dialog" className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
           <div 
             id="payment_advance_backdrop"
             onClick={() => {
               setIsEntryFormOpen(false);
               setFormCategory('');
             }}
-            className="absolute inset-0 z-0 bg-black/60 backdrop-blur-md"
+            className="absolute inset-0 z-0 bg-slate-950/45 backdrop-blur-[6px] transition-all duration-300 animate-in fade-in"
           />
           <div 
             id="payment_advance_box"
-            
-            
-            
-            
-            className={`relative w-full max-w-md rounded-[32px] p-7 shadow-[0_24px_60px_rgba(0,0,0,0.35)] border z-[1010] overflow-hidden font-sans allow-animation transition-colors duration-300 ${
+            className={`relative w-full max-w-md rounded-[24px] p-6 md:p-8 shadow-2xl border z-[10000] overflow-visible font-sans allow-animation transition-all duration-300 transform animate-in zoom-in-95 duration-200 ${
               isDarkMode 
-                ? 'bg-theme-card text-white border-white/10 shadow-black/40' 
-                : 'bg-white text-black border-black/10'
+                ? 'bg-zinc-950 text-white border-zinc-800/80 shadow-black/80' 
+                : 'bg-white text-zinc-900 border-zinc-100 shadow-zinc-200/50'
             }`}
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-slate-900 via-[#1e1b4b] to-slate-900 text-white px-6 py-5 rounded-t-[32px] -mx-7 -mt-7 mb-6 flex items-center justify-between border-b border-white/5 shadow-lg">
+            <div className="flex items-center justify-between mb-3 pb-3 border-b border-zinc-100 dark:border-zinc-800/60">
               <div>
-                <h3 className="text-md font-bold tracking-tight text-white">
-                  {t.COMPANY_ADVANCE || 'Company Advance'}
+                <h3 className="text-md font-bold tracking-tight">
+                  {language === 'bn' ? 'অগ্রিম ট্রানজেকশন' : (language === 'ar' ? 'معاملة الدفعة المقدمة' : 'Advance Transaction')}
                 </h3>
-                <p className="text-[9px] font-semibold text-white/50 uppercase tracking-widest mt-0.5">
-                  {t.ADVANCE_RECORD_ENTRY || 'Advance Record Entry'}
+                <p className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500 mt-1">
+                  {language === 'bn' ? 'নতুন অগ্রিম রেকর্ড যুক্ত করুন' : 'Record a new advance payment'}
                 </p>
               </div>
               <button 
@@ -5549,164 +5683,226 @@ setShowPendingBreakdown(false);
                   setIsEntryFormOpen(false);
                   setFormCategory('');
                 }}
-                className="p-1.5 rounded-full bg-white/5 hover:bg-white/15 active:scale-95 transition-all text-white/70 hover:text-white"
+                className="p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/80 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
-            <div className="mb-6 space-y-2">
-              <span className={`text-[10px] font-black uppercase tracking-wide block ${isDarkMode ? 'text-white/50' : 'text-neutral-500'}`}>{t.ADVANCE_TYPE || 'Advance Type'}</span>
-              <div className={`relative h-12 p-1 rounded-xl border flex items-stretch select-none ${
-                isDarkMode ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'
+            <div className="mb-4 space-y-1.5">
+              <label className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
+                {language === 'bn' ? 'অগ্রিমের ধরণ' : (language === 'ar' ? 'نوع الدفعة المقدمة' : 'Advance Type')}
+              </label>
+              <div className={`relative h-12 p-1 rounded-[8px] border flex items-stretch select-none ${
+                isDarkMode ? 'bg-zinc-900/60 border-zinc-800' : 'bg-zinc-50 border-zinc-200/60'
               }`}>
-                {/* Sliding Background Indicator matching track height nicely */}
+                {/* Sliding Background Indicator */}
                 <div
-                  className="absolute top-1 bottom-1 rounded-lg shadow-sm"
+                  className="absolute top-1 bottom-1 rounded-[6px] shadow-sm transition-all duration-300 ease-out"
                   style={{
                     width: 'calc(50% - 4px)',
                     left: advanceType === 'TAKEN' ? '4px' : 'calc(50%)',
                     background: advanceType === 'TAKEN' ? '#10b981' : '#f43f5e',
                   }}
-                  
-                  
                 />
                 <button
                   type="button"
                   onClick={() => setAdvanceType('TAKEN')}
                   className={`flex-1 flex items-center justify-center text-xs font-bold transition-colors duration-200 relative z-10 ${
-                    advanceType === 'TAKEN' ? 'text-white' : (isDarkMode ? 'text-white/60 hover:text-white' : 'text-neutral-500 hover:text-black')
+                    advanceType === 'TAKEN' ? 'text-white' : (isDarkMode ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-500 hover:text-zinc-900')
                   }`}
                 >
-                  {t.TAKE_ADVANCE || 'Take Advance'}
+                  {language === 'bn' ? 'অগ্রিম গ্রহণ' : 'Take Advance'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setAdvanceType('RETURNED')}
                   className={`flex-1 flex items-center justify-center text-xs font-bold transition-colors duration-200 relative z-10 ${
-                    advanceType === 'RETURNED' ? 'text-white' : (isDarkMode ? 'text-white/60 hover:text-white' : 'text-neutral-500 hover:text-black')
+                    advanceType === 'RETURNED' ? 'text-white' : (isDarkMode ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-500 hover:text-zinc-900')
                   }`}
                 >
-                  {t.RETURN_ADVANCE || 'Return Advance'}
+                  {language === 'bn' ? 'অগ্রিম ফেরত' : 'Return Advance'}
                 </button>
               </div>
 
-              {/* Slide transition description */}
-              <div className="overflow-hidden min-h-[28px]">
-                <>
-                  <p
-                    key={advanceType}
-                    
-                    
-                    
-                    
-                    className={`text-[10px] italic mt-1 leading-normal ${isDarkMode ? 'text-white/40' : 'text-neutral-400'}`}
-                  >
-                    {advanceType === 'TAKEN' 
-                      ? (t.ADVANCE_TAKEN_NOTE || 'Taking advance will be deducted from your Total Income.') 
-                      : (t.ADVANCE_RETURNED_NOTE || 'Returning advance will be added back to your Total Income.')}
-                  </p>
-                </>
+              {/* Dynamic Note */}
+              <div className="min-h-[20px] transition-all duration-300">
+                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5 mt-1 italic leading-normal">
+                  <span className="inline-block w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+                  {advanceType === 'TAKEN' 
+                    ? (language === 'bn' ? 'অগ্রিম নেওয়া হলে তা মোট আয় থেকে কর্তন হবে।' : 'Taking advance will be deducted from your Total Income.') 
+                    : (language === 'bn' ? 'অগ্রিম ফেরত দেওয়া হলে তা মোট আয়ে যুক্ত হবে।' : 'Returning advance will be added back to your Total Income.')}
+                </p>
               </div>
             </div>
 
             {/* Inputs Container */}
             <div id="payment_advance_fields" className="space-y-5">
-              {/* Amount field (Perfect Left-aligned Floating Label Premium Style) */}
-              <div className={`relative h-14 rounded-2xl border transition-all ${
-                isDarkMode 
-                  ? 'bg-transparent border-white/10 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500/30' 
-                  : 'bg-transparent border-black/10 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500/30'
-              }`}>
+              {/* Amount field (Global Floating Label Style) */}
+              <div 
+                className={`relative h-14 w-full transition-colors duration-200 rounded-[8px] border ${isAmountFocused ? 'z-40' : 'z-10'}`}
+                style={{
+                  backgroundColor: isDarkMode ? '#121212' : '#f9fafb',
+                  borderWidth: isAmountFocused ? '2px' : '1px',
+                  borderColor: isAmountFocused 
+                    ? '#10b981' 
+                    : (isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+                }}
+              >
                 <input
                   id="payment_advance_amount_input"
                   type="number"
                   pattern="[0-9]*"
                   inputMode="decimal"
-                  placeholder=" "
+                  placeholder={isAmountFocused ? "Enter Amount" : " "}
                   value={advanceAmount}
+                  onChange={(e) => setAdvanceAmount(e.target.value)}
                   onFocus={() => setIsAmountFocused(true)}
                   onBlur={() => setIsAmountFocused(false)}
-                  onChange={(e) => setAdvanceAmount(e.target.value)}
-                  className={`w-full h-full pt-5 pb-1 px-4 text-left text-sm font-bold bg-transparent border-0 outline-none focus:ring-0 ${
-                    isDarkMode ? 'text-white' : 'text-black'
+                  className={`peer w-full h-full rounded-[8px] bg-transparent outline-none transition-all duration-300 pl-3 pr-4 text-sm font-semibold border-0 focus:ring-0 ${
+                    isDarkMode ? 'text-white' : 'text-zinc-900'
                   }`}
+                  style={{ 
+                    color: isDarkMode ? '#ffffff' : '#000000',
+                    caretColor: '#10b981',
+                  }}
                 />
-                <label
+                <label 
                   htmlFor="payment_advance_amount_input"
-                  className={`absolute transition-all duration-200 pointer-events-none origin-[0] uppercase tracking-wider whitespace-nowrap .5 ${
-                    isAmountFocused || advanceAmount
-                      ? `top-0 -translate-y-1/2 left-4 text-[10px] font-bold ${isDarkMode ? 'bg-theme-card text-emerald-400' : 'bg-white text-emerald-600'}`
-                      : `top-1/2 -translate-y-1/2 left-4 text-xs font-bold ${isDarkMode ? 'text-white/30' : 'text-neutral-400'}`
-                  }`}
+                  className={`absolute font-extrabold tracking-wider text-[12px] floating-label-transition pointer-events-none z-20 rounded-none origin-left left-3 top-1/2 px-1.5`}
+                  style={{
+                    color: isAmountFocused 
+                      ? '#10b981' 
+                      : (isDarkMode ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)'),
+                    backgroundColor: (isAmountFocused || !!advanceAmount) 
+                      ? (isDarkMode ? '#09090b' : '#ffffff') 
+                      : 'transparent',
+                    transform: (isAmountFocused || !!advanceAmount) 
+                      ? 'translateY(-30px) scale(0.83) translateX(0px)' 
+                      : 'translateY(-50%) scale(1) translateX(0px)',
+                    transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), top 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                  }}
                 >
-                  {t.AMOUNT_TAKA || 'Amount'}
+                  {language === 'bn' ? 'টাকার পরিমাণ' : (language === 'ar' ? 'المبلغ' : 'Amount')}
                 </label>
               </div>
 
-              {/* Reason / Purpose field (Clean Premium Select Dropdown) */}
-              <div className={`relative h-14 border rounded-2xl transition-all flex items-center ${
-                isDarkMode 
-                  ? 'bg-transparent border-white/10 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500/30' 
-                  : 'bg-transparent border-black/10 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500/30'
-              }`}>
-                <select
-                  id="payment_advance_reason_select"
-                  value={advanceReason}
-                  onChange={(e) => setAdvanceReason(e.target.value)}
-                  className={`w-full h-full px-4 text-sm font-semibold bg-transparent border-0 outline-none focus:ring-0 appearance-none cursor-pointer ${
-                    isDarkMode ? 'text-white' : 'text-black'
+              {/* Reason / Purpose field with dynamic floating popup */}
+              <div className="space-y-1.5 relative">
+                <label className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
+                  {language === 'bn' ? 'উদ্দেশ্য নির্বাচন করুন' : (language === 'ar' ? 'تحديد الغرض' : 'Select Purpose')}
+                </label>
+                <button
+                  id="payment_advance_reason_button"
+                  type="button"
+                  onClick={() => setIsPurposeDropdownOpen(!isPurposeDropdownOpen)}
+                  className={`relative w-full h-14 rounded-[8px] border transition-all duration-200 flex items-center justify-between px-4 text-left ${
+                    isDarkMode 
+                      ? 'bg-zinc-900/40 border-zinc-800 hover:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20' 
+                      : 'bg-zinc-50/50 border-zinc-200 hover:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/10'
                   }`}
                 >
-                  <option value="" className={isDarkMode ? 'bg-theme-card text-white/40' : 'bg-white text-neutral-500'}>
-                    {t.SELECT_PURPOSE || 'Select Purpose'}
-                  </option>
-                  {advanceReasons && advanceReasons.map((reason, idx) => (
-                    <option key={idx} value={reason} className={isDarkMode ? 'bg-theme-card text-white' : 'bg-white text-black'}>
-                      {reason}
-                    </option>
-                  ))}
-                </select>
-                <div className={`absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none ${isDarkMode ? 'text-white/40' : 'text-black/40'}`}>
-                  <ChevronDown size={14} />
-                </div>
+                  <span className={`text-xs font-semibold ${
+                    advanceReason ? (isDarkMode ? 'text-white' : 'text-zinc-900') : 'text-zinc-400 dark:text-zinc-500'
+                  }`}>
+                    {advanceReason 
+                      ? (
+                          language === 'bn' 
+                            ? (advanceReason === 'Trip Diesel' ? 'ট্রিপ ডিজেল' :
+                               advanceReason === 'Salary' ? 'স্যালারি' :
+                               advanceReason === 'Commission' ? 'কমিশন' :
+                               advanceReason === 'Friday' ? 'ফ্রাইডে' :
+                               advanceReason === 'Bonus' ? 'বোনাস' :
+                               advanceReason === 'Overtime' ? 'ওভারটাইম' :
+                               advanceReason === 'Extra Fuel' ? 'এক্সট্রা ফুয়েল' :
+                               advanceReason === 'Vehicle Inspection' ? 'গাড়ি পরিদর্শন' :
+                               advanceReason)
+                            : advanceReason
+                        )
+                      : (language === 'bn' ? 'উদ্দেশ্য নির্বাচন করুন...' : 'Select purpose...')
+                    }
+                  </span>
+                  <ChevronDown size={16} className={`text-zinc-400 shrink-0 transition-transform duration-200 ${isPurposeDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isPurposeDropdownOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-[10001]" 
+                      onClick={() => setIsPurposeDropdownOpen(false)}
+                    />
+                    <div 
+                      className={`absolute left-0 right-0 top-[calc(100%+4px)] z-[10002] rounded-[8px] p-1.5 shadow-xl border overflow-y-auto max-h-[200px] animate-in fade-in slide-in-from-top-2 duration-150 w-full bg-white text-zinc-900 border-zinc-200/80 shadow-zinc-200/40 dark:bg-zinc-900 dark:text-white dark:border-zinc-800 dark:shadow-black/80`}
+                    >
+                      {[
+                        { value: 'Trip Diesel', label: language === 'bn' ? 'ট্রিপ ডিজেল' : (language === 'ar' ? 'ديزل الرحلة' : 'Trip Diesel') },
+                        { value: 'Salary', label: language === 'bn' ? 'স্যালারি' : (language === 'ar' ? 'راتب' : 'Salary') },
+                        { value: 'Commission', label: language === 'bn' ? 'কমিশন' : (language === 'ar' ? 'عمولة' : 'Commission') },
+                        { value: 'Friday', label: language === 'bn' ? 'ফ্রাইডে' : (language === 'ar' ? 'الجمعة' : 'Friday') },
+                        { value: 'Bonus', label: language === 'bn' ? 'বোনাস' : (language === 'ar' ? 'مكافأة' : 'Bonus') },
+                        { value: 'Overtime', label: language === 'bn' ? 'ওভারটাইম' : (language === 'ar' ? 'عمل إضافي' : 'Overtime') },
+                        { value: 'Extra Fuel', label: language === 'bn' ? 'এক্সট্রা ফুয়েল' : (language === 'ar' ? 'وقود إضافي' : 'Extra Fuel') },
+                        { value: 'Vehicle Inspection', label: language === 'bn' ? 'গাড়ি পরিদর্শন' : (language === 'ar' ? 'فحص المركبة' : 'Vehicle Inspection') },
+                        { value: 'Others', label: language === 'bn' ? 'অন্যান্য' : (language === 'ar' ? 'أخرى' : 'Others') }
+                      ].map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => {
+                            setAdvanceReason(opt.value);
+                            setIsPurposeDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-xs font-bold rounded-[6px] transition-colors whitespace-nowrap block ${
+                            advanceReason === opt.value
+                              ? 'bg-emerald-500 !text-white'
+                              : 'hover:bg-zinc-100/80 text-zinc-800 dark:hover:bg-zinc-800 dark:text-zinc-200'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
 
-              {/* Method selection (Color-Coded By Button Names) */}
+              {/* Method selection */}
               <div className="space-y-1.5">
-                <span className={`text-[10px] font-black uppercase tracking-wide block ${isDarkMode ? 'text-white/50' : 'text-neutral-500'}`}>{t.METHOD_LABEL || 'Method'}</span>
+                <label className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block">
+                  {language === 'bn' ? 'পেমেন্ট মাধ্যম' : (language === 'ar' ? 'طريقة الدفع' : 'Payment Method')}
+                </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { 
                       id: 'CASH', 
-                      label: t.CASH || 'Cash',
-                      activeClass: 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/25 border-transparent',
+                      label: language === 'bn' ? 'ক্যাশ' : (language === 'ar' ? 'نقدي' : 'Cash'),
+                      activeClass: 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/20 border-transparent',
                       inactiveClass: isDarkMode 
-                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20' 
-                        : 'bg-emerald-500/5 border-emerald-500/15 text-emerald-600 hover:bg-emerald-500/10'
+                        ? 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800/80 hover:text-white' 
+                        : 'bg-zinc-50 border-zinc-200/60 text-zinc-600 hover:bg-zinc-100'
                     },
                     { 
                       id: 'ONLINE_BANK', 
-                      label: t.BANK || 'Bank',
-                      activeClass: 'bg-blue-500 hover:bg-blue-600 text-white shadow-md shadow-blue-500/25 border-transparent',
+                      label: language === 'bn' ? 'ব্যাংক' : (language === 'ar' ? 'البنك' : 'Bank'),
+                      activeClass: 'bg-blue-500 hover:bg-blue-600 text-white shadow-md shadow-blue-500/20 border-transparent',
                       inactiveClass: isDarkMode 
-                        ? 'bg-blue-500/10 border-blue-500/20 text-blue-400 hover:bg-blue-500/20' 
-                        : 'bg-blue-500/5 border-blue-500/15 text-blue-600 hover:bg-blue-500/10'
+                        ? 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800/80 hover:text-white' 
+                        : 'bg-zinc-50 border-zinc-200/60 text-zinc-600 hover:bg-zinc-100'
                     },
                     { 
                       id: 'MOBILE_BANKING', 
-                      label: t.MOBILE_BANKING || 'Mobile',
-                      activeClass: 'bg-rose-500 hover:bg-rose-600 text-white shadow-md shadow-rose-500/25 border-transparent',
+                      label: language === 'bn' ? 'মোবাইল' : (language === 'ar' ? 'الهاتف' : 'Mobile'),
+                      activeClass: 'bg-rose-500 hover:bg-rose-600 text-white shadow-md shadow-rose-500/20 border-transparent',
                       inactiveClass: isDarkMode 
-                        ? 'bg-rose-500/10 border-rose-500/20 text-rose-400 hover:bg-rose-500/20' 
-                        : 'bg-rose-500/5 border-rose-500/15 text-rose-600 hover:bg-rose-500/10'
+                        ? 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800/80 hover:text-white' 
+                        : 'bg-zinc-50 border-zinc-200/60 text-zinc-600 hover:bg-zinc-100'
                     }
                   ].map(m => (
                     <button
                       key={m.id}
                       type="button"
                       onClick={() => setAdvanceMethod(m.id as any)}
-                      className={`h-11 rounded-xl text-2xs font-extrabold uppercase transition-all border ${
+                      className={`h-11 rounded-[8px] text-[11px] font-bold transition-all border ${
                         advanceMethod === m.id ? m.activeClass : m.inactiveClass
                       }`}
                     >
@@ -5725,22 +5921,22 @@ setShowPendingBreakdown(false);
                     setIsEntryFormOpen(false);
                     setFormCategory('');
                   }}
-                  className={`h-11 rounded-xl text-xs font-extrabold uppercase transition-all ${
+                  className={`h-12 rounded-[8px] text-xs font-bold transition-all ${
                     isDarkMode 
-                      ? 'bg-neutral-800 hover:bg-neutral-700 text-white' 
-                      : 'bg-neutral-100 hover:bg-neutral-200 text-black'
+                      ? 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300' 
+                      : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
                   }`}
                 >
-                  {t.CANCEL || 'Cancel'}
+                  {language === 'bn' ? 'বাতিল' : (language === 'ar' ? 'إلغاء' : 'Cancel')}
                 </button>
                 <button
                   id="payment_confirm_advance"
                   type="button"
                   onClick={handleSubmitAdvance}
-                  className="h-11 rounded-xl text-xs font-black uppercase text-white transition-all hover:opacity-90 active:scale-95"
+                  className="h-12 rounded-[8px] text-xs font-bold text-white transition-all hover:opacity-95 active:scale-[0.98] shadow-lg shadow-emerald-500/10"
                   style={{ backgroundColor: advanceType === 'TAKEN' ? '#10b981' : '#f43f5e' }}
                 >
-                  {t.CONFIRM_LBL || 'Confirm'}
+                  {language === 'bn' ? 'নিশ্চিত করুন' : (language === 'ar' ? 'تأكيد' : 'Confirm')}
                 </button>
               </div>
             </div>

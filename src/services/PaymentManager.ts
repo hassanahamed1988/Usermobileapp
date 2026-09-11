@@ -132,12 +132,8 @@ export class PaymentManager {
             let pendingVal = Math.max(0, totalVal - paidVal);
             let adjustedPaidVal = paidVal;
 
-            if (category.toLowerCase() === 'trip diesel' && remainingAdvanceDiesel > 0) {
-              const deduction = remainingAdvanceDiesel;
-              pendingVal -= deduction;
-              adjustedPaidVal += deduction;
-              remainingAdvanceDiesel = 0; // consumed all
-            }
+            // Advance Diesel is no longer deducted from individual specific trips as per user request.
+            // It will be consolidated and deducted only from the total/summary level.
 
             const isTripDieselCategory = category.toLowerCase() === 'trip diesel';
             if (pendingVal > 0 || (isTripDieselCategory && pendingVal < 0)) {
@@ -293,49 +289,7 @@ export class PaymentManager {
       }
     });
 
-    // If there is still excess advance diesel, append it to the newest file under Trip Diesel
-    if (remainingAdvanceDiesel > 0 && sortedFiles.length > 0) {
-      const newestFile = sortedFiles[sortedFiles.length - 1];
-      let fileGroup = pendingByFile.find(f => f.fileId === newestFile.id);
-      if (!fileGroup) {
-        fileGroup = {
-          fileId: newestFile.id,
-          month: newestFile.month,
-          year: newestFile.year,
-          totalPending: 0,
-          categories: []
-        };
-        pendingByFile.push(fileGroup);
-      }
-      
-      let catGroup = fileGroup.categories.find((c: any) => c.name.toLowerCase() === 'trip diesel');
-      if (!catGroup) {
-        catGroup = {
-          name: 'Trip Diesel',
-          totalPending: 0,
-          items: []
-        };
-        fileGroup.categories.push(catGroup);
-      }
-      
-      const negativeVal = -remainingAdvanceDiesel;
-      catGroup.items.push({
-        id: `ADV-DIESEL-ADJUST-${newestFile.id}`,
-        label: 'Excess Diesel Advance (অগ্রিম ডিজেল সমন্বয়)',
-        total: 0,
-        paid: remainingAdvanceDiesel,
-        pending: negativeVal,
-        amount: negativeVal,
-        date: new Date().toISOString(),
-        type: 'TRIP_DUE',
-        details: {
-          subType: 'dieselPrice',
-          companyName: 'Advance Diesel Adjust'
-        }
-      });
-      catGroup.totalPending += negativeVal;
-      fileGroup.totalPending += negativeVal;
-    }
+    // Excess advance diesel adjustment card has been completely removed as per user request to not create any cards/items inside specific category sections.
 
     // 2. Process Direct PENDING Payments (not linked to trips)
     const directPending = listPayments.filter(p => 
