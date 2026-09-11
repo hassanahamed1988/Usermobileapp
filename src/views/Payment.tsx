@@ -5061,7 +5061,7 @@ setShowPendingBreakdown(false);
       <div className="z-20 pb-4  shrink-0">
         {/* Summary Card */}
         <div 
-          className="relative overflow-hidden rounded-xl p-5 min-h-[190px] md:min-h-[220px] flex flex-col justify-between text-white shadow-2xl bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a] border border-white/10"
+          className="relative overflow-hidden rounded-xl p-5 min-h-[190px] md:min-h-[220px] flex flex-col justify-between text-white shadow-md bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a] border border-white/10"
         >
         {/* Visual accents */}
         <div className="absolute -top-10 -right-10 w-40 h-40 bg-cyan-400/10 rounded-full blur-[80px]"></div>
@@ -5141,7 +5141,7 @@ setShowPendingBreakdown(false);
             >
               <button 
                 onClick={() => { setNavigationDirection('forward'); setShowReceivedBreakdown(true); }}
-                className="relative overflow-hidden group/btn min-h-[96px] md:min-h-[112px] p-4 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 border border-emerald-400/20 hover:brightness-110 active:scale-95 transition-all text-left shadow-xl flex flex-col justify-between"
+                className="relative overflow-hidden group/btn min-h-[96px] md:min-h-[112px] p-4 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 border border-emerald-400/20 hover:brightness-110 active:scale-95 transition-all text-left shadow-md flex flex-col justify-between"
               >
                 {/* Watermark Icon */}
                 <div className="absolute right-[-16px] bottom-[-16px] opacity-15 pointer-events-none transform group-hover/btn:scale-110 transition-transform duration-300">
@@ -5164,7 +5164,7 @@ setShowPendingBreakdown(false);
 
               <button 
                 onClick={() => { setNavigationDirection('forward'); setShowPendingBreakdown(true); }}
-                className="relative overflow-hidden group/btn min-h-[96px] md:min-h-[112px] p-4 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 border border-orange-400/20 hover:brightness-110 active:scale-95 transition-all text-left shadow-xl flex flex-col justify-between"
+                className="relative overflow-hidden group/btn min-h-[96px] md:min-h-[112px] p-4 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 border border-orange-400/20 hover:brightness-110 active:scale-95 transition-all text-left shadow-md flex flex-col justify-between"
               >
                 {/* Watermark Icon */}
                 <div className="absolute right-[-16px] bottom-[-16px] opacity-15 pointer-events-none transform group-hover/btn:scale-110 transition-transform duration-300">
@@ -5244,7 +5244,7 @@ setShowPendingBreakdown(false);
                   <div 
                     key={p.id}
                     onClick={() => setSelectedVehicleInspectionItem(p)}
-                    className="bg-[#FFFBF2] dark:bg-[#1A1A1A] py-2 px-4 rounded-[10px] flex items-center justify-between shadow-[var(--dynamic-card-shadow)] border-[1.5px] border-[#D4AF37] dark:border-white/10 cursor-pointer group min-h-[72px] relative pointer-events-auto w-full text-left"
+                    className="bg-[#FFFBF2] dark:bg-[#1A1A1A] py-2 px-4 rounded-[10px] flex items-center justify-between shadow-sm border-[1.5px] border-[#D4AF37] dark:border-white/10 cursor-pointer group min-h-[72px] relative pointer-events-auto w-full text-left"
                     role="button"
                     tabIndex={0}
                   >
@@ -5293,7 +5293,7 @@ setShowPendingBreakdown(false);
                 <div 
                   key={p.id}
                   onClick={() => setSelectedTransaction(p)}
-                  className="group w-full bg-theme-card hover:bg-slate-50/50 dark:hover:bg-slate-800/50 border border-[var(--dynamic-card-border)] rounded-[10px] py-2 px-4 min-h-[72px] flex items-center justify-between shadow-[var(--dynamic-card-shadow)] hover:shadow-md transition-all duration-200 ease-out cursor-pointer relative overflow-hidden text-left"
+                  className="group w-full bg-theme-card hover:bg-slate-50/50 dark:hover:bg-slate-800/50 border border-[var(--dynamic-card-border)] rounded-[10px] py-2 px-4 min-h-[72px] flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-200 ease-out cursor-pointer relative overflow-hidden text-left"
                   role="button"
                   tabIndex={0}
                 >

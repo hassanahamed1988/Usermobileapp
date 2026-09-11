@@ -1741,49 +1741,49 @@ const Statement: React.FC = () => {
     await downloadPdf(doc, fileName, showFeedback, language);
   };
 
+  const titleText = isColumnSelectModalOpen
+    ? language === "bn"
+      ? "কলাম নির্বাচন করুন"
+      : "Select Columns"
+    : selectedType === "SALARY_ONLY" ||
+        selectedType === "SALARY_COMMISSION"
+      ? language === "bn"
+        ? "স্যালারি স্টেটমেন্ট"
+        : "Salary Statement"
+      : null;
+
   return (
-    <div className="w-full mx-auto relative overflow-hidden pb-16 px-1 sm:px-2 pt-2">
+    <div className="w-full mx-auto relative overflow-hidden pb-16 px-1 sm:px-2 pt-1">
       {/* Title block */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-black/5 dark:border-white/5 pb-4 gap-4 px-0.5">
-        <div className="flex items-center gap-3">
-          {isColumnSelectModalOpen && (
-            <button
-              onClick={() => setIsColumnSelectModalOpen(false)}
-              className="w-10 h-10 rounded-xl bg-black/5 dark:bg-white/5 flex items-center justify-center text-text-muted hover:text-text-main transition-colors shrink-0"
-            >
-              <ChevronLeft size={24} />
-            </button>
-          )}
-          <div>
-            <h1 className="text-xl font-extrabold uppercase tracking-tight text-text-main">
-              {isColumnSelectModalOpen
-                ? language === "bn"
-                  ? "কলাম নির্বাচন করুন"
-                  : "Select Columns"
-                : selectedType === "SALARY_ONLY" ||
-                    selectedType === "SALARY_COMMISSION"
-                  ? language === "bn"
-                    ? "স্যালারি স্টেটমেন্ট"
-                    : "Salary Statement"
-                  : null}
-            </h1>
+      {titleText && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-black/5 dark:border-white/5 pb-4 gap-4 px-0.5 mb-4">
+          <div className="flex items-center gap-3">
+            {isColumnSelectModalOpen && (
+              <button
+                onClick={() => setIsColumnSelectModalOpen(false)}
+                className="w-10 h-10 rounded-xl bg-black/5 dark:bg-white/5 flex items-center justify-center text-text-muted hover:text-text-main transition-colors shrink-0"
+              >
+                <ChevronLeft size={24} />
+              </button>
+            )}
+            <div>
+              <h1 className="text-xl font-extrabold uppercase tracking-tight text-text-main">
+                {titleText}
+              </h1>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="relative">
         <>
           {!isColumnSelectModalOpen ? (
             <div
               key="main-content"
-              
-              
-              
-              
-              className="space-y-6 pt-4"
+              className={`space-y-6 ${titleText ? "pt-2" : "pt-0"}`}
             >
               {/* Selection Panel card */}
-              <div className="bg-white dark:bg-[#1A1A1A] border border-[#D4AF37] rounded-2xl px-3 py-5 sm:p-6 shadow-sm space-y-5">
+              <div className="bg-white dark:bg-[#1A1A1A] border border-black/5 dark:border-white/5 rounded-2xl px-3 py-5 sm:p-6 shadow-md space-y-5">
                 <div className="flex flex-col gap-5">
                   {/* Status Options: Pending, Payment */}
                   <div className="grid grid-cols-2 gap-3 pb-1">
@@ -1939,7 +1939,7 @@ const Statement: React.FC = () => {
                 ) : (
                   <div className="space-y-6">
                     {/* Screen Data Table wrapper */}
-                    <div className="bg-theme-card border border-black/5 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm">
+                    <div className="bg-theme-card border border-black/5 dark:border-white/5 rounded-2xl overflow-hidden shadow-md">
                       <div className="overflow-x-auto">
                         {selectedType === "TRIP" ? (
                           <table className="w-full text-left border-collapse table-auto whitespace-nowrap">
@@ -2505,7 +2505,7 @@ const Statement: React.FC = () => {
 
                     {/* Bottom calculation summary  block */}
                     <div className="flex justify-end">
-                      <div className="w-full sm:w-80 bg-theme-card border border-black/10 dark:border-white/10 rounded-2xl overflow-hidden shadow-sm divide-y divide-black/5 dark:divide-white/5">
+                      <div className="w-full sm:w-80 bg-theme-card border border-black/10 dark:border-white/10 rounded-2xl overflow-hidden shadow-md divide-y divide-black/5 dark:divide-white/5">
                         {selectedType === "TRIP" ? (
                           <>
                             <div className="flex items-center justify-between p-3.5 sm:p-4 text-xs">
