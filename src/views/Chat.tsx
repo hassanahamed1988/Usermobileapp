@@ -50,7 +50,7 @@ const Chat: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   
   const filteredMessages = searchQuery.trim()
-    ? messages.filter(msg => msg.text.toLowerCase().includes(searchQuery.toLowerCase()))
+    ? messages.filter(msg => msg.text && typeof msg.text === 'string' && msg.text.toLowerCase().includes(searchQuery.toLowerCase()))
     : messages;
 
   const [showMenu, setShowMenu] = useState(false);

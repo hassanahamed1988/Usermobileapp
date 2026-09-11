@@ -26,8 +26,8 @@ const ConfirmationModal: React.FC = () => {
   // Detect if the action is specifically a log out or sign out action
   const isLogoutAction = (cfg: ConfirmConfig | null) => {
     if (!cfg) return false;
-    const checkText = (text?: string) => {
-      if (!text) return false;
+    const checkText = (text?: any) => {
+      if (!text || typeof text !== 'string') return false;
       const lower = text.toLowerCase();
       return (
         lower.includes('logout') || 
@@ -45,8 +45,8 @@ const ConfirmationModal: React.FC = () => {
   // Detect if the action is specifically an app exit action
   const isExitAction = (cfg: ConfirmConfig | null) => {
     if (!cfg) return false;
-    const checkText = (text?: string) => {
-      if (!text) return false;
+    const checkText = (text?: any) => {
+      if (!text || typeof text !== 'string') return false;
       const lower = text.toLowerCase();
       return (
         lower.includes('exit') || 
@@ -69,8 +69,8 @@ const ConfirmationModal: React.FC = () => {
   if (typeof document === 'undefined') return null;
 
   // Detect if the action is destructive (e.g. log out, delete, remove, reset, etc.)
-  const isDestructiveAction = (text?: string) => {
-    if (!text) return false;
+  const isDestructiveAction = (text?: any) => {
+    if (!text || typeof text !== 'string') return false;
     const lower = text.toLowerCase();
     return (
       lower.includes('delete') || 

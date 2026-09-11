@@ -1253,14 +1253,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
            }
         });
      };
-     handlersRef.current['confirmAction'] = (msg: string, onConfirm: () => void, options?: any) => {
+     handlersRef.current['confirmAction'] = (msg: any, onConfirm?: () => void, options?: any) => {
         mutate((d: any) => {
-           d.confirmConfig = {
-              isOpen: true,
-              message: msg,
-              onConfirm,
-              ...options
-           };
+           if (msg && typeof msg === 'object') {
+              d.confirmConfig = {
+                 isOpen: true,
+                 message: msg.message,
+                 onConfirm: msg.onConfirm,
+                 ...msg
+              };
+           } else {
+              d.confirmConfig = {
+                 isOpen: true,
+                 message: msg,
+                 onConfirm,
+                 ...options
+              };
+           }
         });
      };
      handlersRef.current['closeConfirm'] = () => {
