@@ -46,7 +46,8 @@ import {
   UserX,
   Fuel,
   Download,
-  Landmark
+  Landmark,
+  ShoppingCart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore, GLOBAL_TRANSITION, GLOBAL_VARIANTS } from '../store';
@@ -166,6 +167,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
   const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [isPartnerAccountOpen, setIsPartnerAccountOpen] = useState(false);
   const [isVehicleOpen, setIsVehicleOpen] = useState(false);
+  const [isMessManagementOpen, setIsMessManagementOpen] = useState(false);
 
   useEffect(() => {
     if (!isDrawerOpen) {
@@ -174,6 +176,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
       setIsWalletOpen(false);
       setIsPartnerAccountOpen(false);
       setIsVehicleOpen(false);
+      setIsMessManagementOpen(false);
     }
   }, [isDrawerOpen]);
 
@@ -290,6 +293,13 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
     { id: 'MANAGER_PROFILE', icon: <UserPlus size={20} />, label: 'Manager Profile', color: '#8b5cf6' },
   ]) : [];
 
+  const hasPurchasePermission = isAdmin || (Array.isArray(user?.permissions) && user.permissions.includes('PURCHASE'));
+
+  const messManagementItems = user && hasPurchasePermission ? [
+    { id: 'MESS_ADD_PARTNER', icon: <UserPlus size={20} />, label: language === 'bn' ? 'পার্টনার যোগ করুন' : 'Add Partner', color: '#10b981' },
+    { id: 'MESS_PARTNER_LIST', icon: <Users size={20} />, label: language === 'bn' ? 'পার্টনার তালিকা' : 'Partner List', color: '#3b82f6' },
+  ] : [];
+
   const walletItems = user ? filterItems([
     { id: 'WALLET_DASHBOARD', icon: <Wallet size={20} />, label: language === 'bn' ? 'ওয়ালেট ড্যাশবোর্ড' : 'Wallet Dashboard', color: '#159938' },
     { id: 'WALLET_LINK_USER', icon: <UserPlus size={20} />, label: language === 'bn' ? 'ওয়ালেট লিঙ্ক ইউজার' : 'Wallet Link User', color: '#fbbf24' },
@@ -350,6 +360,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
     { id: 'TRIP_MANAGEMENT', icon: <Truck size={26} />, label: t.TRIP_MANAGEMENT, show: isAdmin || tripManagementItems.length > 0, isAccordion: true, subItems: tripManagementItems, isOpen: isTripManagementOpen, toggle: () => setIsTripManagementOpen(!isTripManagementOpen), color: '#facc15' },
     { id: 'VEHICLES', icon: <Car size={26} />, label: language === 'bn' ? 'যানবাহন ব্যবস্থাপনা' : 'Vehicle Management', show: !isAdmin, isAccordion: true, subItems: vehicleItems, isOpen: isVehicleOpen, toggle: () => setIsVehicleOpen(!isVehicleOpen), color: '#3b82f6' },
     { id: 'PARTNER_ACCOUNT', icon: <UserPlus size={26} />, label: 'Partner Account', show: isAdmin || partnerAccountItems.length > 0, isAccordion: true, subItems: partnerAccountItems, isOpen: isPartnerAccountOpen, toggle: () => setIsPartnerAccountOpen(!isPartnerAccountOpen), color: '#8b5cf6' },
+    { id: 'MESS_MANAGEMENT', icon: <ShoppingCart size={26} />, label: language === 'bn' ? 'মেস ম্যানেজমেন্ট' : 'Mess Management', show: hasPurchasePermission, isAccordion: true, subItems: messManagementItems, isOpen: isMessManagementOpen, toggle: () => setIsMessManagementOpen(!isMessManagementOpen), color: '#facc15' },
     { id: 'PRAYER_TIMES', icon: <Clock size={26} />, label: t.PRAYER_TIMES, show: true, color: '#06b6d4' },
     { id: 'SUPPORT', icon: <LifeBuoy size={26} />, label: t.SUPPORT, show: true, color: '#f472b6' },
     { id: 'SETTINGS', icon: <Settings size={26} />, label: t.SETTINGS, show: showSettings, color: '#9ca3af' },
@@ -563,6 +574,12 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
                               } else if (subItem.id === 'WALLET_LINK_USER') {
                                 setView('WALLET');
                                 setActiveSection('LINK_USER');
+                              } else if (subItem.id === 'MESS_ADD_PARTNER') {
+                                setView('PURCHASE');
+                                setActiveSection('ADD_PARTNER');
+                              } else if (subItem.id === 'MESS_PARTNER_LIST') {
+                                setView('PURCHASE');
+                                setActiveSection('PARTNER_LIST');
                               } else {
                                 if (subItem.id === 'NEW_TRIP') {
                                                       setCurrentFile(null);
@@ -574,7 +591,9 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
                             className={`w-full flex items-center gap-4 h-9 px-5 rounded-md transition-all active:scale-[0.98] ${
                               (subItem.id === 'WALLET_DASHBOARD' && currentView === 'WALLET' && !activeSection) ||
                               (subItem.id === 'WALLET_LINK_USER' && currentView === 'WALLET' && activeSection === 'LINK_USER') ||
-                              (subItem.id !== 'WALLET_DASHBOARD' && subItem.id !== 'WALLET_LINK_USER' && currentView === subItem.id)
+                              (subItem.id === 'MESS_ADD_PARTNER' && currentView === 'PURCHASE' && activeSection === 'ADD_PARTNER') ||
+                              (subItem.id === 'MESS_PARTNER_LIST' && currentView === 'PURCHASE' && activeSection === 'PARTNER_LIST') ||
+                              (subItem.id !== 'WALLET_DASHBOARD' && subItem.id !== 'WALLET_LINK_USER' && subItem.id !== 'MESS_ADD_PARTNER' && subItem.id !== 'MESS_PARTNER_LIST' && currentView === subItem.id)
                                 ? 'bg-black/20 dark:bg-white/20' 
                                 : 'hover:bg-black/10 dark:hover:bg-white/10'
                             }`}
@@ -582,7 +601,9 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
                               color: 'var(--sidebar-text)', 
                               opacity: (subItem.id === 'WALLET_DASHBOARD' && currentView === 'WALLET' && !activeSection) ||
                                        (subItem.id === 'WALLET_LINK_USER' && currentView === 'WALLET' && activeSection === 'LINK_USER') ||
-                                       (subItem.id !== 'WALLET_DASHBOARD' && subItem.id !== 'WALLET_LINK_USER' && currentView === subItem.id)
+                                       (subItem.id === 'MESS_ADD_PARTNER' && currentView === 'PURCHASE' && activeSection === 'ADD_PARTNER') ||
+                                       (subItem.id === 'MESS_PARTNER_LIST' && currentView === 'PURCHASE' && activeSection === 'PARTNER_LIST') ||
+                                       (subItem.id !== 'WALLET_DASHBOARD' && subItem.id !== 'WALLET_LINK_USER' && subItem.id !== 'MESS_ADD_PARTNER' && subItem.id !== 'MESS_PARTNER_LIST' && currentView === subItem.id)
                                          ? 1 
                                          : 0.8 
                             }}
@@ -741,7 +762,9 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
                               {item.subItems?.map(subItem => {
                                 const isSubSelected = (subItem.id === 'WALLET_DASHBOARD' && currentView === 'WALLET' && !activeSection) ||
                                                       (subItem.id === 'WALLET_LINK_USER' && currentView === 'WALLET' && activeSection === 'LINK_USER') ||
-                                                      (subItem.id !== 'WALLET_DASHBOARD' && subItem.id !== 'WALLET_LINK_USER' && currentView === subItem.id);
+                                                      (subItem.id === 'MESS_ADD_PARTNER' && currentView === 'PURCHASE' && activeSection === 'ADD_PARTNER') ||
+                                                      (subItem.id === 'MESS_PARTNER_LIST' && currentView === 'PURCHASE' && activeSection === 'PARTNER_LIST') ||
+                                                      (subItem.id !== 'WALLET_DASHBOARD' && subItem.id !== 'WALLET_LINK_USER' && subItem.id !== 'MESS_ADD_PARTNER' && subItem.id !== 'MESS_PARTNER_LIST' && currentView === subItem.id);
                                 return (
                                   <div key={subItem.id} className="w-full">
                                     <button
@@ -771,6 +794,12 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
                                         } else if (subItem.id === 'WALLET_LINK_USER') {
                                           setView('WALLET');
                                           setActiveSection('LINK_USER');
+                                        } else if (subItem.id === 'MESS_ADD_PARTNER') {
+                                          setView('PURCHASE');
+                                          setActiveSection('ADD_PARTNER');
+                                        } else if (subItem.id === 'MESS_PARTNER_LIST') {
+                                          setView('PURCHASE');
+                                          setActiveSection('PARTNER_LIST');
                                         } else {
                                           if (subItem.id === 'NEW_TRIP') {
                                             setCurrentFile(null);

@@ -593,12 +593,9 @@ export default function ManagerProfile() {
                               <h5 className={`font-bold truncate text-sm leading-tight border-b border-gray-200 dark:border-white/10 pb-0.5 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                                 {partner.name}
                               </h5>
-                              <div className="flex flex-col gap-0.5 items-start">
-                                <span className="text-[10px] text-gray-500 flex items-center gap-1 font-medium">
-                                  <Phone size={8} /> {partner.mobile || partnerUserObj?.mobileNumber || 'No mobile'}
-                                </span>
-                                <span className="text-[10px] font-bold font-mono text-gray-600 dark:text-gray-400">
-                                  Partner ID: {partner.partnerId || 'N/A'}
+                              <div className="flex flex-col gap-0.5 items-start mt-0.5">
+                                <span className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1 font-medium">
+                                  <Phone size={10} /> {partner.mobile || partnerUserObj?.mobileNumber || 'No mobile'}
                                 </span>
                               </div>
                             </div>

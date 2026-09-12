@@ -51,7 +51,13 @@ const SENSITIVE_FIELD_MAPPING: { [key: string]: 'userId' | 'email' | 'dob' | 'ni
   accountNumber: 'nid_etc',
   cardNumber: 'nid_etc',
   cardNo: 'nid_etc',
-  twoFASecret: 'nid_etc'
+  twoFASecret: 'nid_etc',
+  cardPin: 'nid_etc',
+  mobilePin: 'nid_etc',
+  ibankingUserId: 'nid_etc',
+  ibankingPassword: 'nid_etc',
+  ibankingTpin: 'nid_etc',
+  mobileAccountNumber: 'nid_etc'
 };
 
 export const applyMaskingBeforeSave = (data: any): any => {

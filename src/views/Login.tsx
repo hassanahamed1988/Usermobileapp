@@ -1134,25 +1134,13 @@ const Login: React.FC = () => {
           if (isPasswordCorrect) {
             console.log("Legacy credentials correct! Syncing user to Firebase Auth on the fly...");
             try {
-              const syncResponse = await fetch('/api/auth/create-user', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: userEmailToAuth, password: inputPasswordTrimmed })
-              }).catch(() => null);
-
-              if (syncResponse && syncResponse.ok) {
-                try {
-                  const { signInWithEmailAndPassword } = await import('firebase/auth');
-                  const { auth } = await import('../services/firebase');
-                  await signInWithEmailAndPassword(auth, userEmailToAuth, inputPasswordTrimmed);
-                  isAuthSuccess = true;
-                  console.log("Firebase Auth self-healing registration & login successful!");
-                } catch (authSignInErr) {
-                  console.warn("Firebase Auth signIn skipped:", authSignInErr);
-                }
-              }
-            } catch (syncErr) {
-              console.warn("Self-healing registration/login skipped:", syncErr);
+              const { createUserWithEmailAndPassword } = await import('firebase/auth');
+              const { auth } = await import('../services/firebase');
+              await createUserWithEmailAndPassword(auth, userEmailToAuth, inputPasswordTrimmed);
+              isAuthSuccess = true;
+              console.log("Firebase Auth self-healing registration successful!");
+            } catch (syncErr: any) {
+              console.warn("Self-healing registration skipped/failed:", syncErr);
             }
           }
         }
@@ -1178,6 +1166,18 @@ const Login: React.FC = () => {
                               decryptedStored === inputPasswordTrimmed ||
                               decryptedStored.trim() === inputPasswordTrimmed ||
                               (foundUser.role === 'ADMIN' && inputPasswordTrimmed.toLowerCase() === 'admin');
+        }
+
+        if (isPasswordCorrect) {
+          try {
+            const { signInAnonymously } = await import('firebase/auth');
+            const { auth } = await import('../services/firebase');
+            await signInAnonymously(auth);
+            isAuthSuccess = true;
+            console.log("Anonymous Firebase Auth successful for non-email user.");
+          } catch (err) {
+            console.warn("Anonymous sign-in failed:", err);
+          }
         }
       }
 

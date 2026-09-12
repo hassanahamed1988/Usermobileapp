@@ -403,43 +403,65 @@ const PaymentView: React.FC = () => {
 
   const getAdvanceTargetCategory = (p: any): string | null => {
     if ((p.category || '').toUpperCase() !== 'ADVANCE') return null;
-    const reason = (p.details?.advanceReason || p.details?.serviceName || p.details?.note || '').toLowerCase();
-    if (reason.includes('diesel') || reason.includes('ডিজেল')) return 'Trip Diesel';
-    if (reason.includes('salary') || reason.includes('স্যালারি')) return 'Salary';
+    const reason = (p.details?.advanceReason || p.details?.serviceName || p.details?.note || p.serviceName || '').toLowerCase();
+    if (reason.includes('diesel') || reason.includes('ডিজেল') || reason.includes('fuel')) return 'Trip Diesel';
+    if (reason.includes('salary') || reason.includes('স্যালারি') || reason.includes('বেতন')) return 'Salary';
     if (reason.includes('commission') || reason.includes('কমিশন')) return 'Commission';
-    if (reason.includes('friday') || reason.includes('ফ্রাইডে')) return 'Friday';
+    if (reason.includes('friday') || reason.includes('ফ্রাইডে') || reason.includes('শুক্রবার')) return 'Friday';
     if (reason.includes('bonus') || reason.includes('বোনাস')) return 'Bonus';
     if (reason.includes('overtime') || reason.includes('ওভারটাইম')) return 'Overtime';
-    if (reason.includes('extra fuel') || reason.includes('এক্সট্রা ফুয়েল') || reason.includes('extra_fuel')) return 'Extra Fuel';
+    if (reason.includes('extra fuel') || reason.includes('এক্সট্রা ফুয়েল') || reason.includes('extra_fuel') || reason.includes('vehicle inspection') || reason.includes('পরিদর্শন')) return 'Extra Fuel';
     return null;
   };
 
+  const getCategoryUnadjustedAdvance = (paymentList: Payment[], category: string, month: number | 'ALL', year: number | 'ALL'): number => {
+    let normCategory = (category || '').toUpperCase();
+    if (normCategory === 'VEHICLE INSPECTION' || normCategory === 'EXTRA_FUEL') {
+      normCategory = 'EXTRA FUEL';
+    }
+
+    let totalTaken = 0;
+    let totalReturned = 0;
+    let totalDeducted = 0;
+
+    paymentList.forEach(p => {
+      if (p.status !== 'RECEIVED') return;
+      const monthMatch = month === 'ALL' ? true : Number(p.month) === Number(month);
+      const yearMatch = year === 'ALL' ? true : Number(p.year) === Number(year);
+      if (!monthMatch || !yearMatch) return;
+
+      const pCat = (p.category || '').toUpperCase();
+      let targetCat = getAdvanceTargetCategory(p);
+      if (targetCat && (targetCat.toUpperCase() === 'VEHICLE INSPECTION' || targetCat.toUpperCase() === 'EXTRA_FUEL')) {
+        targetCat = 'Extra Fuel';
+      }
+
+      const isTargetMatch = targetCat ? targetCat.toUpperCase() === normCategory : (pCat === normCategory || normCategory === 'ALL');
+
+      if (pCat === 'ADVANCE') {
+        if (p.details?.advanceType === 'TAKEN' && (isTargetMatch || (!targetCat && normCategory === 'OTHERS'))) {
+          totalTaken += Number(p.amount) || 0;
+        } else if (p.details?.advanceType === 'RETURNED' && (isTargetMatch || (!targetCat && normCategory === 'OTHERS'))) {
+          totalReturned += Number(p.amount) || 0;
+        }
+      }
+
+      // Also count advances that were already deducted in payments for this category
+      let pCatNorm = pCat;
+      if (pCatNorm === 'VEHICLE INSPECTION' || pCatNorm === 'EXTRA_FUEL') {
+        pCatNorm = 'EXTRA FUEL';
+      }
+      if (isTargetMatch || pCatNorm === normCategory) {
+        const advDeducted = Number(p.details?.advanceDeducted) || Number(p.details?.advanceAmount) || 0;
+        totalDeducted += advDeducted;
+      }
+    });
+
+    return Math.max(0, totalTaken - totalReturned - totalDeducted);
+  };
+
   const getCategoryAdvanceAmount = (paymentList: Payment[], category: string, month: number | 'ALL', year: number | 'ALL'): number => {
-    return paymentList
-      .filter(p => {
-        if ((p.category || '').toUpperCase() !== 'ADVANCE') return false;
-        if (p.details?.advanceType !== 'TAKEN') return false;
-        if (p.status !== 'RECEIVED') return false;
-        
-        const monthMatch = month === 'ALL' ? true : Number(p.month) === Number(month);
-        const yearMatch = year === 'ALL' ? true : Number(p.year) === Number(year);
-        if (!monthMatch || !yearMatch) return false;
-
-        const targetCat = getAdvanceTargetCategory(p);
-        if (!targetCat) return false;
-
-        // Normalize matching categories
-        let matchedCat = targetCat;
-        if (category.toUpperCase() === 'EXTRA FUEL' || category.toUpperCase() === 'EXTRA_FUEL') {
-          category = 'EXTRA FUEL';
-        }
-        if (matchedCat.toUpperCase() === 'EXTRA FUEL' || matchedCat.toUpperCase() === 'EXTRA_FUEL') {
-          matchedCat = 'EXTRA FUEL';
-        }
-
-        return matchedCat.toUpperCase() === category.toUpperCase();
-      })
-      .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    return getCategoryUnadjustedAdvance(paymentList, category, month, year);
   };
 
   const filteredDetailedPendingItems = useMemo(() => {
@@ -1127,10 +1149,34 @@ setShowUserRenewSelection(false);
   // Form State
   const [formType, setFormType] = useState<'INCOME' | 'DEDUCTION'>('INCOME');
   const [formCategory, setFormCategory] = useState('');
+  const [formRemainingBalance, setFormRemainingBalance] = useState('');
+  const [formAdvance, setFormAdvance] = useState('');
   const [formAmount, setFormAmount] = useState('');
   const [formNote, setFormNote] = useState('');
   const [formMethod, setFormMethod] = useState<'CASH' | 'ONLINE_BANK' | 'MOBILE_BANKING'>('CASH');
   const [formDetails, setFormDetails] = useState<any>({});
+
+  const handleRemainingBalanceChange = (val: string) => {
+    setFormRemainingBalance(val);
+    const rem = parseFloat(val);
+    const adv = parseFloat(formAdvance) || 0;
+    if (!isNaN(rem)) {
+      const net = Math.max(0, rem - adv);
+      setFormAmount(net.toString());
+    } else {
+      setFormAmount('');
+    }
+  };
+
+  const handleAdvanceChange = (val: string) => {
+    setFormAdvance(val);
+    const adv = parseFloat(val) || 0;
+    const rem = parseFloat(formRemainingBalance);
+    if (!isNaN(rem)) {
+      const net = Math.max(0, rem - adv);
+      setFormAmount(net.toString());
+    }
+  };
   
   const getBankDisplayName = (bankVal?: string) => {
     if (!bankVal) return '';
@@ -1439,8 +1485,11 @@ setShowUserRenewSelection(false);
   const handleTripDieselAllocationSave = () => {
     const totalAmount = (Object.values(selectedItems) as number[]).reduce((sum, val) => sum + (val || 0), 0);
     if (totalAmount > 0) {
-      setFormAmount(totalAmount.toString());
-      setFormDetails({ ...formDetails, pendingItems: selectedItems });
+      setFormRemainingBalance(totalAmount.toString());
+      const adv = parseFloat(formAdvance) || 0;
+      const net = Math.max(0, totalAmount - adv);
+      setFormAmount(net.toString());
+      setFormDetails({ ...formDetails, pendingItems: selectedItems, remainingBalance: totalAmount });
       
       const firstItemId = Object.keys(selectedItems)[0];
       if (firstItemId) {
@@ -1451,9 +1500,11 @@ setShowUserRenewSelection(false);
       }
       showFeedback(`Allocated ${totalAmount.toLocaleString()} from Trip Diesel`);
     } else {
+      setFormRemainingBalance('');
       setFormAmount('');
       const cleanedDetails = { ...formDetails };
       delete cleanedDetails.pendingItems;
+      delete cleanedDetails.remainingBalance;
       setFormDetails(cleanedDetails);
     }
     setNavigationDirection('backward');
@@ -1555,15 +1606,21 @@ setShowTripDieselSubPage(false);
   const handlePendingSelectionNext = () => {
     const totalAmount = (Object.values(selectedItems) as number[]).reduce((sum, val) => sum + val, 0);
     if (totalAmount > 0) {
-      setFormAmount(totalAmount.toString());
+      setFormRemainingBalance(totalAmount.toString());
+      const adv = parseFloat(formAdvance) || 0;
+      const net = Math.max(0, totalAmount - adv);
+      setFormAmount(net.toString());
       // Store selected items in details for reference
-      setFormDetails({ ...formDetails, pendingItems: selectedItems });
+      setFormDetails({ ...formDetails, pendingItems: selectedItems, remainingBalance: totalAmount });
       
       // Update current file to the selected pending file so the payment is linked correctly
       if (selectedPendingFile) {
         const file = monthlyFiles.find(f => f.id === selectedPendingFile.fileId);
         if (file) setCurrentFile(file);
       }
+    } else {
+      setFormRemainingBalance('');
+      setFormAmount('');
     }
     setNavigationDirection('backward');
 setShowPendingSelection(false);
@@ -1574,12 +1631,18 @@ setShowPendingSelection(false);
   const handleRenewUserSelect = (selectedUser: User) => {
     setRenewingUser(selectedUser);
     setFormCategory('User Renew');
-    setFormAmount(selectedUser.price && selectedUser.price !== '0' ? selectedUser.price : '');
+    const price = selectedUser.price && selectedUser.price !== '0' ? selectedUser.price : '';
+    setFormRemainingBalance(price);
+    const adv = parseFloat(formAdvance) || 0;
+    const rem = parseFloat(price) || 0;
+    const net = Math.max(0, rem - adv);
+    setFormAmount(price ? net.toString() : '');
     setFormDetails({ 
       ...formDetails, 
       userId: selectedUser.id, 
       userName: selectedUser.name,
-      serviceName: `Renewal - ${selectedUser.duration || 'Monthly'}` 
+      serviceName: `Renewal - ${selectedUser.duration || 'Monthly'}`,
+      remainingBalance: price ? parseFloat(price) : undefined
     });
     setNavigationDirection('backward');
 setShowUserRenewSelection(false);
@@ -1683,7 +1746,12 @@ setShowUserRenewSelection(false);
     }
 
     // 2. Build or augment details with pending Items
-    let finalDetails = { ...formDetails, note: formNote };
+    let finalDetails = { 
+      ...formDetails, 
+      note: formNote,
+      remainingBalance: formRemainingBalance ? parseFloat(formRemainingBalance) : undefined,
+      advanceDeducted: formAdvance ? parseFloat(formAdvance) : undefined
+    };
     const amountVal = parseFloat(formAmount) || 0;
 
     if (editingPayment) {
@@ -1869,6 +1937,8 @@ setShowUserRenewSelection(false);
 
   const resetForm = () => {
     setFormCategory('');
+    setFormRemainingBalance('');
+    setFormAdvance('');
     setFormAmount('');
     setFormNote('');
     setFormMethod('CASH');
@@ -1973,33 +2043,14 @@ setShowUserRenewSelection(false);
       });
     });
 
-    // 3. For any Advance TAKEN, deduct its amount from the target category's pending balance
-    // and add its amount to the target category's received balance!
-    payments.forEach(p => {
-      const monthMatch = selectedMonth === 'ALL' ? true : Number(p.month) === Number(selectedMonth);
-      const yearMatch = selectedYear === 'ALL' ? true : Number(p.year) === Number(selectedYear);
-      if (monthMatch && yearMatch) {
-        if ((p.category || '').toUpperCase() === 'ADVANCE' && p.details?.advanceType === 'TAKEN' && p.status === 'RECEIVED') {
-          const reason = (p.details?.advanceReason || p.details?.serviceName || '').toLowerCase();
-          let targetCatKey = '';
-          if (reason.includes('diesel') || reason.includes('ডিজেল')) targetCatKey = 'TRIP DIESEL';
-          else if (reason.includes('salary') || reason.includes('স্যালারি')) targetCatKey = 'SALARY';
-          else if (reason.includes('commission') || reason.includes('কমিশন')) targetCatKey = 'COMMISSION';
-          else if (reason.includes('friday') || reason.includes('ফ্রাইডে')) targetCatKey = 'FRIDAY';
-          else if (reason.includes('bonus') || reason.includes('বোনাস')) targetCatKey = 'BONUS';
-          else if (reason.includes('overtime') || reason.includes('ওভারটাইম')) targetCatKey = 'OVERTIME';
-          else if (reason.includes('extra fuel') || reason.includes('এক্সট্রা ফুয়েল') || reason.includes('extra_fuel')) targetCatKey = 'EXTRA FUEL';
-
-          if (targetCatKey) {
-            const pAmount = Number(p.amount) || 0;
-            if (!breakdown[targetCatKey]) {
-              breakdown[targetCatKey] = { pending: 0, received: 0 };
-            }
-            breakdown[targetCatKey].pending -= pAmount;
-            breakdown[targetCatKey].received += pAmount;
-          }
-        }
+    // 3. For any Advance TAKEN, deduct only the unadjusted active advance from the target category's pending balance
+    const categoriesToCheck = ['TRIP DIESEL', 'SALARY', 'COMMISSION', 'FRIDAY', 'BONUS', 'OVERTIME', 'EXTRA FUEL', 'OTHERS'];
+    categoriesToCheck.forEach(catKey => {
+      const unadjustedAdv = getCategoryUnadjustedAdvance(payments, catKey, selectedMonth, selectedYear);
+      if (!breakdown[catKey]) {
+        breakdown[catKey] = { pending: 0, received: 0 };
       }
+      breakdown[catKey].pending = Math.max(0, (breakdown[catKey].pending || 0) - unadjustedAdv);
     });
 
     return breakdown;
@@ -2361,7 +2412,25 @@ setShowUserRenewSelection(false);
         {/* Amount Card */}
         <div className="bg-theme-card px-4 py-4 rounded-[10px] shadow-sm space-y-4">
           <InputField 
-            label={t.LBL_AMOUNT || "Amount"}
+            label={language === 'bn' ? 'রিমাইনিং ব্যালেন্স' : 'Remaining Balance'}
+            name="remainingBalance"
+            type="tel"
+            inputMode="decimal"
+            value={formRemainingBalance}
+            onChange={(e) => handleRemainingBalanceChange(e.target.value)}
+          />
+
+          <InputField 
+            label={language === 'bn' ? 'অ্যাডভান্স' : 'Advance'}
+            name="advance"
+            type="tel"
+            inputMode="decimal"
+            value={formAdvance}
+            onChange={(e) => handleAdvanceChange(e.target.value)}
+          />
+
+          <InputField 
+            label={t.LBL_AMOUNT || (language === 'bn' ? 'অ্যামাউন্ট' : 'Amount')}
             name="amount"
             type="tel"
             inputMode="decimal"
@@ -5019,33 +5088,22 @@ setShowPendingBreakdown(false);
                     });
                   });
 
-                  // Subtract all categorized advances taken from their respective pending balances in localBreakdown
-                  payments.forEach(p => {
-                    const monthMatch = pendingListFilterMonth === 'ALL' ? true : Number(p.month) === Number(pendingListFilterMonth);
-                    const yearMatch = pendingListFilterYear === 'ALL' ? true : Number(p.year) === Number(pendingListFilterYear);
-                    if (monthMatch && yearMatch) {
-                      if ((p.category || '').toUpperCase() === 'ADVANCE' && p.details?.advanceType === 'TAKEN' && p.status === 'RECEIVED') {
-                        const reason = (p.details?.advanceReason || p.details?.serviceName || p.details?.note || '').toLowerCase();
-                        let targetKey = 'Others';
-                        if (reason.includes('diesel') || reason.includes('ডিজেল')) targetKey = 'Trip Diesel';
-                        else if (reason.includes('salary') || reason.includes('স্যালারি')) targetKey = 'Salary';
-                        else if (reason.includes('commission') || reason.includes('কমিশন')) targetKey = 'Commission';
-                        else if (reason.includes('friday') || reason.includes('ফ্রাইডে')) targetKey = 'Friday';
-                        else if (reason.includes('bonus') || reason.includes('বোনাস')) targetKey = 'Bonus';
-                        else if (reason.includes('overtime') || reason.includes('ওভারটাইম')) targetKey = 'Others';
-                        else if (reason.includes('extra fuel') || reason.includes('এক্সট্রা ফুয়েল') || reason.includes('extra_fuel')) targetKey = 'Vehicle Inspection';
-
-                        const pAmount = Number(p.amount) || 0;
-                        if (localBreakdown[targetKey] !== undefined) {
-                          localBreakdown[targetKey] -= pAmount;
-                        } else {
-                          localBreakdown['Others'] -= pAmount;
-                        }
-                      }
-                    }
+                  // Subtract unadjusted active advance taken from respective pending balances in localBreakdown
+                  Object.keys(localBreakdown).forEach(key => {
+                    const targetLookup = key === 'Vehicle Inspection' ? 'Extra Fuel' : key;
+                    const unadjustedAdv = getCategoryUnadjustedAdvance(payments, targetLookup, pendingListFilterMonth, pendingListFilterYear);
+                    localBreakdown[key] = Math.max(0, (localBreakdown[key] || 0) - unadjustedAdv);
                   });
 
                   let totalExcessDieselAdvance = 0;
+                  const dieselRawPending = matchingPending.reduce((sum, cp) => {
+                    const c = cp.categories.find((cat: any) => (cat.name || '').toLowerCase().includes('diesel'));
+                    return sum + (Number(c?.totalPending) || 0);
+                  }, 0);
+                  const dieselUnadjustedAdv = getCategoryUnadjustedAdvance(payments, 'Trip Diesel', pendingListFilterMonth, pendingListFilterYear);
+                  if (dieselUnadjustedAdv > dieselRawPending) {
+                    totalExcessDieselAdvance = dieselUnadjustedAdv - dieselRawPending;
+                  }
 
                   const filteredEntries = Object.entries(localBreakdown).filter(([category, amount]) => {
                     const defaultCategories = ['Salary', 'Commission', 'Trip Diesel', 'Friday', 'Bonus', 'Vehicle Inspection', 'Others'];
@@ -6200,7 +6258,7 @@ setShowTripDieselSubPage(false);
                             type="button"
                             disabled={!hasItems}
                             onClick={() => handleSubCatToggle(sub.key)}
-                            className={`flex items-center gap-2 px-3 py-2.5 rounded-2xl border text-left transition-all ${
+                            className={`flex items-center gap-2 px-3 py-2.5 rounded-[8px] border text-left transition-all ${
                               !hasItems 
                                 ? 'opacity-40 cursor-not-allowed bg-black/5 dark:bg-white/5 border-transparent text-text-muted' 
                                 : enabledSubCats[sub.key]
@@ -6234,7 +6292,7 @@ setShowTripDieselSubPage(false);
 
                 {/* Flat Trip Items list */}
                 <div className="space-y-3">
-                  <div className="bg-theme-card px-4 py-3 rounded-2xl shadow-sm flex justify-between items-center border border-black/5 dark:border-white/5">
+                  <div className="bg-theme-card px-4 py-3 rounded-[8px] shadow-sm flex justify-between items-center border border-black/5 dark:border-white/5">
                     <h4 className="text-[10px] font-black uppercase text-text-main tracking-widest">
                       Trip Wise Outstanding Dues ({groupedTripItems.length})
                     </h4>
@@ -6244,7 +6302,7 @@ setShowTripDieselSubPage(false);
                   </div>
 
                   {groupedTripItems.length === 0 ? (
-                    <div className="py-12 bg-theme-card text-center rounded-2xl text-text-muted opacity-50 flex flex-col items-center">
+                    <div className="py-12 bg-theme-card text-center rounded-[8px] text-text-muted opacity-50 flex flex-col items-center">
                       <AlertCircle size={32} />
                       <p className="text-xs font-bold mt-2">No pending {formCategory} dues available</p>
                     </div>
@@ -7697,6 +7755,10 @@ setShowTripDieselSubPage(false);
                     <button
                       onClick={() => {
                         setFormCategory(selectedTransaction.category);
+                        const adv = selectedTransaction.details?.advanceDeducted?.toString() || selectedTransaction.details?.advanceAmount?.toString() || '';
+                        const rem = selectedTransaction.details?.remainingBalance?.toString() || (adv ? (selectedTransaction.amount + parseFloat(adv)).toString() : selectedTransaction.amount.toString());
+                        setFormAdvance(adv);
+                        setFormRemainingBalance(rem);
                         setFormAmount(selectedTransaction.amount.toString());
                         setFormNote(selectedTransaction.details?.note || '');
                         setFormMethod(selectedTransaction.method);
@@ -7921,6 +7983,8 @@ setShowTripDieselSubPage(false);
           onClick={() => {
             setFormType('INCOME');
             setFormCategory('');
+            setFormRemainingBalance('');
+            setFormAdvance('');
             setFormAmount('');
             setFormNote('');
             setFormMethod('CASH');

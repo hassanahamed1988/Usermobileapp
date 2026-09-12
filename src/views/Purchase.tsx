@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { useStore ,GLOBAL_TRANSITION ,GLOBAL_VARIANTS } from '@/store';
 import { TRANSLATIONS } from '@/constants';
-import { Plus ,Users ,ShoppingCart ,User as UserIcon ,Phone ,Calendar ,Globe ,MapPin ,X ,Check ,Eye ,Trash2 ,Edit ,Power ,Scan ,Camera ,Download ,Banknote ,CreditCard ,ArrowLeft } from 'lucide-react';
+import { Plus ,Users ,ShoppingCart ,User as UserIcon ,Phone ,Calendar ,Globe ,MapPin ,X ,Check ,Eye ,Trash2 ,Edit ,Power ,Scan ,Camera ,Download ,Banknote ,CreditCard ,ArrowLeft ,ChevronDown ,CheckCircle2 ,Clock ,Store ,Package ,FileText } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import InputField, { InputFieldThemeContext } from '@/components/InputField';
 import GlobalFullscreenSelect from '@/components/GlobalFullscreenSelect';
@@ -19,50 +19,6 @@ import { FileOpener } from "@capacitor-community/file-opener";
 
 // Assuming we add Partner type to types later defining it here for now if needed.
 // Or we just save it to Firebase under 'partners' collection.
-
-interface SwipeToDeleteProps {
-  children: React.ReactNode;
-  onDelete: () => void;
-  disabled: boolean;
-  key?: React.Key;
-}
-
-function SwipeToDelete({ children ,onDelete ,disabled }: SwipeToDeleteProps) {
-  if (disabled) return <>{children}</>;
-
-  return (
-    <div className="relative overflow-hidden rounded-xl w-full">
-      {/* Behind background: Delete action */}
-      <div className="absolute inset-y-0 right-0 w-24 bg-rose-600 rounded-xl flex items-center justify-center text-white">
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          className="flex flex-col items-center justify-center w-full h-full text-white"
-        >
-          <Trash2 size={20} className="animate-pulse" />
-          <span className="text-[10px] font-black uppercase tracking-wider mt-1">Delete</span>
-        </button>
-      </div>
-
-      <motion.div
-        drag="x"
-        dragDirectionLock
-        dragConstraints={{ left: -96 ,right: 0 }}
-        dragElastic={{ left: 0.1 ,right: 0 }}
-        onDragEnd={(event, info) => {
-          if (info.offset.x < -60) {
-            onDelete();
-          }
-        }}
-        className="relative z-10 w-full"
-      >
-        {children}
-      </motion.div>
-    </div>
-  );
-}
 
 const SimpleInput = ({ 
   label 
@@ -126,7 +82,20 @@ const SimpleInput = ({
 import PartnerProfileCard from '@/components/PartnerProfileCard';
 
 export default function Purchase() {
-  const { language ,user ,isNightMode ,users ,showFeedback ,appThemeMode ,backgroundColor ,wallpaper ,confirmAction ,currentView ,setView ,goBack ,theme ,isDarkMode: storeIsDarkMode ,globalFilterMonth ,setGlobalFilterMonth ,globalFilterYear ,setGlobalFilterYear ,countries ,banks ,branches ,walletPaymentMethods } = useStore();
+  const { language ,user ,isNightMode ,users ,showFeedback ,appThemeMode ,backgroundColor ,wallpaper ,confirmAction ,currentView ,setView ,goBack ,theme ,isDarkMode: storeIsDarkMode ,globalFilterMonth ,setGlobalFilterMonth ,globalFilterYear ,setGlobalFilterYear ,countries ,banks ,branches ,walletPaymentMethods, activeSection, setActiveSection } = useStore();
+
+  React.useEffect(() => {
+    if (currentView === 'PURCHASE' && activeSection) {
+      if (activeSection === 'ADD_PARTNER') {
+        setIsUserListOpen(true);
+        setActiveSection(null);
+      } else if (activeSection === 'PARTNER_LIST') {
+        setIsPartnerListModalOpen(true);
+        setPartnerFilter('active');
+        setActiveSection(null);
+      }
+    }
+  }, [currentView, activeSection, setActiveSection]);
 
   React.useEffect(() => {
     const currentM = new Date().getMonth() + 1;
@@ -315,6 +284,8 @@ export default function Purchase() {
   const setSelectedYear = setGlobalFilterYear;
   const selectedMonth = globalFilterMonth;
   const setSelectedMonth = setGlobalFilterMonth;
+  const [isMonthSelectOpen, setIsMonthSelectOpen] = useState(false);
+  const [isYearSelectOpen, setIsYearSelectOpen] = useState(false);
   const [partners ,setPartners] = useState<any[]>([]);
   const [purchases ,setPurchases] = useState<any[]>([]);
   const [globalUsers ,setGlobalUsers] = useState<any[]>([]);
@@ -707,10 +678,10 @@ export default function Purchase() {
       window.addEventListener('close-permissions-overlay' ,handleBack);
       return () => {
         window.removeEventListener('close-permissions-overlay' ,handleBack);
-        window.dispatchEvent(new CustomEvent('change-title' ,{ detail: isPartnerListModalOpen || isAdmin ? 'Partner List' : null }));
+        window.dispatchEvent(new CustomEvent('change-title' ,{ detail: isPartnerListModalOpen || isAdmin ? 'Purchase' : null }));
       };
     } else if (isPartnerListModalOpen || isAdmin) {
-      window.dispatchEvent(new CustomEvent('change-title' ,{ detail: 'Partner List' }));
+      window.dispatchEvent(new CustomEvent('change-title' ,{ detail: 'Purchase' }));
       const handleBack = () => {
         if (isAdmin && !isPartnerListModalOpen) {
           goBack();
@@ -2270,12 +2241,29 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                       </span>
                     </p>
                   </div>
-                  <button 
-                    onClick={() => setIsPaymentDetailsOpen(false)}
-                    className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
-                  >
-                    <X size={18} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {livePayment && (isAdmin || 
+                      (isManager && livePayment?.userId && myAssignedPartnerUserIds.includes(String(livePayment?.userId))) || 
+                      ((user?.id === livePayment?.userId || user?.userId === livePayment?.userId) && livePayment?.status === 'pending')
+                    ) && (
+                      <button 
+                        onClick={() => {
+                          handleDeleteMessPayment(livePayment);
+                          setIsPaymentDetailsOpen(false);
+                        }}
+                        className="w-8 h-8 rounded-full bg-red-500/20 text-red-100 hover:bg-red-500/40 flex items-center justify-center transition-colors"
+                        title={language === 'bn' ? 'ডিলিট করুন' : 'Delete Payment'}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => setIsPaymentDetailsOpen(false)}
+                      className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-5 space-y-5">
@@ -2577,7 +2565,21 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                     <h3 className="text-lg font-black text-white">Purchase Details</h3>
                     <p className="text-xs text-indigo-100 mt-1">Status: <span className="text-white uppercase tracking-widest font-bold">{livePurchase?.status === 'approved' ? 'APPROVED' : (livePurchase?.status === 'rejected' ? 'REJECTED' : 'PENDING APPROVAL')}</span></p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
+                    {livePurchase && (isAdmin || (isManager && livePurchase?.userId && myAssignedPartnerUserIds.includes(String(livePurchase?.userId))) || ((user?.id === livePurchase?.userId || user?.userId === livePurchase?.userId) && livePurchase?.status !== 'approved')) && (
+                      <button 
+                        onClick={() => {
+                          if (window.confirm(language === 'bn' ? 'আপনি কি নিশ্চিত যে আপনি এই পারচেস রেকর্ডটি ডিলিট করতে চান?' : 'Are you sure you want to delete this purchase record?')) {
+                            deleteFirebaseDoc(getPurchaseSubPath(livePurchase?.userId), livePurchase?.id);
+                            setIsPendingDetailsModalOpen(false);
+                          }
+                        }}
+                        className="w-10 h-10 rounded-full bg-red-500/20 text-red-100 hover:bg-red-500/40 flex items-center justify-center transition-colors"
+                        title={language === 'bn' ? 'ডিলিট করুন' : 'Delete Purchase'}
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
                     <button 
                       onClick={() => handleDownloadInvoice(livePurchase)}
                       className="w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/30 transition-colors"
@@ -2795,39 +2797,31 @@ const fileName = `Invoice_${purchase.id}.pdf`;
         <div className="relative z-10 max-w-4xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-300">
           
           {/* Status Toggle Card */}
-          {isAdmin && (
-            <div className={`border border-white/10 rounded-[12px] p-1 shadow-xl relative overflow-hidden ${isDarkMode ? 'bg-[#121212]' : 'bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a]'}`}>
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/10 rounded-full blur-[60px]"></div>
-              <div className="flex relative z-10 bg-black/20 rounded-xl border border-white/5">
-                <button
-                  onClick={() => setPartnerFilter('active')}
-                  className={`flex-1 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-lg transition-all relative ${partnerFilter === 'active' ? 'text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
-                >
-                  {partnerFilter === 'active' && (
-                    <div
-                      
-                      className="absolute inset-0 bg-white/10 border border-white/10 rounded-lg -z-10"
-                      
-                    />
-                  )}
-                  Active Partner
-                </button>
-                <button
-                  onClick={() => setPartnerFilter('inactive')}
-                  className={`flex-1 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-lg transition-all relative ${partnerFilter === 'inactive' ? 'text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
-                >
-                  {partnerFilter === 'inactive' && (
-                    <div
-                      
-                      className="absolute inset-0 bg-white/10 border border-white/10 rounded-lg -z-10"
-                      
-                    />
-                  )}
-                  Inactive Partner
-                </button>
-              </div>
-            </div>
-          )}
+          <div 
+            className="bg-white dark:bg-[#121212] rounded-[8px] p-1.5 shadow-[var(--dynamic-card-shadow)] relative flex gap-1.5"
+            style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
+          >
+            <button
+              onClick={() => setPartnerFilter('active')}
+              className={`flex-1 py-2 md:py-2.5 text-xs md:text-sm font-black rounded-[6px] transition-all duration-200 ${
+                partnerFilter === 'active' 
+                  ? 'bg-purple-600 text-white shadow-sm' 
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+              }`}
+            >
+              Active Partner
+            </button>
+            <button
+              onClick={() => setPartnerFilter('inactive')}
+              className={`flex-1 py-2 md:py-2.5 text-xs md:text-sm font-black rounded-[6px] transition-all duration-200 ${
+                partnerFilter === 'inactive' 
+                  ? 'bg-purple-600 text-white shadow-sm' 
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+              }`}
+            >
+              Inactive Partner
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredPartners.map(partner => {
@@ -2858,13 +2852,13 @@ const fileName = `Invoice_${purchase.id}.pdf`;
 
               if (balance > 0) {
                 balanceStr = `Plus (+${balance.toFixed(2)})`;
-                balanceClass = "text-emerald-400";
+                balanceClass = "text-emerald-600 dark:text-emerald-400";
               } else if (balance < 0) {
                 balanceStr = `Minus (${balance.toFixed(2)})`;
-                balanceClass = "text-rose-400";
+                balanceClass = "text-rose-600 dark:text-rose-400";
               } else {
                 balanceStr = "0.00";
-                balanceClass = "text-slate-400";
+                balanceClass = "text-text-muted";
               }
 
               // Retrieve mobile and avatar from either partner record or the linked user record
@@ -2872,24 +2866,26 @@ const fileName = `Invoice_${purchase.id}.pdf`;
               const partnerAvatar = partner.avatar || partnerUser?.avatar;
 
               return (
-                <div key={partner.id} className={`relative overflow-hidden rounded-[12px] flex flex-col group text-white shadow-xl border border-white/10 ${isDarkMode ? 'bg-[#121212]' : 'bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a]'}`}>
-                  {/* Visual accents */}
-                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/10 rounded-full blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  
+                <div 
+                  key={partner.id} 
+                  className="relative overflow-hidden rounded-[12px] flex flex-col group bg-theme-card border border-[var(--dynamic-card-border)] shadow-[var(--dynamic-card-shadow)] text-text-main transition-all hover:shadow-md"
+                  style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
+                >
                   {/* View Icon */}
                   <button 
                     onClick={() => {
                       setSelectedPartnerProfile(partner);
                       setIsPartnerProfileModalOpen(true);
                     }}
-                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/5 hover:bg-white/20 border border-white/10 flex items-center justify-center transition-colors z-20 text-white/70 hover:text-white"
+                    className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 border border-slate-200 dark:border-white/10 flex items-center justify-center transition-colors z-20 text-text-muted hover:text-text-main shadow-xs"
+                    title="View Details"
                   >
-                    <Eye size={14} />
+                    <Eye size={15} />
                   </button>
 
                   {/* Profile Header */}
                   <div className="p-5 flex items-center gap-4 relative z-10">
-                    <div className="w-16 h-16 rounded-[12px] bg-white/5 text-purple-400 flex items-center justify-center shrink-0 overflow-hidden border-2 border-white/10 shadow-md group-hover:scale-105 transition-transform duration-300">
+                    <div className="w-16 h-16 rounded-[12px] bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 overflow-hidden border-2 border-purple-500/20 shadow-sm group-hover:scale-105 transition-transform duration-300">
                       {partnerAvatar ? (
                         <img src={partnerAvatar} alt={partner.name} className="w-full h-full object-cover" />
                       ) : (
@@ -2897,36 +2893,24 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                       )}
                     </div>
                     <div className="flex-1 min-w-0 pr-8">
-                      <h4 className="font-black text-white text-lg truncate">{partner.name}</h4>
-                      <p className="text-xs font-medium text-slate-300 mt-0.5 truncate flex items-center gap-1.5">
-                        <Phone size={12} />
+                      <h4 className="font-black text-text-main text-lg truncate">{partner.name}</h4>
+                      <p className="text-xs font-medium text-text-muted mt-1 truncate flex items-center gap-1.5">
+                        <Phone size={13} className="text-purple-500 shrink-0" />
                         {partnerMobile}
                       </p>
-                      {partner.partnerId && (
-                        <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider bg-white/5 inline-block px-1.5 py-0.5 rounded border border-white/5 font-mono">
-                          ID: {partner.partnerId}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-1 bg-white/5 rounded-md text-slate-300 border border-white/10 flex items-center gap-1">
-                          <Globe size={10} />
-                          {partner.nationality || 'Unknown'}
-                        </span>
-                      </div>
                     </div>
                   </div>
                   
                   {/* Account Card (Expense Calculation) */}
                   {!isAdmin && (
-                    <div className="p-4 bg-black/20 border-t border-white/10 mt-auto relative z-10">
-                      <div className="flex items-center justify-between mb-3 px-1">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Purchase</span>
-                        <span className="font-bold text-sm text-white">{partnerTotal.toFixed(2)} <span className="text-[10px] text-slate-400">QAR</span></span>
+                    <div className="p-3.5 bg-slate-50/80 dark:bg-white/5 border-t border-[var(--dynamic-card-border)] mt-auto relative z-10">
+                      <div className="flex items-center justify-between mb-2.5 px-0.5">
+                        <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Total Purchase</span>
+                        <span className="font-black text-sm text-text-main">{partnerTotal.toFixed(2)} <span className="text-[10px] text-text-muted">QAR</span></span>
                       </div>
                       
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 shadow-inner relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest relative z-10">Mess Balance</span>
+                      <div className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-white/5 border border-slate-200/80 dark:border-white/10 shadow-xs relative overflow-hidden">
+                        <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest relative z-10">Mess Balance</span>
                         <span className={`font-black text-sm relative z-10 ${balanceClass}`}>
                           {balanceStr}
                         </span>
@@ -2939,16 +2923,14 @@ const fileName = `Invoice_${purchase.id}.pdf`;
           </div>
         </div>
 
-        {isAdmin && (
-          <div className="fixed bottom-[calc(85px+env(safe-area-inset-bottom))] right-6 z-40">
-            <button
-              onClick={handleOpenNewPartner}
-              className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-xl transition-transform active:scale-95"
-            >
-              <Plus size={24} className="stroke-[3px]" />
-            </button>
-          </div>
-        )}
+        <div className="fixed bottom-[calc(85px+env(safe-area-inset-bottom))] right-6 z-40">
+          <button
+            onClick={handleOpenNewPartner}
+            className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-xl transition-transform active:scale-95"
+          >
+            <Plus size={24} className="stroke-[3px]" />
+          </button>
+        </div>
 
         {renderModals()}
       </div>
@@ -3192,93 +3174,136 @@ const fileName = `Invoice_${purchase.id}.pdf`;
       <div className="relative z-10 max-w-4xl mx-auto space-y-6">
         
         {/* Main Summary Card */}
-        <div className="relative overflow-hidden rounded-xl p-6 md:p-8 flex flex-col justify-center text-white shadow-xl bg-[#6a24ff] border border-white/20 backdrop-blur-md min-h-[160px]">
+        <div 
+          className="relative overflow-hidden rounded-2xl p-5 min-h-[190px] md:min-h-[220px] flex flex-col justify-between bg-theme-card border border-[var(--dynamic-card-border)] shadow-[var(--dynamic-card-shadow)] transition-colors duration-200"
+        >
           {/* Visual accents */}
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-[80px]"></div>
-          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-black/10 rounded-full blur-[80px]"></div>
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-purple-500/5 dark:bg-purple-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none"></div>
           
-          {/* Date Filter Header */}
-          <style>{`
-            select.summary-date-select {
-              color: #ffffff !important;
-              -webkit-text-fill-color: #ffffff !important;
-              background-color: rgba(255 255 255 0.15) !important;
-            }
-            select.summary-date-select option {
-              color: #000000 !important;
-              -webkit-text-fill-color: #000000 !important;
-              background-color: #ffffff !important;
-            }
-          `}</style>
-          <div className="relative z-10 flex justify-between items-center mb-6 px-2">
-            <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white/90">Summary</h2>
-            <div className="flex gap-2 items-center">
-              <select 
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                className="summary-date-select border border-white/20 text-xs font-bold rounded-lg px-3 py-1.5 outline-none cursor-pointer shadow-sm"
-                style={{ WebkitAppearance: 'none' ,appearance: 'none' ,backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")' ,backgroundRepeat: 'no-repeat' ,backgroundPosition: 'right .7em top 50%' ,backgroundSize: '.65em auto' ,paddingRight: '1.8rem' }}
-              >
-                <option value="ALL">{language === 'bn' ? 'সব মাস' : 'All Month'}</option>
-                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                  <option key={m} value={m}>{new Date(0, m - 1).toLocaleString('default' ,{ month: 'short' })}</option>
-                ))}
-              </select>
-              <select 
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                className="summary-date-select border border-white/20 text-xs font-bold rounded-lg px-3 py-1.5 outline-none cursor-pointer shadow-sm"
-                style={{ WebkitAppearance: 'none' ,appearance: 'none' ,backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")' ,backgroundRepeat: 'no-repeat' ,backgroundPosition: 'right .7em top 50%' ,backgroundSize: '.65em auto' ,paddingRight: '1.8rem' }}
-              >
-                <option value="ALL">{language === 'bn' ? 'সব বছর' : 'All Years'}</option>
-                {[...Array(5)].map((_, i) => {
-                  const y = new Date().getFullYear() - 2 + i;
-                  return <option key={y} value={y}>{y}</option>;
-                })}
-              </select>
+          <div className="relative z-10 space-y-4 flex-1 flex flex-col justify-between">
+            {/* Top Row: Date Selectors & Actions */}
+            <div className="flex items-center justify-between">
+              <div className="flex gap-2 items-center">
+                <button
+                  type="button"
+                  onClick={() => setIsMonthSelectOpen(true)}
+                  className="bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-text-main transition-all border border-black/5 dark:border-white/10 flex items-center gap-1.5 active:scale-95 shadow-xs cursor-pointer"
+                >
+                  <span>{selectedMonth === 'ALL' ? (language === 'bn' ? 'সব মাস' : 'All Month') : new Date(0, (typeof selectedMonth === 'number' ? selectedMonth : 1) - 1).toLocaleString('default', { month: 'long' })}</span>
+                  <ChevronDown size={12} className="text-text-muted" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsYearSelectOpen(true)}
+                  className="bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-text-main transition-all border border-black/5 dark:border-white/10 flex items-center gap-1.5 active:scale-95 shadow-xs cursor-pointer"
+                >
+                  <span>{selectedYear === 'ALL' ? (language === 'bn' ? 'সব বছর' : 'All Years') : selectedYear}</span>
+                  <ChevronDown size={12} className="text-text-muted" />
+                </button>
+
+                <GlobalFullscreenSelect
+                  isOpen={isYearSelectOpen}
+                  onClose={() => setIsYearSelectOpen(false)}
+                  onSelect={(val) => {
+                    setSelectedYear(val === 'ALL' ? 'ALL' : parseInt(val));
+                    setIsYearSelectOpen(false);
+                  }}
+                  options={[
+                    { label: language === 'bn' ? 'সব বছর' : 'All Years', value: 'ALL' },
+                    ...[...Array(5)].map((_, i) => {
+                      const y = new Date().getFullYear() - 2 + i;
+                      return { label: String(y), value: String(y) };
+                    })
+                  ]}
+                  title={language === 'bn' ? 'বছর নির্বাচন করুন' : 'Select Year'}
+                  selectedValue={String(selectedYear)}
+                  searchable={false}
+                />
+
+                <GlobalFullscreenSelect
+                  isOpen={isMonthSelectOpen}
+                  onClose={() => setIsMonthSelectOpen(false)}
+                  onSelect={(val) => {
+                    setSelectedMonth(val === 'ALL' ? 'ALL' : parseInt(val));
+                    setIsMonthSelectOpen(false);
+                  }}
+                  options={[
+                    { label: language === 'bn' ? 'সব মাস' : 'All Month', value: 'ALL' },
+                    ...Array.from({ length: 12 }, (_, i) => i + 1).map(m => ({
+                      label: new Date(0, m - 1).toLocaleString('default', { month: 'long' }),
+                      value: String(m)
+                    }))
+                  ]}
+                  title={language === 'bn' ? 'মাস নির্বাচন করুন' : 'Select Month'}
+                  selectedValue={String(selectedMonth)}
+                  searchable={false}
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsDownloadModalOpen(true)}
+                  className="w-10 h-10 flex items-center justify-center bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-text-main rounded-xl transition-all border border-black/5 dark:border-white/10 shadow-xs active:scale-95 cursor-pointer"
+                  title="Download Statement"
+                >
+                  <Download size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Bottom Row: Total Partner & Total Purchase */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Total Partner */}
               <button
-                onClick={() => setIsDownloadModalOpen(true)}
-                className="p-1.5 bg-black/20 hover:bg-black/30 text-white rounded-lg transition-colors border border-white/20 ml-1"
+                type="button"
+                onClick={() => setIsPartnerListModalOpen(true)}
+                className="group relative overflow-hidden flex flex-col items-start justify-between min-h-[96px] md:min-h-[112px] p-4 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-600 border border-indigo-400/20 text-left shadow-lg active:scale-95 transition-all cursor-pointer"
               >
-                <Download size={16} />
+                <div className="absolute right-[-16px] bottom-[-16px] opacity-15 pointer-events-none scale-100 group-hover:scale-110 transition-transform duration-300">
+                  <Users size={80} strokeWidth={1.5} className="text-white" />
+                </div>
+                <div className="relative z-10 w-full h-full flex flex-col justify-between">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white/60 shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>
+                    <span className="text-[8px] font-black uppercase tracking-wider text-indigo-100 whitespace-nowrap">
+                      {language === 'bn' ? 'মোট পার্টনার' : 'Total Partner'}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-2xl font-black tracking-tighter text-white drop-shadow-sm">{accessiblePartners.length}</span>
+                  </div>
+                </div>
               </button>
-            </div>
-          </div>
 
-          <div className="flex gap-4 w-full">
-            {/* Total Partner */}
-            <div 
-              className="flex-1 relative z-10 text-center bg-black/10 hover:bg-black/20 border border-white/10 rounded-xl cursor-pointer transition-colors py-4 shadow-sm"
-              onClick={() => setIsPartnerListModalOpen(true)}
-            >
-               <div className="flex flex-col items-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center border border-white/30">
-                     <Users className="w-5 h-5 text-white" />
+              {/* Total Purchase */}
+              <div
+                className="group relative overflow-hidden flex flex-col items-start justify-between min-h-[96px] md:min-h-[112px] p-4 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 border border-emerald-400/20 text-left shadow-lg"
+              >
+                <div className="absolute right-[-16px] bottom-[-16px] opacity-15 pointer-events-none scale-100">
+                  <ShoppingCart size={80} strokeWidth={1.5} className="text-white" />
+                </div>
+                <div className="relative z-10 w-full h-full flex flex-col justify-between">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white/60 shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>
+                    <span className="text-[8px] font-black uppercase tracking-wider text-emerald-100 whitespace-nowrap">
+                      {language === 'bn' ? 'মোট পারচেস' : 'Total Purchase'}
+                    </span>
                   </div>
-                  <div>
-                     <p className="text-[10px] font-black uppercase tracking-widest text-white/80">Total Partner</p>
-                     <p className="text-2xl font-black mt-1 text-white">{accessiblePartners.length}</p>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-2xl font-black tracking-tighter text-white drop-shadow-sm">{totalPurchaseAmount}</span>
+                    <span className="text-[10px] font-black text-emerald-100/70">QAR</span>
                   </div>
-               </div>
-            </div>
-
-            {/* Total Purchase */}
-            <div className="flex-1 relative z-10 text-center bg-black/10 border border-white/10 rounded-xl py-4 shadow-sm">
-               <div className="flex flex-col items-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center border border-white/30">
-                     <ShoppingCart className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                     <p className="text-[10px] font-black uppercase tracking-widest text-white/80">Total Purchase</p>
-                     <p className="text-2xl font-black mt-1 text-white">{totalPurchaseAmount} <span className="text-sm text-white/90">QAR</span></p>
-                  </div>
-               </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Animated Tabs */}
-        <div className="bg-card-bg rounded-xl p-1.5 flex border border-border-main/50 relative shadow-sm">
+        <div className="bg-card-bg rounded-xl p-1.5 flex border border-border-main/50 relative shadow-[var(--dynamic-card-shadow)]">
           <div 
             className="absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-gradient-to-r from-purple-500/10 to-indigo-500/10 dark:from-purple-500/20 dark:to-indigo-500/20 rounded-lg transition-transform duration-300 ease-out border border-purple-500/20"
             style={{ transform: activeTab === 'history' ? 'translateX(0)' : 'translateX(100%)' ,left: '6px' }}
@@ -3287,13 +3312,13 @@ const fileName = `Invoice_${purchase.id}.pdf`;
             onClick={() => setActiveTab('history')}
             className={`flex-1 py-2.5 text-xs font-bold rounded-lg relative z-10 transition-colors uppercase tracking-wider ${activeTab === 'history' ? 'text-purple-600 dark:text-purple-400' : 'text-text-muted hover:text-text-main'}`}
           >
-            Transaction History
+            {language === 'bn' ? 'পারচেস হিস্টরি' : 'Purchase History'}
           </button>
           <button
             onClick={() => setActiveTab('pending')}
             className={`flex-1 py-2.5 text-xs font-bold rounded-lg relative z-10 transition-colors uppercase tracking-wider ${activeTab === 'pending' ? 'text-indigo-600 dark:text-indigo-400' : 'text-text-muted hover:text-text-main'}`}
           >
-            Pending
+            {language === 'bn' ? 'পেন্ডিং' : 'Pending'}
           </button>
         </div>
 
@@ -3303,11 +3328,7 @@ const fileName = `Invoice_${purchase.id}.pdf`;
             {activeTab === 'history' && (
               <div
                 key="history"
-                
-                
-                
-                
-                className="space-y-3"
+                className="space-y-2.5"
               >
                 {combinedHistory.length > 0 ? (
                   combinedHistory.map(item => {
@@ -3316,80 +3337,107 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                     
                     if (item.type === 'BILL_PAYMENT') {
                       return (
-                        <SwipeToDelete
+                        <div 
                           key={item.id}
-                          disabled={!(isAdmin || (isManager && item.userId && myAssignedPartnerUserIds.includes(String(item.userId))))}
-                          onDelete={() => handleDeleteMessPayment(item)}
+                          onClick={() => {
+                            setSelectedPayment(item);
+                            setIsPaymentDetailsOpen(true);
+                          }}
+                          className="bg-theme-card border border-[var(--dynamic-card-border)] rounded-xl p-3.5 sm:p-4 shadow-[var(--dynamic-card-shadow)] cursor-pointer active:scale-[0.99] transition-all hover:shadow-md relative overflow-hidden flex items-center gap-3.5 sm:gap-4"
+                          style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
                         >
-                          <div 
-                            onClick={() => {
-                              setSelectedPayment(item);
-                              setIsPaymentDetailsOpen(true);
-                            }}
-                            className="bg-card-bg border border-border-main/50 rounded-xl p-0 shadow-sm cursor-pointer active:scale-[0.98] transition-transform hover:shadow-md overflow-hidden"
-                            style={{ backgroundColor: isDarkMode ? '#121212' : undefined }}
-                          >
-                            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3 flex justify-between items-center">
-                              <div>
-                                <p className="font-black text-white text-sm">{partnerName}</p>
-                                <p className="text-[10px] text-white/80">{item.date} • {item.time} • {language === 'bn' ? 'বিল পেমেন্ট' : 'Bill Payment'}</p>
-                              </div>
-                              <div className="bg-white/10 text-white font-bold text-[10px] uppercase px-2 py-0.5 rounded border border-white/10">
-                                {item.method}
-                              </div>
+                          {/* Left Payment Icon with equal space on top, bottom, and left */}
+                          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
+                            <CreditCard size={22} className="stroke-[2.2]" />
+                          </div>
+
+                          {/* Center Details with equal spacing top/middle/bottom */}
+                          <div className="flex-1 min-w-0 h-12 flex flex-col justify-between py-0.5">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <p className="font-black text-text-main text-sm truncate leading-tight">{partnerName}</p>
+                              <span className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 shrink-0 leading-none">
+                                <CheckCircle2 size={10} className="stroke-[2.5]" />
+                                {language === 'bn' ? 'অনুমোদিত' : 'Approved'}
+                              </span>
                             </div>
-                            <div className={`p-4 flex justify-between items-center ${isDarkMode ? 'bg-transparent' : 'bg-background-main/30'}`}>
-                              <div>
-                                <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{t('REMARKS')}</p>
-                                <p className="font-bold text-text-main text-sm mt-0.5 truncate max-w-[200px]">{item.remarks || 'No remarks'}</p>
-                                {item.transactionId && (
-                                  <p className="text-[9px] text-text-muted mt-1 font-mono">TXN: {item.transactionId}</p>
-                                )}
-                              </div>
-                              <div className="text-right">
-                                <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{language === 'bn' ? 'পরিশোধিত' : 'Paid Amount'}</p>
-                                <p className="font-black text-emerald-600 dark:text-emerald-400 text-lg mt-0.5">+{item.amount} <span className="text-xs">QAR</span></p>
-                              </div>
+
+                            <div className="flex items-center gap-2 text-[11px] text-text-muted leading-tight flex-wrap">
+                              <span className="flex items-center gap-1 shrink-0 font-medium">
+                                <Calendar size={12} className="text-slate-400" />
+                                {item.date} • {item.time}
+                              </span>
+                              <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 text-[10px] bg-emerald-500/10 px-1.5 py-0.2 rounded shrink-0">
+                                {item.method || (language === 'bn' ? 'বিল পেমেন্ট' : 'Bill Payment')}
+                              </span>
+                              {item.remarks && (
+                                <span className="flex items-center gap-1 truncate text-text-muted text-[10px] max-w-[120px]">
+                                  <FileText size={10} className="text-slate-400 shrink-0" />
+                                  <span className="truncate">{item.remarks}</span>
+                                </span>
+                              )}
                             </div>
                           </div>
-                        </SwipeToDelete>
+
+                          {/* Right Side: Vertically Centered Amount */}
+                          <div className="text-right shrink-0 h-12 flex items-center justify-center pl-1 my-auto">
+                            <span className="font-black text-emerald-600 dark:text-emerald-400 text-base md:text-lg whitespace-nowrap leading-none">
+                              +{item.amount} <span className="text-[10px] font-bold text-text-muted">QAR</span>
+                            </span>
+                          </div>
+                        </div>
                       );
                     }
 
                     return (
-                    <SwipeToDelete
-                      key={item.id}
-                      disabled={!(isAdmin || (isManager && item.userId && myAssignedPartnerUserIds.includes(String(item.userId))))}
-                      onDelete={() => handleDeletePurchase(item)}
-                    >
                       <div 
+                        key={item.id}
                         onClick={() => {
                           setSelectedPendingPurchase(item);
                           setIsPendingDetailsModalOpen(true);
                         }}
-                        className="bg-card-bg border border-border-main/50 rounded-xl p-0 shadow-sm cursor-pointer active:scale-[0.98] transition-transform hover:shadow-md overflow-hidden"
-                        style={{ backgroundColor: isDarkMode ? '#121212' : undefined }}
+                        className="bg-theme-card border border-[var(--dynamic-card-border)] rounded-xl p-3.5 sm:p-4 shadow-[var(--dynamic-card-shadow)] cursor-pointer active:scale-[0.99] transition-all hover:shadow-md relative overflow-hidden flex items-center gap-3.5 sm:gap-4"
+                        style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
                       >
-                        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3">
-                          <p className="font-black text-white text-sm">{partnerName}</p>
-                          <p className="text-[10px] text-white/80">{item.date} • {item.time} • {item.hypermarketName || 'Unknown Hypermarket'}</p>
+                        {/* Left Marketing Icon with equal space on top, bottom, and left */}
+                        <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 border border-purple-500/20">
+                          <ShoppingCart size={22} className="stroke-[2.2]" />
                         </div>
-                        <div className={`p-4 flex justify-between items-center ${isDarkMode ? 'bg-transparent' : 'bg-background-main/30'}`}>
-                          <div>
-                            <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Total Item Count</p>
-                            <p className="font-bold text-text-main text-sm mt-0.5">{item.items?.length || 0} Items</p>
+
+                        {/* Center Details with equal spacing top/middle/bottom */}
+                        <div className="flex-1 min-w-0 h-12 flex flex-col justify-between py-0.5">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <p className="font-black text-text-main text-sm truncate leading-tight">{partnerName}</p>
+                            <span className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 shrink-0 leading-none">
+                              <CheckCircle2 size={10} className="stroke-[2.5]" />
+                              {language === 'bn' ? 'অনুমোদিত' : 'Approved'}
+                            </span>
                           </div>
-                          <div className="text-right">
-                            <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Total Amount</p>
-                            <p className="font-black text-purple-600 dark:text-purple-400 text-lg mt-0.5">{item.amount} <span className="text-xs">QAR</span></p>
+
+                          <div className="flex items-center gap-1.5 text-[11px] text-text-muted leading-tight flex-wrap">
+                            <span className="flex items-center gap-1 shrink-0 font-medium">
+                              <Calendar size={12} className="text-slate-400" />
+                              {item.date} • {item.time}
+                            </span>
+                            <span className="text-slate-300 dark:text-slate-600">•</span>
+                            <span className="flex items-center gap-1 font-semibold text-purple-600 dark:text-purple-400 shrink-0">
+                              <Package size={11} className="shrink-0" />
+                              <span>{item.items?.length || 0} {language === 'bn' ? 'আইটেম' : 'Items'}</span>
+                            </span>
                           </div>
+                        </div>
+
+                        {/* Right Side: Vertically Centered Amount */}
+                        <div className="text-right shrink-0 h-12 flex items-center justify-center pl-1 my-auto">
+                          <span className="font-black text-purple-600 dark:text-purple-400 text-base md:text-lg whitespace-nowrap leading-none">
+                            {item.amount} <span className="text-[10px] font-bold text-text-muted">QAR</span>
+                          </span>
                         </div>
                       </div>
-                    </SwipeToDelete>
-                  )})
+                    );
+                  })
                 ) : (
-                  <div className="text-center py-12 border border-dashed border-border-main/50 rounded-xl bg-background-main/50">
-                    <p className="text-text-muted text-sm font-bold">No Transaction History</p>
+                  <div className="text-center py-12 border border-dashed border-border-main/50 rounded-xl bg-card-bg shadow-[var(--dynamic-card-shadow)]">
+                    <p className="text-text-muted text-sm font-bold">{language === 'bn' ? 'কোন পারচেস হিস্টরি পাওয়া যায়নি' : 'No Purchase History'}</p>
                   </div>
                 )}
               </div>
@@ -3398,11 +3446,7 @@ const fileName = `Invoice_${purchase.id}.pdf`;
             {activeTab === 'pending' && (
               <div
                 key="pending"
-                
-                
-                
-                
-                className="space-y-3"
+                className="space-y-2.5"
               >
                 {combinedPending.length > 0 ? (
                   combinedPending.map(item => {
@@ -3411,74 +3455,106 @@ const fileName = `Invoice_${purchase.id}.pdf`;
 
                     if (item.type === 'BILL_PAYMENT') {
                       return (
-                        <SwipeToDelete
+                        <div 
                           key={item.id}
-                          disabled={!(isAdmin || (isManager && item.userId && myAssignedPartnerUserIds.includes(String(item.userId))))}
-                          onDelete={() => handleDeleteMessPayment(item)}
+                          onClick={() => {
+                            setSelectedPayment(item);
+                            setIsPaymentDetailsOpen(true);
+                          }}
+                          className="bg-theme-card border border-[var(--dynamic-card-border)] rounded-xl p-3.5 sm:p-4 shadow-[var(--dynamic-card-shadow)] cursor-pointer active:scale-[0.99] transition-all hover:shadow-md relative overflow-hidden flex items-center gap-3.5 sm:gap-4"
+                          style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
                         >
-                          <div 
-                            onClick={() => {
-                              setSelectedPayment(item);
-                              setIsPaymentDetailsOpen(true);
-                            }}
-                            className="bg-card-bg border border-emerald-500/30 rounded-xl p-0 shadow-sm relative overflow-hidden cursor-pointer active:scale-[0.98] transition-transform hover:shadow-md"
-                            style={{ backgroundColor: isDarkMode ? '#121212' : undefined }}
-                          >
-                            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3 relative">
-                              <div className="absolute top-0 right-0 px-3 py-1 bg-white/20 text-white text-[10px] font-black uppercase rounded-bl-lg backdrop-blur-md">Pending</div>
-                              <p className="font-black text-white text-sm pr-16">{partnerName}</p>
-                              <p className="text-[10px] text-white/80">{item.date} • {item.time} • {language === 'bn' ? 'বিল পেমেন্ট' : 'Bill Payment'}</p>
+                          {/* Left Payment Icon with equal space on top, bottom, and left */}
+                          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
+                            <CreditCard size={22} className="stroke-[2.2]" />
+                          </div>
+
+                          {/* Center Details with equal spacing top/middle/bottom */}
+                          <div className="flex-1 min-w-0 h-12 flex flex-col justify-between py-0.5">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <p className="font-black text-text-main text-sm truncate leading-tight">{partnerName}</p>
+                              <span className="inline-flex items-center gap-1 text-[9px] font-black text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 shrink-0 leading-none">
+                                <Clock size={10} className="stroke-[2.5]" />
+                                {language === 'bn' ? 'পেন্ডিং' : 'Pending'}
+                              </span>
                             </div>
-                            <div className={`p-4 flex justify-between items-center ${isDarkMode ? 'bg-transparent' : 'bg-background-main/30'}`}>
-                              <div>
-                                <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{t('REMARKS')}</p>
-                                <p className="font-bold text-text-main text-sm mt-0.5 truncate max-w-[200px]">{item.remarks || 'No remarks'}</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{language === 'bn' ? 'পরিশোধিত' : 'Paid Amount'}</p>
-                                <p className="font-black text-emerald-600 dark:text-emerald-400 text-lg mt-0.5">+{item.amount} <span className="text-xs">QAR</span></p>
-                              </div>
+
+                            <div className="flex items-center gap-2 text-[11px] text-text-muted leading-tight flex-wrap">
+                              <span className="flex items-center gap-1 shrink-0 font-medium">
+                                <Calendar size={12} className="text-slate-400" />
+                                {item.date} • {item.time}
+                              </span>
+                              <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 text-[10px] bg-emerald-500/10 px-1.5 py-0.2 rounded shrink-0">
+                                {item.method || (language === 'bn' ? 'বিল পেমেন্ট' : 'Bill Payment')}
+                              </span>
+                              {item.remarks && (
+                                <span className="flex items-center gap-1 truncate text-text-muted text-[10px] max-w-[120px]">
+                                  <FileText size={10} className="text-slate-400 shrink-0" />
+                                  <span className="truncate">{item.remarks}</span>
+                                </span>
+                              )}
                             </div>
                           </div>
-                        </SwipeToDelete>
+
+                          {/* Right Side: Vertically Centered Amount */}
+                          <div className="text-right shrink-0 h-12 flex items-center justify-center pl-1 my-auto">
+                            <span className="font-black text-emerald-600 dark:text-emerald-400 text-base md:text-lg whitespace-nowrap leading-none">
+                              +{item.amount} <span className="text-[10px] font-bold text-text-muted">QAR</span>
+                            </span>
+                          </div>
+                        </div>
                       );
                     }
 
                     return (
-                      <SwipeToDelete
+                      <div 
                         key={item.id}
-                        disabled={!(isAdmin || (isManager && item.userId && myAssignedPartnerUserIds.includes(String(item.userId))))}
-                        onDelete={() => handleDeletePurchase(item)}
+                        onClick={() => {
+                          setSelectedPendingPurchase(item);
+                          setIsPendingDetailsModalOpen(true);
+                        }}
+                        className="bg-theme-card border border-[var(--dynamic-card-border)] rounded-xl p-3.5 sm:p-4 shadow-[var(--dynamic-card-shadow)] cursor-pointer active:scale-[0.99] transition-all hover:shadow-md relative overflow-hidden flex items-center gap-3.5 sm:gap-4"
+                        style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
                       >
-                        <div 
-                          onClick={() => {
-                            setSelectedPendingPurchase(item);
-                            setIsPendingDetailsModalOpen(true);
-                          }}
-                          className="bg-card-bg border border-indigo-500/30 rounded-xl p-0 shadow-sm relative overflow-hidden cursor-pointer active:scale-[0.98] transition-transform hover:shadow-md"
-                          style={{ backgroundColor: isDarkMode ? '#121212' : undefined }}
-                        >
-                          <div className="bg-gradient-to-r from-indigo-500 to-purple-500 px-4 py-3 relative">
-                            <div className="absolute top-0 right-0 px-3 py-1 bg-white/20 text-white text-[10px] font-black uppercase rounded-bl-lg backdrop-blur-md">Pending</div>
-                            <p className="font-black text-white text-sm pr-16">{partnerName}</p>
-                            <p className="text-[10px] text-white/80">{item.date} • {item.time} • {item.hypermarketName || 'Unknown Hypermarket'}</p>
+                        {/* Left Marketing Icon with equal space on top, bottom, and left */}
+                        <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 border border-purple-500/20">
+                          <ShoppingCart size={22} className="stroke-[2.2]" />
+                        </div>
+
+                        {/* Center Details with equal spacing top/middle/bottom */}
+                        <div className="flex-1 min-w-0 h-12 flex flex-col justify-between py-0.5">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <p className="font-black text-text-main text-sm truncate leading-tight">{partnerName}</p>
+                            <span className="inline-flex items-center gap-1 text-[9px] font-black text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 shrink-0 leading-none">
+                              <Clock size={10} className="stroke-[2.5]" />
+                              {language === 'bn' ? 'পেন্ডিং' : 'Pending'}
+                            </span>
                           </div>
-                          <div className={`p-4 flex justify-between items-center ${isDarkMode ? 'bg-transparent' : 'bg-background-main/30'}`}>
-                            <div>
-                              <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Total Item Count</p>
-                              <p className="font-bold text-text-main text-sm mt-0.5">{item.items?.length || 0} Items</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Total Amount</p>
-                              <p className="font-black text-indigo-600 dark:text-indigo-400 text-lg mt-0.5">{item.amount} <span className="text-xs">QAR</span></p>
-                            </div>
+
+                          <div className="flex items-center gap-1.5 text-[11px] text-text-muted leading-tight flex-wrap">
+                            <span className="flex items-center gap-1 shrink-0 font-medium">
+                              <Calendar size={12} className="text-slate-400" />
+                              {item.date} • {item.time}
+                            </span>
+                            <span className="text-slate-300 dark:text-slate-600">•</span>
+                            <span className="flex items-center gap-1 font-semibold text-purple-600 dark:text-purple-400 shrink-0">
+                              <Package size={11} className="shrink-0" />
+                              <span>{item.items?.length || 0} {language === 'bn' ? 'আইটেম' : 'Items'}</span>
+                            </span>
                           </div>
                         </div>
-                      </SwipeToDelete>
+
+                        {/* Right Side: Vertically Centered Amount */}
+                        <div className="text-right shrink-0 h-12 flex items-center justify-center pl-1 my-auto">
+                          <span className="font-black text-purple-600 dark:text-purple-400 text-base md:text-lg whitespace-nowrap leading-none">
+                            {item.amount} <span className="text-[10px] font-bold text-text-muted">QAR</span>
+                          </span>
+                        </div>
+                      </div>
                     );
                   })
                 ) : (
-                  <div className="text-center py-12 border border-dashed border-border-main/50 rounded-xl bg-background-main/50">
+                  <div className="text-center py-12 border border-dashed border-border-main/50 rounded-xl bg-card-bg shadow-[var(--dynamic-card-shadow)]">
                     <p className="text-text-muted text-sm font-bold">No Pending Approvals</p>
                   </div>
                 )}

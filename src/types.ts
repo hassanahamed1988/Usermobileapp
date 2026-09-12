@@ -434,6 +434,7 @@ export interface BankAccount {
   cardType?: string;
   cardExpiryDate?: string;
   cardStatus?: string;
+  cardPin?: string;
   mobileProviderName?: string;
   mobileRegisteredNumber?: string;
   mobileAccountNumber?: string;
@@ -453,6 +454,7 @@ export interface BankAccount {
   branchName?: string;
   branchCode?: string;
   routingNumber?: string;
+  swiftCode?: string;
   branchAddress?: string;
   branchContactNumber?: string;
   assistantOfficerNumber?: string;
@@ -460,6 +462,7 @@ export interface BankAccount {
   availableBalance?: number;
   lastBalanceUpdated?: string;
   balanceUpdateSource?: string;
+  accountOpeningDate?: string;
   createdAt: string;
   updatedAt: string;
 }

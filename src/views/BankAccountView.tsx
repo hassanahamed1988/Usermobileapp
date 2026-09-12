@@ -35,6 +35,7 @@ import FormWindow from '@/components/FormWindow';
 import InputField from '@/components/InputField';
 import SearchBar from '@/components/SearchBar';
 import GlobalFullscreenSelect from '@/components/GlobalFullscreenSelect';
+import GlobalDateTimePicker from '@/components/GlobalDateTimePicker';
 import { BankBrandIcon } from '@/components/BankBrandIcon';
 import { WORLD_COUNTRIES } from '@/utils/countryUtils';
 
@@ -129,6 +130,58 @@ const I_BANKING_STATUSES = [
   'Pending Registration'
 ];
 
+const FINANCIAL_MOBILE_APPS = [
+  'bKash App',
+  'Nagad App',
+  'Rocket App (DBBL)',
+  'Upay App (UCB)',
+  'CellFin (IBBL)',
+  'Tap App (PBL)',
+  'SureCash App',
+  'Islamic Wallet (Al-Arafah)',
+  'mCash App (IBBL)',
+  'OK Wallet (ONE Bank)',
+  'TeleCash App (Southeast Bank)',
+  'Pocket App (AB Bank)',
+  'NexusPay (DBBL)',
+  'Citytouch (City Bank)',
+  'Astha (BRAC Bank)',
+  'EBL Skybanking',
+  'MyPrime (Prime Bank)',
+  'Bank Asia Smart App'
+];
+
+const FINANCIAL_IBANKING_APPS = [
+  'Citytouch (City Bank)',
+  'Astha (BRAC Bank)',
+  'EBL Skybanking (Eastern Bank)',
+  'CellFin (Islami Bank BD)',
+  'SC Mobile BD (Standard Chartered)',
+  'MTB Smart Banking (Mutual Trust Bank)',
+  'MyPrime (Prime Bank)',
+  'Bank Asia Smart App',
+  'NexusPay (Dutch-Bangla Bank)',
+  'UCB FinNet (United Commercial Bank)',
+  'AB Direct (AB Bank)',
+  'Dhaka Bank Go',
+  'Pubali Banking App',
+  'Exim Bank Bangladesh App',
+  'Jamuna Bank Smart App',
+  'NCC Bank Smart App',
+  'Southeast Bank iBanking',
+  'MBL Rainbow (Mercantile Bank)',
+  'Trust Money (Trust Bank)',
+  'SBAC Bank Smart App',
+  'NRBC Bank Smart App',
+  'Bengal Bank Smart App',
+  'Community Bank Smart App',
+  'Global Islami Bank App',
+  'FSIBL Cloud (First Security Islami Bank)',
+  'Union Bank Smart App',
+  'One Bank OK Wallet / iBanking',
+  'Standard Bank Smart App'
+];
+
 const POPULAR_BRANCHES = [
   'Principal / Main Branch',
   'Motijheel Branch',
@@ -184,25 +237,46 @@ const maskCardNumber = (cardNo?: string) => {
 // Known App / Play Store link lookup
 const DEFAULT_APP_LINKS: Record<string, string> = {
   'bkash': 'https://play.google.com/store/apps/details?id=com.bkash.app',
+  'bkash app': 'https://play.google.com/store/apps/details?id=com.bkash.app',
   'nagad': 'https://play.google.com/store/apps/details?id=com.konapayment.nagad',
+  'nagad app': 'https://play.google.com/store/apps/details?id=com.konapayment.nagad',
   'rocket': 'https://play.google.com/store/apps/details?id=com.dbbl.mbb.mobilebanking',
-  'rocket (dbbl)': 'https://play.google.com/store/apps/details?id=com.dbbl.mbb.mobilebanking',
+  'rocket app (dbbl)': 'https://play.google.com/store/apps/details?id=com.dbbl.mbb.mobilebanking',
   'upay': 'https://play.google.com/store/apps/details?id=com.ucb.upay',
-  'upay (ucb)': 'https://play.google.com/store/apps/details?id=com.ucb.upay',
+  'upay app (ucb)': 'https://play.google.com/store/apps/details?id=com.ucb.upay',
   'cellfin': 'https://play.google.com/store/apps/details?id=com.ibbl.cellfin',
   'cellfin (ibbl)': 'https://play.google.com/store/apps/details?id=com.ibbl.cellfin',
+  'cellfin (islami bank bd)': 'https://play.google.com/store/apps/details?id=com.ibbl.cellfin',
   'surecash': 'https://play.google.com/store/apps/details?id=com.progoti.surecash',
   'tap': 'https://play.google.com/store/apps/details?id=bd.com.pbl.tap',
+  'tap app (pbl)': 'https://play.google.com/store/apps/details?id=bd.com.pbl.tap',
+  'nexuspay': 'https://play.google.com/store/apps/details?id=com.dbbl.nexuspay',
+  'nexuspay (dbbl)': 'https://play.google.com/store/apps/details?id=com.dbbl.nexuspay',
+  'nexuspay (dutch-bangla bank)': 'https://play.google.com/store/apps/details?id=com.dbbl.nexuspay',
   'dutch-bangla bank': 'https://play.google.com/store/apps/details?id=com.dbbl.nexuspay',
   'brac bank': 'https://play.google.com/store/apps/details?id=com.bracbank.astha',
-  'islami bank bangladesh': 'https://play.google.com/store/apps/details?id=com.ibbl.cellfin',
+  'astha': 'https://play.google.com/store/apps/details?id=com.bracbank.astha',
+  'astha (brac bank)': 'https://play.google.com/store/apps/details?id=com.bracbank.astha',
+  'astha app (brac bank)': 'https://play.google.com/store/apps/details?id=com.bracbank.astha',
   'city bank': 'https://play.google.com/store/apps/details?id=com.thecitybank.citytouch',
+  'citytouch': 'https://play.google.com/store/apps/details?id=com.thecitybank.citytouch',
+  'citytouch (city bank)': 'https://play.google.com/store/apps/details?id=com.thecitybank.citytouch',
+  'citytouch app (city bank)': 'https://play.google.com/store/apps/details?id=com.thecitybank.citytouch',
   'eastern bank': 'https://play.google.com/store/apps/details?id=com.ebl.skybanking',
+  'ebl skybanking': 'https://play.google.com/store/apps/details?id=com.ebl.skybanking',
+  'ebl skybanking (eastern bank)': 'https://play.google.com/store/apps/details?id=com.ebl.skybanking',
   'standard chartered': 'https://play.google.com/store/apps/details?id=com.sc.scmobile.bd',
+  'sc mobile bd (standard chartered)': 'https://play.google.com/store/apps/details?id=com.sc.scmobile.bd',
   'mutual trust bank': 'https://play.google.com/store/apps/details?id=com.mtb.mtbsmartbanking',
+  'mtb smart banking (mutual trust bank)': 'https://play.google.com/store/apps/details?id=com.mtb.mtbsmartbanking',
   'prime bank': 'https://play.google.com/store/apps/details?id=com.primebank.myprime',
+  'myprime (prime bank)': 'https://play.google.com/store/apps/details?id=com.primebank.myprime',
   'bank asia': 'https://play.google.com/store/apps/details?id=com.bankasia.smartapp',
-  'united commercial bank (ucb)': 'https://play.google.com/store/apps/details?id=com.ucb.upay',
+  'bank asia smart app': 'https://play.google.com/store/apps/details?id=com.bankasia.smartapp',
+  'pubali banking app': 'https://play.google.com/store/apps/details?id=com.pubalibankbd.pi',
+  'exim bank bangladesh app': 'https://play.google.com/store/apps/details?id=com.eximbankbd.ais',
+  'jamuna bank smart app': 'https://play.google.com/store/apps/details?id=com.jamunabank.smartapp',
+  'trust money (trust bank)': 'https://play.google.com/store/apps/details?id=bd.com.trustbank.trustmoney',
 };
 
 const handleOpenApp = (customLink?: string, appName?: string, providerOrBankName?: string) => {
@@ -284,6 +358,9 @@ const BankAccountView: React.FC = () => {
   const [showMobileProviderSelect, setShowMobileProviderSelect] = useState(false);
   const [showMobileStatusSelect, setShowMobileStatusSelect] = useState(false);
   const [showIBankingStatusSelect, setShowIBankingStatusSelect] = useState(false);
+  const [showMobileAppNameSelect, setShowMobileAppNameSelect] = useState(false);
+  const [showIBankingAppNameSelect, setShowIBankingAppNameSelect] = useState(false);
+  const [showOpeningDatePicker, setShowOpeningDatePicker] = useState(false);
 
   // Form Fields State
   const [formData, setFormData] = useState<Partial<BankAccount>>({
@@ -293,11 +370,13 @@ const BankAccountView: React.FC = () => {
     accountNumber: '',
     accountType: 'Savings Account',
     accountStatus: 'Active',
+    accountOpeningDate: '',
     cardHolderName: '',
     cardNumber: '',
     cardType: 'Debit Card',
     cardExpiryDate: '',
     cardStatus: 'Active',
+    cardPin: '',
     mobileProviderName: '',
     mobileRegisteredNumber: '',
     mobileAccountNumber: '',
@@ -317,6 +396,7 @@ const BankAccountView: React.FC = () => {
     branchName: '',
     branchCode: '',
     routingNumber: '',
+    swiftCode: '',
     branchAddress: '',
     branchContactNumber: '',
     assistantOfficerNumber: '',
@@ -364,11 +444,13 @@ const BankAccountView: React.FC = () => {
         accountNumber: account.accountNumber || '',
         accountType: account.accountType || 'Savings Account',
         accountStatus: account.accountStatus || 'Active',
+        accountOpeningDate: account.accountOpeningDate || '',
         cardHolderName: account.cardHolderName || '',
         cardNumber: account.cardNumber || '',
         cardType: account.cardType || 'Debit Card',
         cardExpiryDate: account.cardExpiryDate || '',
         cardStatus: account.cardStatus || 'Active',
+        cardPin: account.cardPin || '',
         mobileProviderName: account.mobileProviderName || '',
         mobileRegisteredNumber: account.mobileRegisteredNumber || '',
         mobileAccountNumber: account.mobileAccountNumber || '',
@@ -388,6 +470,7 @@ const BankAccountView: React.FC = () => {
         branchName: account.branchName || '',
         branchCode: account.branchCode || '',
         routingNumber: account.routingNumber || '',
+        swiftCode: account.swiftCode || '',
         branchAddress: account.branchAddress || '',
         branchContactNumber: account.branchContactNumber || '',
         assistantOfficerNumber: account.assistantOfficerNumber || '',
@@ -402,11 +485,13 @@ const BankAccountView: React.FC = () => {
         accountNumber: '',
         accountType: 'Savings Account',
         accountStatus: 'Active',
+        accountOpeningDate: '',
         cardHolderName: '',
         cardNumber: '',
         cardType: 'Debit Card',
         cardExpiryDate: '',
         cardStatus: 'Active',
+        cardPin: '',
         mobileProviderName: '',
         mobileRegisteredNumber: '',
         mobileAccountNumber: '',
@@ -423,6 +508,7 @@ const BankAccountView: React.FC = () => {
         branchName: '',
         branchCode: '',
         routingNumber: '',
+        swiftCode: '',
         branchAddress: '',
         branchContactNumber: '',
         assistantOfficerNumber: '',
@@ -448,11 +534,13 @@ const BankAccountView: React.FC = () => {
       accountNumber: selectedAccount.accountNumber || '',
       accountType: selectedAccount.accountType || 'Savings Account',
       accountStatus: selectedAccount.accountStatus || 'Active',
+      accountOpeningDate: selectedAccount.accountOpeningDate || '',
       cardHolderName: selectedAccount.cardHolderName || '',
       cardNumber: selectedAccount.cardNumber || '',
       cardType: selectedAccount.cardType || 'Debit Card',
       cardExpiryDate: selectedAccount.cardExpiryDate || '',
       cardStatus: selectedAccount.cardStatus || 'Active',
+      cardPin: selectedAccount.cardPin || '',
       mobileProviderName: selectedAccount.mobileProviderName || '',
       mobileRegisteredNumber: selectedAccount.mobileRegisteredNumber || '',
       mobileAccountNumber: selectedAccount.mobileAccountNumber || '',
@@ -472,6 +560,7 @@ const BankAccountView: React.FC = () => {
       branchName: selectedAccount.branchName || '',
       branchCode: selectedAccount.branchCode || '',
       routingNumber: selectedAccount.routingNumber || '',
+      swiftCode: selectedAccount.swiftCode || '',
       branchAddress: selectedAccount.branchAddress || '',
       branchContactNumber: selectedAccount.branchContactNumber || '',
       assistantOfficerNumber: selectedAccount.assistantOfficerNumber || '',
@@ -517,7 +606,8 @@ const BankAccountView: React.FC = () => {
           bankName: formData.bankName?.trim() || '',
           accountNumber: formData.accountNumber?.trim() || '',
           accountType: formData.accountType || 'Savings Account',
-          accountStatus: formData.accountStatus || 'Active'
+          accountStatus: formData.accountStatus || 'Active',
+          accountOpeningDate: formData.accountOpeningDate?.trim() || ''
         };
       } else if (editingSection === 'BRANCH_INFO') {
         updatedAccount = {
@@ -525,6 +615,7 @@ const BankAccountView: React.FC = () => {
           branchName: formData.branchName?.trim() || '',
           branchCode: formData.branchCode?.trim() || '',
           routingNumber: formData.routingNumber?.trim() || '',
+          swiftCode: formData.swiftCode?.trim() || '',
           branchAddress: formData.branchAddress?.trim() || '',
           branchContactNumber: formData.branchContactNumber?.trim() || '',
           assistantOfficerNumber: formData.assistantOfficerNumber?.trim() || '',
@@ -537,7 +628,8 @@ const BankAccountView: React.FC = () => {
           cardNumber: formData.cardNumber?.trim() || '',
           cardType: formData.cardType || 'Debit Card',
           cardExpiryDate: formData.cardExpiryDate?.trim() || '',
-          cardStatus: formData.cardStatus || 'Active'
+          cardStatus: formData.cardStatus || 'Active',
+          cardPin: formData.cardPin?.trim() || ''
         };
       } else if (editingSection === 'MOBILE_BANKING_INFO') {
         updatedAccount = {
@@ -597,6 +689,7 @@ const BankAccountView: React.FC = () => {
         { labelBn: 'শাখার নাম', labelEn: 'Branch Name', value: branch },
         { labelBn: 'অ্যাকাউন্ট নম্বর', labelEn: 'Account Number', value: accNum, isHighlight: true, isMono: true },
         { labelBn: 'রাউটিং নম্বর', labelEn: 'Routing Number', value: routing, isMono: true },
+        ...(selectedAccount.swiftCode ? [{ labelBn: 'সুইফট কোড', labelEn: 'SWIFT Code', value: selectedAccount.swiftCode, isMono: true }] : []),
         { labelBn: 'অ্যাকাউন্টের ধরন', labelEn: 'Account Type', value: accType }
       ];
 
@@ -828,11 +921,13 @@ const BankAccountView: React.FC = () => {
           accountNumber: formData.accountNumber?.trim() || '',
           accountType: formData.accountType || 'Savings Account',
           accountStatus: formData.accountStatus || 'Active',
+          accountOpeningDate: formData.accountOpeningDate?.trim() || '',
           cardHolderName: formData.cardHolderName?.trim() || '',
           cardNumber: formData.cardNumber?.trim() || '',
           cardType: formData.cardType || 'Debit Card',
           cardExpiryDate: formData.cardExpiryDate?.trim() || '',
           cardStatus: formData.cardStatus || 'Active',
+          cardPin: formData.cardPin?.trim() || '',
           mobileProviderName: formData.mobileProviderName?.trim() || '',
           mobileRegisteredNumber: formData.mobileRegisteredNumber?.trim() || '',
           mobileAccountNumber: formData.mobileAccountNumber?.trim() || '',
@@ -848,6 +943,7 @@ const BankAccountView: React.FC = () => {
           branchName: formData.branchName?.trim() || '',
           branchCode: formData.branchCode?.trim() || '',
           routingNumber: formData.routingNumber?.trim() || '',
+          swiftCode: formData.swiftCode?.trim() || '',
           branchAddress: formData.branchAddress?.trim() || '',
           branchContactNumber: formData.branchContactNumber?.trim() || '',
           assistantOfficerNumber: formData.assistantOfficerNumber?.trim() || '',
@@ -1233,6 +1329,7 @@ const BankAccountView: React.FC = () => {
                   <DetailRow label={language === 'bn' ? 'রাউটিং নম্বর' : 'Routing Number'} value={selectedAccount.routingNumber} isMono icon={<Hash size={15} className="text-blue-500" />} />
                 )}
                 <DetailRow label={language === 'bn' ? 'অ্যাকাউন্টের ধরন' : 'Account Type'} value={selectedAccount.accountType} icon={<Building2 size={15} className="text-sky-500" />} />
+                <DetailRow label={language === 'bn' ? 'অ্যাকাউন্ট ওপেনিং তারিখ' : 'Account Opening Date'} value={selectedAccount.accountOpeningDate} isMono icon={<Calendar size={15} className="text-sky-500" />} />
                 <DetailRow label={language === 'bn' ? 'স্ট্যাটাস' : 'Status'} value={selectedAccount.accountStatus} icon={<Info size={15} className="text-emerald-500" />} />
               </div>
 
@@ -1257,11 +1354,11 @@ const BankAccountView: React.FC = () => {
           {/* TAB 2: Branch Info */}
           {activeTab === 'BRANCH_INFO' && (
             <div className="space-y-4 sm:space-y-6">
-              {!selectedAccount.branchName && !selectedAccount.routingNumber && !selectedAccount.branchContactNumber && !selectedAccount.branchManagerNumber ? (
+              {!selectedAccount.branchName && !selectedAccount.routingNumber && !selectedAccount.swiftCode && !selectedAccount.branchContactNumber && !selectedAccount.branchManagerNumber ? (
                 <EmptyTabState 
                   icon={<MapPin size={36} />}
                   title={language === 'bn' ? 'কোনো শাখার তথ্য নেই' : 'No Branch Information'}
-                  description={language === 'bn' ? 'ব্যাংকের নির্দিষ্ট শাখা, রাউটিং নম্বর, ঠিকানা ও কন্টাক্ট নম্বর যুক্ত করতে এডিট করুন।' : 'Branch name, routing number, address, or contact numbers have not been configured.'}
+                  description={language === 'bn' ? 'ব্যাংকের নির্দিষ্ট শাখা, রাউটিং নম্বর, সুইফট কোড, ঠিকানা ও কন্টাক্ট নম্বর যুক্ত করতে এডিট করুন।' : 'Branch name, routing number, swift code, address, or contact numbers have not been configured.'}
                   onAdd={() => handleOpenSectionForm('BRANCH_INFO')}
                   buttonLabel={language === 'bn' ? 'শাখার তথ্য যোগ করুন' : 'Add Branch Info'}
                 />
@@ -1287,6 +1384,7 @@ const BankAccountView: React.FC = () => {
                   <DetailRow label={language === 'bn' ? 'শাখার নাম' : 'Branch Name'} value={selectedAccount.branchName} icon={<MapPin size={15} className="text-teal-500" />} />
                   <DetailRow label={language === 'bn' ? 'শাখা কোড' : 'Branch Code'} value={selectedAccount.branchCode} isMono icon={<Hash size={15} className="text-teal-500" />} />
                   <DetailRow label={language === 'bn' ? 'রাউটিং নম্বর' : 'Routing Number'} value={selectedAccount.routingNumber} isMono icon={<Hash size={15} className="text-blue-500" />} />
+                  <DetailRow label={language === 'bn' ? 'সুইফট কোড' : 'SWIFT Code'} value={selectedAccount.swiftCode} isMono icon={<Hash size={15} className="text-sky-500" />} />
                   <DetailRow label={language === 'bn' ? 'শাখার ঠিকানা' : 'Branch Address'} value={selectedAccount.branchAddress} icon={<Building2 size={15} className="text-teal-500" />} />
                   <DetailRow label={language === 'bn' ? 'ব্রাঞ্চ কন্টাক্ট নম্বর' : 'Branch Contact Number'} value={selectedAccount.branchContactNumber} isMono icon={<Phone size={15} className="text-teal-500" />} />
                   <DetailRow label={language === 'bn' ? 'অ্যাসিস্ট্যান্ট অফিসার নম্বর' : 'Assistant Officer Number'} value={selectedAccount.assistantOfficerNumber} isMono icon={<Phone size={15} className="text-teal-500" />} />
@@ -1335,6 +1433,12 @@ const BankAccountView: React.FC = () => {
                   />
                   <DetailRow label={language === 'bn' ? 'কার্ডের ধরন' : 'Card Type'} value={selectedAccount.cardType} icon={<CreditCard size={15} className="text-purple-500" />} />
                   <DetailRow label={language === 'bn' ? 'মেয়াদ উত্তীর্ণের তারিখ' : 'Expiry Date'} value={selectedAccount.cardExpiryDate} isMono icon={<Calendar size={15} className="text-purple-500" />} />
+                  <DetailRow 
+                    label={language === 'bn' ? 'কার্ড পিন নম্বর' : 'Card PIN Number'} 
+                    value={selectedAccount.cardPin ? (showFullNumbers ? selectedAccount.cardPin : '••••') : ''} 
+                    isMono 
+                    icon={<Lock size={15} className="text-purple-500" />} 
+                  />
                   <DetailRow label={language === 'bn' ? 'কার্ড স্ট্যাটাস' : 'Card Status'} value={selectedAccount.cardStatus} icon={<Info size={15} className="text-purple-500" />} />
                 </div>
               )}
@@ -1602,6 +1706,20 @@ const BankAccountView: React.FC = () => {
                     <ChevronDown size={18} />
                   </div>
                 </div>
+
+                <div onClick={() => setShowOpeningDatePicker(true)} className="relative cursor-pointer group">
+                  <InputField
+                    label={language === 'bn' ? 'অ্যাকাউন্ট ওপেনিং তারিখ' : 'Account Opening Date'}
+                    name="accountOpeningDate"
+                    value={formData.accountOpeningDate || ''}
+                    onChange={() => {}}
+                    placeholder="YYYY-MM-DD"
+                    readOnly
+                  />
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted group-hover:text-text-main transition-colors">
+                    <Calendar size={18} />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1643,6 +1761,14 @@ const BankAccountView: React.FC = () => {
                   value={formData.routingNumber || ''}
                   onChange={e => handleFieldChange('routingNumber', e.target.value)}
                   placeholder="Enter Routing Number"
+                />
+
+                <InputField
+                  label={language === 'bn' ? 'সুইফট কোড (SWIFT Code)' : 'SWIFT Code'}
+                  name="swiftCode"
+                  value={formData.swiftCode || ''}
+                  onChange={e => handleFieldChange('swiftCode', e.target.value)}
+                  placeholder="e.g. CITYBDDH"
                 />
 
                 <InputField
@@ -1729,7 +1855,16 @@ const BankAccountView: React.FC = () => {
                   placeholder="MM/YY"
                 />
 
-                <div onClick={() => setShowCardStatusSelect(true)} className="relative cursor-pointer group md:col-span-2">
+                <InputField
+                  label={language === 'bn' ? 'কার্ড পিন নম্বর (Card PIN)' : 'Card PIN Number'}
+                  name="cardPin"
+                  type="password"
+                  value={formData.cardPin || ''}
+                  onChange={e => handleFieldChange('cardPin', e.target.value)}
+                  placeholder="e.g. 1234"
+                />
+
+                <div onClick={() => setShowCardStatusSelect(true)} className="relative cursor-pointer group">
                   <InputField
                     label={language === 'bn' ? 'কার্ড স্ট্যাটাস' : 'Card Status'}
                     name="cardStatus"
@@ -1794,13 +1929,19 @@ const BankAccountView: React.FC = () => {
                   placeholder="Enter PIN Number"
                 />
 
-                <InputField
-                  label={language === 'bn' ? 'অ্যাপ্লিকেশনের নাম (App Name)' : 'Application Name'}
-                  name="mobileAppName"
-                  value={formData.mobileAppName || ''}
-                  onChange={e => handleFieldChange('mobileAppName', e.target.value)}
-                  placeholder={language === 'bn' ? 'যেমন: bKash / Nagad App' : 'e.g. bKash, Nagad App'}
-                />
+                <div onClick={() => setShowMobileAppNameSelect(true)} className="relative cursor-pointer group">
+                  <InputField
+                    label={language === 'bn' ? 'অ্যাপ্লিকেশনের নাম (App Name)' : 'Application Name'}
+                    name="mobileAppName"
+                    value={formData.mobileAppName || ''}
+                    onChange={() => {}}
+                    placeholder={language === 'bn' ? 'অ্যাপ নির্বাচন করুন (যেমন: bKash, Nagad App...)' : 'Select App (bKash, Nagad App...)'}
+                    readOnly
+                  />
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted group-hover:text-text-main transition-colors">
+                    <ChevronDown size={18} />
+                  </div>
+                </div>
 
                 <InputField
                   label={language === 'bn' ? 'অ্যাপ্লিকেশনের লিংক (App Link / Play Store)' : 'Application Link (Play Store / Deep Link)'}
@@ -1878,13 +2019,19 @@ const BankAccountView: React.FC = () => {
                   placeholder="e.g. user@example.com"
                 />
 
-                <InputField
-                  label={language === 'bn' ? 'অ্যাপ্লিকেশনের নাম (App Name)' : 'Application Name'}
-                  name="ibankingAppName"
-                  value={formData.ibankingAppName || ''}
-                  onChange={e => handleFieldChange('ibankingAppName', e.target.value)}
-                  placeholder={language === 'bn' ? 'যেমন: Citytouch / Astha / Skybanking' : 'e.g. Citytouch, Astha, Skybanking'}
-                />
+                <div onClick={() => setShowIBankingAppNameSelect(true)} className="relative cursor-pointer group">
+                  <InputField
+                    label={language === 'bn' ? 'অ্যাপ্লিকেশনের নাম (App Name)' : 'Application Name'}
+                    name="ibankingAppName"
+                    value={formData.ibankingAppName || ''}
+                    onChange={() => {}}
+                    placeholder={language === 'bn' ? 'অ্যাপ নির্বাচন করুন (যেমন: Citytouch, Astha...)' : 'Select App (Citytouch, Astha...)'}
+                    readOnly
+                  />
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted group-hover:text-text-main transition-colors">
+                    <ChevronDown size={18} />
+                  </div>
+                </div>
 
                 <InputField
                   label={language === 'bn' ? 'অ্যাপ্লিকেশনের লিংক (App Link / Play Store)' : 'Application Link (Play Store / Deep Link)'}
@@ -2072,6 +2219,52 @@ const BankAccountView: React.FC = () => {
               setShowIBankingStatusSelect(false);
             }}
           />
+
+          <GlobalFullscreenSelect
+            isOpen={showMobileAppNameSelect}
+            onClose={() => setShowMobileAppNameSelect(false)}
+            title={language === 'bn' ? 'মোবাইল ব্যাংকিং অ্যাপ নির্বাচন করুন' : 'Select Mobile Banking App'}
+            options={FINANCIAL_MOBILE_APPS}
+            selectedValue={formData.mobileAppName}
+            onSelect={(v) => {
+              handleFieldChange('mobileAppName', v);
+              setShowMobileAppNameSelect(false);
+            }}
+            allowAdd
+            onAddNew={(val) => {
+              handleFieldChange('mobileAppName', val);
+              setShowMobileAppNameSelect(false);
+            }}
+          />
+
+          <GlobalFullscreenSelect
+            isOpen={showIBankingAppNameSelect}
+            onClose={() => setShowIBankingAppNameSelect(false)}
+            title={language === 'bn' ? 'ইন্টারনেট ব্যাংকিং অ্যাপ নির্বাচন করুন' : 'Select I-Banking App'}
+            options={FINANCIAL_IBANKING_APPS}
+            selectedValue={formData.ibankingAppName}
+            onSelect={(v) => {
+              handleFieldChange('ibankingAppName', v);
+              setShowIBankingAppNameSelect(false);
+            }}
+            allowAdd
+            onAddNew={(val) => {
+              handleFieldChange('ibankingAppName', val);
+              setShowIBankingAppNameSelect(false);
+            }}
+          />
+
+          <GlobalDateTimePicker
+            isOpen={showOpeningDatePicker}
+            onClose={() => setShowOpeningDatePicker(false)}
+            value={formData.accountOpeningDate}
+            onSelect={(val) => {
+              handleFieldChange('accountOpeningDate', val);
+              setShowOpeningDatePicker(false);
+            }}
+            type="date"
+            title={language === 'bn' ? 'অ্যাকাউন্ট ওপেনিং তারিখ নির্বাচন করুন' : 'Select Account Opening Date'}
+          />
         </FormWindow>
       )}
 
@@ -2179,6 +2372,20 @@ const BankAccountView: React.FC = () => {
                       <ChevronDown size={18} />
                     </div>
                   </div>
+
+                  <div onClick={() => setShowOpeningDatePicker(true)} className="relative cursor-pointer group">
+                    <InputField
+                      label={language === 'bn' ? 'অ্যাকাউন্ট ওপেনিং তারিখ' : 'Account Opening Date'}
+                      name="accountOpeningDate"
+                      value={formData.accountOpeningDate || ''}
+                      onChange={() => {}}
+                      placeholder="YYYY-MM-DD"
+                      readOnly
+                    />
+                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted group-hover:text-text-main transition-colors">
+                      <Calendar size={18} />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -2222,6 +2429,14 @@ const BankAccountView: React.FC = () => {
                     value={formData.routingNumber || ''}
                     onChange={e => handleFieldChange('routingNumber', e.target.value)}
                     placeholder="Enter Routing Number"
+                  />
+
+                  <InputField
+                    label={language === 'bn' ? 'সুইফট কোড (SWIFT Code)' : 'SWIFT Code'}
+                    name="swiftCode"
+                    value={formData.swiftCode || ''}
+                    onChange={e => handleFieldChange('swiftCode', e.target.value)}
+                    placeholder="e.g. CITYBDDH"
                   />
 
                   <InputField
@@ -2310,7 +2525,16 @@ const BankAccountView: React.FC = () => {
                     placeholder="MM/YY"
                   />
 
-                  <div onClick={() => setShowCardStatusSelect(true)} className="relative cursor-pointer group md:col-span-2">
+                  <InputField
+                    label={language === 'bn' ? 'কার্ড পিন নম্বর (Card PIN)' : 'Card PIN Number'}
+                    name="cardPin"
+                    type="password"
+                    value={formData.cardPin || ''}
+                    onChange={e => handleFieldChange('cardPin', e.target.value)}
+                    placeholder="e.g. 1234"
+                  />
+
+                  <div onClick={() => setShowCardStatusSelect(true)} className="relative cursor-pointer group">
                     <InputField
                       label={language === 'bn' ? 'কার্ড স্ট্যাটাস' : 'Card Status'}
                       name="cardStatus"
@@ -2377,13 +2601,19 @@ const BankAccountView: React.FC = () => {
                     placeholder="Enter PIN Number"
                   />
 
-                  <InputField
-                    label={language === 'bn' ? 'অ্যাপ্লিকেশনের নাম (App Name)' : 'Application Name'}
-                    name="mobileAppName"
-                    value={formData.mobileAppName || ''}
-                    onChange={e => handleFieldChange('mobileAppName', e.target.value)}
-                    placeholder={language === 'bn' ? 'যেমন: bKash / Nagad App' : 'e.g. bKash, Nagad App'}
-                  />
+                  <div onClick={() => setShowMobileAppNameSelect(true)} className="relative cursor-pointer group">
+                    <InputField
+                      label={language === 'bn' ? 'অ্যাপ্লিকেশনের নাম (App Name)' : 'Application Name'}
+                      name="mobileAppName"
+                      value={formData.mobileAppName || ''}
+                      onChange={() => {}}
+                      placeholder={language === 'bn' ? 'অ্যাপ নির্বাচন করুন (যেমন: bKash, Nagad App...)' : 'Select App (bKash, Nagad App...)'}
+                      readOnly
+                    />
+                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted group-hover:text-text-main transition-colors">
+                      <ChevronDown size={18} />
+                    </div>
+                  </div>
 
                   <InputField
                     label={language === 'bn' ? 'অ্যাপ্লিকেশনের লিংক (App Link / Play Store)' : 'Application Link (Play Store / Deep Link)'}
@@ -2463,13 +2693,19 @@ const BankAccountView: React.FC = () => {
                     placeholder="e.g. user@example.com"
                   />
 
-                  <InputField
-                    label={language === 'bn' ? 'অ্যাপ্লিকেশনের নাম (App Name)' : 'Application Name'}
-                    name="ibankingAppName"
-                    value={formData.ibankingAppName || ''}
-                    onChange={e => handleFieldChange('ibankingAppName', e.target.value)}
-                    placeholder={language === 'bn' ? 'যেমন: Citytouch / Astha / Skybanking' : 'e.g. Citytouch, Astha, Skybanking'}
-                  />
+                  <div onClick={() => setShowIBankingAppNameSelect(true)} className="relative cursor-pointer group">
+                    <InputField
+                      label={language === 'bn' ? 'অ্যাপ্লিকেশনের নাম (App Name)' : 'Application Name'}
+                      name="ibankingAppName"
+                      value={formData.ibankingAppName || ''}
+                      onChange={() => {}}
+                      placeholder={language === 'bn' ? 'অ্যাপ নির্বাচন করুন (যেমন: Citytouch, Astha...)' : 'Select App (Citytouch, Astha...)'}
+                      readOnly
+                    />
+                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted group-hover:text-text-main transition-colors">
+                      <ChevronDown size={18} />
+                    </div>
+                  </div>
 
                   <InputField
                     label={language === 'bn' ? 'অ্যাপ্লিকেশনের লিংক (App Link / Play Store)' : 'Application Link (Play Store / Deep Link)'}
@@ -2654,6 +2890,52 @@ const BankAccountView: React.FC = () => {
               handleFieldChange('ibankingStatus', v);
               setShowIBankingStatusSelect(false);
             }}
+          />
+
+          <GlobalFullscreenSelect
+            isOpen={showMobileAppNameSelect}
+            onClose={() => setShowMobileAppNameSelect(false)}
+            title={language === 'bn' ? 'মোবাইল ব্যাংকিং অ্যাপ নির্বাচন করুন' : 'Select Mobile Banking App'}
+            options={FINANCIAL_MOBILE_APPS}
+            selectedValue={formData.mobileAppName}
+            onSelect={(v) => {
+              handleFieldChange('mobileAppName', v);
+              setShowMobileAppNameSelect(false);
+            }}
+            allowAdd
+            onAddNew={(val) => {
+              handleFieldChange('mobileAppName', val);
+              setShowMobileAppNameSelect(false);
+            }}
+          />
+
+          <GlobalFullscreenSelect
+            isOpen={showIBankingAppNameSelect}
+            onClose={() => setShowIBankingAppNameSelect(false)}
+            title={language === 'bn' ? 'ইন্টারনেট ব্যাংকিং অ্যাপ নির্বাচন করুন' : 'Select I-Banking App'}
+            options={FINANCIAL_IBANKING_APPS}
+            selectedValue={formData.ibankingAppName}
+            onSelect={(v) => {
+              handleFieldChange('ibankingAppName', v);
+              setShowIBankingAppNameSelect(false);
+            }}
+            allowAdd
+            onAddNew={(val) => {
+              handleFieldChange('ibankingAppName', val);
+              setShowIBankingAppNameSelect(false);
+            }}
+          />
+
+          <GlobalDateTimePicker
+            isOpen={showOpeningDatePicker}
+            onClose={() => setShowOpeningDatePicker(false)}
+            value={formData.accountOpeningDate}
+            onSelect={(val) => {
+              handleFieldChange('accountOpeningDate', val);
+              setShowOpeningDatePicker(false);
+            }}
+            type="date"
+            title={language === 'bn' ? 'অ্যাকাউন্ট ওপেনিং তারিখ নির্বাচন করুন' : 'Select Account Opening Date'}
           />
         </FormWindow>
       )}

@@ -1493,138 +1493,184 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const parentCol = state.user.role === 'ADMIN' ? 'admins' : 'users';
       const parentPath = `${parentCol}/${state.user.id}`;
 
-      // 1. Subscribe to own profile document to keep it always in sync
-      unsubscribes.push(
-        subscribeFirebaseDoc(parentCol, state.user.id, (data) => {
-          if (data) {
-            mutate((d: any) => {
-              const decryptedData = decryptSensitiveFields(data);
-              const updatedUser = { ...d.user, ...decryptedData };
-              // Theme/wallpaper/background settings are local-device-only now
-              // (never written to Firestore, see setter logic below) — so never
-              // let a remote profile update carry a userThemeSettings payload
-              // in and overwrite what's on this device.
-              if (updatedUser.userThemeSettings) {
-                delete updatedUser.userThemeSettings;
-              }
-              d.user = updatedUser;
-              // For standard users, they should only see themselves in the users array for privacy
-              if (updatedUser.role !== 'ADMIN') {
-                d.users = [updatedUser];
-              }
-              if (d.selectedUser && d.selectedUser.id === updatedUser.id) {
-                d.selectedUser = updatedUser;
-              }
-            });
+      // Only subscribe to user personal collections once Firebase auth is active and ready
+      const unsubscribeAuth = auth.onAuthStateChanged(async (fbUser) => {
+        if (!fbUser) {
+          console.log('Firebase Auth: Session still initializing or user unauthenticated.');
+          if (state.user) {
+            try {
+              console.log('Attempting anonymous sign-in to restore data access for legacy session...');
+              const { signInAnonymously } = await import('firebase/auth');
+              await signInAnonymously(auth);
+            } catch (err) {
+              console.warn('Anonymous sign-in failed during session recovery:', err);
+            }
           }
-        })
-      );
+          return;
+        }
 
-      // 1b. Subscribe to own persistent preferences to restore language and currency
-      unsubscribes.push(
-        subscribeFirebaseDoc('user_preferences', state.user.id, (prefData) => {
-          if (prefData) {
-            mutate((d: any) => {
-              if (prefData.language) {
-                d.language = prefData.language;
-              }
-              if (prefData.selectedCurrency) {
-                d.selectedCurrency = prefData.selectedCurrency;
-              }
+        console.log('Firebase Auth: Logged in as:', fbUser.uid);
+
+        // Auto-heal/sync user's firebaseUid if missing or different to ensure Firestore security rules match
+        if (state.user && state.user.firebaseUid !== fbUser.uid) {
+          console.log(`Syncing firebaseUid for user ${state.user.id}: ${fbUser.uid}`);
+          saveFirebaseDocMerge(parentCol, state.user.id, { firebaseUid: fbUser.uid })
+            .then(() => {
+              mutate((d: any) => {
+                if (d.user && d.user.id === state.user.id) {
+                  d.user.firebaseUid = fbUser.uid;
+                }
+              });
+            })
+            .catch((err) => {
+              console.error('Failed to sync firebaseUid on Auth state change:', err);
             });
-          } else {
-            // Document does not exist in Firestore yet (brand new or first-time preference sync)
-            // Let's write the current local settings to Firestore to bootstrap/preserve them
-            const currentLang = stateRef.current.language || 'en';
-            const currentCurrency = stateRef.current.selectedCurrency || 'USD';
-            saveFirebaseDocMerge('user_preferences', state.user.id, {
-              id: state.user.id,
-              language: currentLang,
-              selectedCurrency: currentCurrency
-            }).catch((err) => {
-              console.error('Failed to bootstrap user preferences in Firestore:', err);
-            });
-          }
-        })
-      );
+        }
 
-      // 2. Load trips, profiles, finances, monthlyFiles, payments, notifications from OWN subcollections
-      const userSubCollections = [
-        'trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices', 'bankAccounts'
-      ];
+        // Clear existing personal subscriptions to avoid duplication if auth state changes
+        const personalUnsubs = unsubscribes.filter(u => u !== unsubscribeAuth);
+        personalUnsubs.forEach(un => un());
+        
+        // Remove personal listeners from array, keeping only unsubscribeAuth
+        unsubscribes.length = 0;
+        unsubscribes.push(unsubscribeAuth);
 
-      userSubCollections.forEach(col => {
-        const subPath = `${parentPath}/${col}`;
+        // 1. Subscribe to own profile document to keep it always in sync
         unsubscribes.push(
-          subscribeFirebaseCollection(subPath, (data) => {
-            mutate((d: any) => {
-              let targetKey = col;
-              if (['trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices', 'bankAccounts'].includes(col)) {
-                targetKey = 'all' + col.charAt(0).toUpperCase() + col.slice(1);
-              }
-              let cleanData = data || [];
-              if (col === 'payments') {
-                cleanData = cleanData.filter((p: any) => p && p.id !== 'PAY-W6970' && p.category !== 'undefined' && p.category !== undefined && p.category !== '');
-              }
-              d[col] = cleanData;
-              d[targetKey] = cleanData;
-            });
+          subscribeFirebaseDoc(parentCol, state.user.id, (data) => {
+            if (data) {
+              mutate((d: any) => {
+                const decryptedData = decryptSensitiveFields(data);
+                const updatedUser = { ...d.user, ...decryptedData };
+                // Theme/wallpaper/background settings are local-device-only now
+                // (never written to Firestore, see setter logic below) — so never
+                // let a remote profile update carry a userThemeSettings payload
+                // in and overwrite what's on this device.
+                if (updatedUser.userThemeSettings) {
+                  delete updatedUser.userThemeSettings;
+                }
+                d.user = updatedUser;
+                // For standard users, they should only see themselves in the users array for privacy
+                if (updatedUser.role !== 'ADMIN') {
+                  d.users = [updatedUser];
+                }
+                if (d.selectedUser && d.selectedUser.id === updatedUser.id) {
+                  d.selectedUser = updatedUser;
+                }
+              });
+            }
           })
         );
+
+        // 1b. Subscribe to own persistent preferences to restore language and currency
+        unsubscribes.push(
+          subscribeFirebaseDoc('user_preferences', state.user.id, (prefData) => {
+            if (prefData) {
+              mutate((d: any) => {
+                if (prefData.language) {
+                  d.language = prefData.language;
+                }
+                if (prefData.selectedCurrency) {
+                  d.selectedCurrency = prefData.selectedCurrency;
+                }
+              });
+            } else {
+              // Ensure we are fully authenticated and match state user ID before writing preferences
+              if (auth.currentUser && auth.currentUser.uid === state.user.id) {
+                // Document does not exist in Firestore yet (brand new or first-time preference sync)
+                // Let's write the current local settings to Firestore to bootstrap/preserve them
+                const currentLang = stateRef.current.language || 'en';
+                const currentCurrency = stateRef.current.selectedCurrency || 'USD';
+                saveFirebaseDocMerge('user_preferences', state.user.id, {
+                  id: state.user.id,
+                  language: currentLang,
+                  selectedCurrency: currentCurrency
+                }).catch((err) => {
+                  console.error('Failed to bootstrap user preferences in Firestore:', err);
+                });
+              }
+            }
+          })
+        );
+
+        // 2. Load trips, profiles, finances, monthlyFiles, payments, notifications from OWN subcollections
+        const userSubCollections = [
+          'trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices', 'bankAccounts'
+        ];
+
+        userSubCollections.forEach(col => {
+          const subPath = `${parentPath}/${col}`;
+          unsubscribes.push(
+            subscribeFirebaseCollection(subPath, (data) => {
+              mutate((d: any) => {
+                let targetKey = col;
+                if (['trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices', 'bankAccounts'].includes(col)) {
+                  targetKey = 'all' + col.charAt(0).toUpperCase() + col.slice(1);
+                }
+                let cleanData = data || [];
+                if (col === 'payments') {
+                  cleanData = cleanData.filter((p: any) => p && p.id !== 'PAY-W6970' && p.category !== 'undefined' && p.category !== undefined && p.category !== '');
+                }
+                d[col] = cleanData;
+                d[targetKey] = cleanData;
+              });
+            })
+          );
+        });
+
+        // 3. For ADMINs, subscribe to all users and admins root collections so they can view user account profiles
+        // Admins will NOT subscribe to user trips or payments, satisfying the constraint
+        if (state.user.role === 'ADMIN') {
+          // Run a background delete of the duplicate users/Admin document if present
+          deleteFirebaseDoc('users', 'Admin').catch(() => {});
+
+          unsubscribes.push(
+            subscribeFirebaseCollection('users', (data) => {
+              mutate((d: any) => {
+                const decryptedList = (data || []).map((u: any) => decryptSensitiveFields(u));
+                const cleanData = decryptedList.filter((u: any) => u.id !== 'Admin');
+                const existingAdmins = d.users ? d.users.filter((u: any) => u.role === 'ADMIN') : [];
+                d.users = [...cleanData, ...existingAdmins];
+                
+                if (d.selectedUser) {
+                  const updatedSelected = cleanData.find((u: any) => u.id === d.selectedUser.id);
+                  if (updatedSelected) {
+                    d.selectedUser = updatedSelected;
+                  }
+                }
+              });
+            })
+          );
+
+          unsubscribes.push(
+            subscribeFirebaseCollection('admins', (data) => {
+              mutate((d: any) => {
+                const decryptedList = (data || []).map((u: any) => decryptSensitiveFields(u));
+                const cleanData = decryptedList;
+                const adminsWithRole = cleanData.map(u => ({...u, role: u.role || 'ADMIN'}));
+                const existingUsers = d.users ? d.users.filter((u: any) => u.role !== 'ADMIN') : [];
+                d.users = [...existingUsers, ...adminsWithRole];
+                
+                if (d.user && d.user.role === 'ADMIN') {
+                  const updatedAdmin = adminsWithRole.find((u: any) => u.id === d.user.id);
+                  if (updatedAdmin) {
+                    d.user = { ...d.user, ...updatedAdmin };
+                  }
+                }
+
+                if (d.selectedUser) {
+                  const updatedSelectedAdmin = adminsWithRole.find((u: any) => u.id === d.selectedUser.id);
+                  if (updatedSelectedAdmin) {
+                    d.selectedUser = updatedSelectedAdmin;
+                  }
+                }
+              });
+            })
+          );
+        }
       });
 
-
-
-      // 3. For ADMINs, subscribe to all users and admins root collections so they can view user account profiles
-      // Admins will NOT subscribe to user trips or payments, satisfying the constraint
-      if (state.user.role === 'ADMIN') {
-        // Run a background delete of the duplicate users/Admin document if present
-        deleteFirebaseDoc('users', 'Admin').catch(() => {});
-
-        unsubscribes.push(
-          subscribeFirebaseCollection('users', (data) => {
-            mutate((d: any) => {
-              const decryptedList = (data || []).map((u: any) => decryptSensitiveFields(u));
-              const cleanData = decryptedList.filter((u: any) => u.id !== 'Admin');
-              const existingAdmins = d.users ? d.users.filter((u: any) => u.role === 'ADMIN') : [];
-              d.users = [...cleanData, ...existingAdmins];
-              
-              if (d.selectedUser) {
-                const updatedSelected = cleanData.find((u: any) => u.id === d.selectedUser.id);
-                if (updatedSelected) {
-                  d.selectedUser = updatedSelected;
-                }
-              }
-            });
-          })
-        );
-
-        unsubscribes.push(
-          subscribeFirebaseCollection('admins', (data) => {
-            mutate((d: any) => {
-              const decryptedList = (data || []).map((u: any) => decryptSensitiveFields(u));
-              const cleanData = decryptedList;
-              const adminsWithRole = cleanData.map(u => ({...u, role: u.role || 'ADMIN'}));
-              const existingUsers = d.users ? d.users.filter((u: any) => u.role !== 'ADMIN') : [];
-              d.users = [...existingUsers, ...adminsWithRole];
-              
-              if (d.user && d.user.role === 'ADMIN') {
-                const updatedAdmin = adminsWithRole.find((u: any) => u.id === d.user.id);
-                if (updatedAdmin) {
-                  d.user = { ...d.user, ...updatedAdmin };
-                }
-              }
-
-              if (d.selectedUser) {
-                const updatedSelectedAdmin = adminsWithRole.find((u: any) => u.id === d.selectedUser.id);
-                if (updatedSelectedAdmin) {
-                  d.selectedUser = updatedSelectedAdmin;
-                }
-              }
-            });
-          })
-        );
-      }
+      unsubscribes.push(unsubscribeAuth);
     }
       
       const configCols = ['locations', 'countries', 'companies', 'nationalities', 'containerTypes', 'loadingTypes', 'idTypes', 'extraDieselReasons', 'advanceReasons', 'emptyReturnYards', 'banks', 'branches', 'routingNumbers', 'currencies', 'genders', 'religions', 'professions', 'postOffices', 'policeStations', 'cities', 'states', 'walletIncomeSources', 'walletDeductionReasons', 'walletPaymentMethods', 'bankNames', 'mobileBankingWallets', 'relationships', 'loanPurposes'];
@@ -1673,21 +1719,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 // If local state had additional items not yet in Firestore, sync merged array back to Firestore
                 setTimeout(() => {
                   const currentArr = stateRef.current[col];
-                  if (currentArr && currentArr.length > arrayData.length) {
+                  if (currentArr && currentArr.length > arrayData.length && auth.currentUser && stateRef.current.user?.role === 'ADMIN') {
                     saveFirebaseDocMerge('dropdowns', col, { data: currentArr }).catch(() => {});
                   }
                 }, 100);
               } else if (docData && (!arrayData || arrayData.length === 0)) {
                 // If remote document exists but is empty, populate with local values
                 const currentArray = stateRef.current[col];
-                if (currentArray && currentArray.length > 0) {
+                if (currentArray && currentArray.length > 0 && auth.currentUser && stateRef.current.user?.role === 'ADMIN') {
                   saveFirebaseDocMerge('dropdowns', col, { data: currentArray }).catch(() => {});
                 }
               }
             } else if (docData === null) {
               // Try to bootstrap dropdowns document if it doesn't exist yet but has local values
               const currentArray = stateRef.current[col];
-              if (currentArray && currentArray.length > 0) {
+              if (currentArray && currentArray.length > 0 && auth.currentUser && stateRef.current.user?.role === 'ADMIN') {
                 saveFirebaseDocMerge('dropdowns', col, { data: currentArray }).catch(() => {});
               }
             }
@@ -1763,7 +1809,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 hasLocalBranding = true;
               }
             });
-            if (hasLocalBranding) {
+            if (hasLocalBranding && auth.currentUser && stateRef.current.user?.role === 'ADMIN') {
               saveFirebaseDocMerge('settings', 'branding', brandingData).catch(() => {});
             }
           }
@@ -1945,7 +1991,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               }
 
               // Persist language and currency to Firestore user_preferences collection
-              if ((key === 'language' || key === 'selectedCurrency') && stateRef.current.user?.id) {
+              if ((key === 'language' || key === 'selectedCurrency') && stateRef.current.user?.id && auth.currentUser) {
                 const userId = stateRef.current.user.id;
                 const updatePayload: Record<string, any> = {};
                 updatePayload[key] = val;
