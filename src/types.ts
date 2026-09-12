@@ -417,3 +417,47 @@ export interface VehicleService {
   history?: ServiceHistoryRecord[];
 }
 
+export interface BankAccount {
+  id: string;
+  userId: string;
+  country?: string;
+  accountHolderName: string;
+  accountName?: string;
+  accountType: string;
+  accountNumber: string;
+  bankName: string;
+  currency?: string;
+  accountStatus: string;
+  currentBalance?: number;
+  cardHolderName?: string;
+  cardNumber?: string;
+  cardType?: string;
+  cardExpiryDate?: string;
+  cardStatus?: string;
+  mobileProviderName?: string;
+  mobileRegisteredNumber?: string;
+  mobileAccountNumber?: string;
+  mobilePin?: string;
+  mobileStatus?: string;
+  ibankingUserId?: string;
+  ibankingPassword?: string;
+  ibankingTpin?: string;
+  ibankingRegisteredContact?: string;
+  ibankingRegisteredMobile?: string;
+  ibankingRegisteredEmail?: string;
+  ibankingStatus?: string;
+  branchName?: string;
+  branchCode?: string;
+  routingNumber?: string;
+  branchAddress?: string;
+  branchContactNumber?: string;
+  assistantOfficerNumber?: string;
+  branchManagerNumber?: string;
+  availableBalance?: number;
+  lastBalanceUpdated?: string;
+  balanceUpdateSource?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+

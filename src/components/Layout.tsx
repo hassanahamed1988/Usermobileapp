@@ -45,7 +45,8 @@ import {
   MessageSquare,
   UserX,
   Fuel,
-  Download
+  Download,
+  Landmark
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore, GLOBAL_TRANSITION, GLOBAL_VARIANTS } from '../store';
@@ -340,6 +341,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
     { id: 'DASHBOARD', icon: <DashboardIcon size={26} />, label: t.DASHBOARD, show: true, color: '#10b981' },
     { id: 'SEARCH', icon: <Search size={26} />, label: t.SEARCH, show: isAdmin, color: '#818cf8' },
     { id: 'PAYMENT', icon: <Wallet size={26} />, label: t.PAYMENT, show: showPayment, color: '#fbbf24' },
+    { id: 'BANK_ACCOUNT', icon: <Landmark size={26} />, label: t.BANK_ACCOUNT || 'Bank Accounts', show: !!user, color: '#0ea5e9' },
     { id: 'WALLET', icon: <Wallet size={26} />, label: t.WALLET, show: isAdmin, isAccordion: true, subItems: walletItems, isOpen: isWalletOpen, toggle: () => setIsWalletOpen(!isWalletOpen), color: '#159938' },
     { id: 'STATEMENT', icon: <FileText size={26} />, label: t.STATEMENT, show: !!user, color: '#10b981' },
     { id: 'LEAVE_SETTLEMENT', icon: <CalendarCheck size={26} />, label: t.LEAVE_SETTLEMENT || 'Leave & Settlement', show: !!user, color: '#ef4444' },

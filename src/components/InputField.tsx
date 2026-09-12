@@ -483,7 +483,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(({
   return (
     <div 
       ref={localContainerRef}
-      className={`input-field-container relative group transition-colors duration-200 rounded-lg border ${isFocused || showSuggestions ? 'z-50' : 'z-20'} ${isSearch ? 'search-field-container' : ''} ${className || 'h-14'}`}
+      className={`input-field-container relative group transition-colors duration-200 rounded-lg border ${isFocused || showSuggestions ? 'z-50' : 'z-20'} ${isSearch ? 'search-field-container' : ''} ${className ? (!className.includes('h-') ? 'h-14 ' : '') + className : 'h-14'}`}
       style={{
         backgroundColor: hasError 
           ? 'rgba(239, 68, 68, 0.1)' 

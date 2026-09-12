@@ -19,6 +19,7 @@ import { THEMES, TRANSLATIONS } from '@/constants';
 import Dashboard from '@/views/Dashboard';
 import VehicleList from '@/views/VehicleList';
 import VehicleServices from '@/views/VehicleServices';
+import BankAccountView from '@/views/BankAccountView';
 import ContactsView from '@/views/Contacts';
 import Profiles from '@/views/Profiles';
 import Trips from '@/views/Trips';
@@ -988,6 +989,7 @@ const renderView = (view: StoreState['currentView'], language: string) => {
     case 'PURCHASE':
     case 'NEW_PURCHASE': return <PurchaseView />;
     case 'WALLET': return <WalletView />;
+    case 'BANK_ACCOUNT': return <BankAccountView />;
     case 'ADMIN': return <Dashboard />;
     case 'SETTINGS': return <Settings />;
     case 'USER_PROFILE': return <UserProfile />;
@@ -1062,7 +1064,7 @@ const renderView = (view: StoreState['currentView'], language: string) => {
   const shouldHideHeader = (currentView === 'MY_INCOME' && (activeSection === 'PENDING_PAGE' || (typeof activeSection === 'string' && (activeSection.startsWith('CATEGORY_') || activeSection.startsWith('PENDING_CATEGORY_'))))) || (currentView === 'PAYMENT' && (isEntryFormOpen || isPendingIncome)) || currentView === 'CHAT';
   const shouldBeFullWidth = (currentView === 'MY_INCOME' && (activeSection === 'PENDING_PAGE' || activeSection === 'INCOME' || activeSection === 'DEDUCTION' || (typeof activeSection === 'string' && (activeSection.startsWith('CATEGORY_') || activeSection.startsWith('PENDING_CATEGORY_'))) || activeSection === 'ADD_INCOME')) || currentView === 'CHAT' || currentView === 'SETTINGS' || currentView === 'WALLET' || currentView === 'SEARCH';
 
-  const mainNavViews = ['DASHBOARD', 'SEARCH', 'PAYMENT', 'USER_PROFILE', 'TRIPS', 'PROFILES', 'MONTHLY_FILES', 'SETTINGS', 'FINANCE', 'MY_INCOME', 'CHAT', 'NOTIFICATIONS', 'FUEL', 'DOWNLOAD'];
+  const mainNavViews = ['DASHBOARD', 'SEARCH', 'PAYMENT', 'USER_PROFILE', 'TRIPS', 'PROFILES', 'MONTHLY_FILES', 'SETTINGS', 'FINANCE', 'MY_INCOME', 'CHAT', 'NOTIFICATIONS', 'FUEL', 'DOWNLOAD', 'BANK_ACCOUNT'];
   const isNavTransition = prevView && mainNavViews.includes(prevView) && mainNavViews.includes(currentView);
 
   const isBottomNavHidden = !user || currentView === 'CHAT' || isKeyboardOpen;

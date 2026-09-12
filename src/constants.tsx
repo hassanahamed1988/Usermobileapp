@@ -18,7 +18,8 @@ import {
   Lock,
   Receipt,
   Home,
-  Contact
+  Contact,
+  Landmark
 } from "lucide-react";
 
 import { TRANSLATIONS } from './translations';
@@ -47,6 +48,7 @@ export const GLOBAL_DASHBOARD_MODULES = [
   { id: 'PURCHASE', labelKey: 'PURCHASE', icon: <ShoppingCart size={18} />, color: '#facc15', type: 'user' },
   { id: 'WALLET', labelKey: 'WALLET', icon: <Wallet size={18} />, color: '#10b981', type: 'user' },
   { id: 'SECURITY', labelKey: 'SECURITY', icon: <Lock size={18} />, color: '#ef4444', type: 'user' },
+  { id: 'BANK_ACCOUNT', labelKey: 'BANK_ACCOUNT', icon: <Landmark size={18} />, color: '#0ea5e9', type: 'user' },
 ];
 
 export const PRESET_BACKGROUNDS = [

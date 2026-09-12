@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
-import { User, Trip, Profile, Language, Theme, FinancialRecord, SupportInfo, MonthlyFile, Currency, Payment, Notification, DownloadedFile, FuelPurchase, Loan, LoanPayment, Vehicle, VehicleService } from '@/types';
+import { User, Trip, Profile, Language, Theme, FinancialRecord, SupportInfo, MonthlyFile, Currency, Payment, Notification, DownloadedFile, FuelPurchase, Loan, LoanPayment, Vehicle, VehicleService, BankAccount } from '@/types';
 import { storageService } from '@/services/storageService';
 import { getFirebaseCollection, subscribeFirebaseCollection, subscribeFirebaseCollectionGroup, saveFirebaseDoc, deleteFirebaseDoc, clearFirebaseCollection, syncFirebaseCollection, subscribeFirebaseDoc, saveFirebaseDocMerge, auth } from '@/services/firebase';
 import { where } from 'firebase/firestore';
@@ -81,6 +81,11 @@ export interface StoreState {
   addVehicleService: (service: VehicleService) => void;
   updateVehicleService: (service: VehicleService) => void;
   removeVehicleService: (id: string, userId?: string) => void;
+  bankAccounts: BankAccount[];
+  allBankAccounts: BankAccount[];
+  addBankAccount: (account: BankAccount) => void;
+  updateBankAccount: (account: BankAccount) => void;
+  removeBankAccount: (id: string, userId?: string) => void;
   allTrips: Trip[];
   addTrip: (trip: Trip) => void;
   profiles: Profile[];
@@ -484,6 +489,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       allVehicles: [],
       vehicleServices: [],
       allVehicleServices: [],
+      bankAccounts: [],
+      allBankAccounts: [],
       allTrips: [],
       profiles: [],
       allProfiles: [],
@@ -1340,6 +1347,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
            d.allVehicles = [];
            d.vehicleServices = [];
            d.allVehicleServices = [];
+           d.bankAccounts = [];
+           d.allBankAccounts = [];
            d.notifications = [];
          });
       };
@@ -1457,7 +1466,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         mutate((d: any, prev: any) => {
           sections.forEach(sec => {
             const key = sec.toLowerCase();
-            if (['trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'loans', 'loanpayments', 'vehicles', 'vehicleservices'].includes(key)) {
+            if (['trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'loans', 'loanpayments', 'vehicles', 'vehicleservices', 'bankaccounts', 'bankaccounts'].includes(key)) {
               d[key] = [];
               const targetKey = 'all' + key.charAt(0).toUpperCase() + key.slice(1);
               if (d[targetKey]) d[targetKey] = [];
@@ -1468,7 +1477,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           if (prev.user) {
             sections.forEach(sec => {
               const key = sec.toLowerCase();
-              if (['trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'loans', 'loanpayments', 'vehicles', 'vehicleservices'].includes(key)) {
+              if (['trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'loans', 'loanpayments', 'vehicles', 'vehicleservices', 'bankaccounts', 'bankaccounts'].includes(key)) {
                 clearFirebaseCollection(`${parentCol}/${prev.user.id}/${key}`, d[key] || []).catch(() => {});
               }
             });
@@ -1541,7 +1550,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       // 2. Load trips, profiles, finances, monthlyFiles, payments, notifications from OWN subcollections
       const userSubCollections = [
-        'trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices'
+        'trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices', 'bankAccounts'
       ];
 
       userSubCollections.forEach(col => {
@@ -1550,7 +1559,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           subscribeFirebaseCollection(subPath, (data) => {
             mutate((d: any) => {
               let targetKey = col;
-              if (['trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices'].includes(col)) {
+              if (['trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices', 'bankAccounts'].includes(col)) {
                 targetKey = 'all' + col.charAt(0).toUpperCase() + col.slice(1);
               }
               let cleanData = data || [];
@@ -1996,6 +2005,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 });
                 if (!isDuplicate) {
                   d[key].push(processedItem);
+                  let targetKey = key;
+                  if (['trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices', 'bankAccounts'].includes(key)) {
+                    targetKey = 'all' + key.charAt(0).toUpperCase() + key.slice(1);
+                    if (!d[targetKey]) d[targetKey] = [];
+                    if (!d[targetKey].some((x: any) => x && (x.id === processedItem.id || (processedItem.id && x.id === processedItem.id)))) {
+                      d[targetKey].push(processedItem);
+                    }
+                  }
                 }
 
                 if (key === 'payments' && item) {
@@ -2060,7 +2077,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 }
               });
               const configCols = ['locations', 'countries', 'companies', 'nationalities', 'containerTypes', 'loadingTypes', 'idTypes', 'extraDieselReasons', 'advanceReasons', 'emptyReturnYards', 'banks', 'branches', 'routingNumbers', 'currencies', 'genders', 'religions', 'professions', 'postOffices', 'policeStations', 'cities', 'states', 'walletIncomeSources', 'walletDeductionReasons', 'walletPaymentMethods', 'bankNames', 'mobileBankingWallets', 'relationships', 'loanPurposes'];
-              if (['users', 'trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices'].includes(key)) {
+              if (['users', 'trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices', 'bankAccounts'].includes(key)) {
                 if (item && item.id) {
                   if (key === 'users') {
                     const coll = item.role === 'ADMIN' ? 'admins' : 'users';
@@ -2157,8 +2174,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     d[key] = d[key].filter((x: any) => x && x.id !== id && String(x) !== String(id) && x.code !== id && x.name !== id);
                   }
 
-                  let targetKey = key;
-                  if (['trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices'].includes(key)) {
+                   let targetKey = key;
+                  if (['trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices', 'bankAccounts'].includes(key)) {
                     targetKey = 'all' + key.charAt(0).toUpperCase() + key.slice(1);
                   }
                   if (d[targetKey] && targetKey !== key) {
@@ -2173,13 +2190,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 }
               });
               const configCols = ['locations', 'countries', 'companies', 'nationalities', 'containerTypes', 'loadingTypes', 'idTypes', 'extraDieselReasons', 'advanceReasons', 'emptyReturnYards', 'banks', 'branches', 'routingNumbers', 'currencies', 'genders', 'religions', 'professions', 'postOffices', 'policeStations', 'cities', 'states', 'walletIncomeSources', 'walletDeductionReasons', 'walletPaymentMethods', 'bankNames', 'mobileBankingWallets', 'relationships', 'loanPurposes'];
-              if (['users', 'trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices'].includes(key)) {
+              if (['users', 'trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices', 'bankAccounts'].includes(key)) {
                 if (key === 'users') {
                   deleteFirebaseDoc('users', String(id));
                   deleteFirebaseDoc('admins', String(id));
                   
                   // Cascading delete for subcollections
-                  const subCollections = ['trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'settlements', 'Purchase', 'loans', 'loanPayments', 'vehicles', 'vehicleServices'];
+                  const subCollections = ['trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'settlements', 'Purchase', 'loans', 'loanPayments', 'vehicles', 'vehicleServices', 'bankAccounts'];
                   ['users', 'admins'].forEach(parentCol => {
                     subCollections.forEach(sub => {
                       const subPath = `${parentCol}/${id}/${sub}`;
@@ -2268,6 +2285,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                      }
                      updatedItem = d[key][idx];
 
+                     let targetKey = key;
+                     if (['trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices', 'bankAccounts'].includes(key)) {
+                       targetKey = 'all' + key.charAt(0).toUpperCase() + key.slice(1);
+                       if (d[targetKey] && targetKey !== key) {
+                         const tIdx = d[targetKey].findIndex((x: any) => 
+                           x && (x.id === targetId || x.userId === targetId || String(x) === String(targetId) || x.code === targetId || (typeof x === 'object' && x.name === targetId))
+                         );
+                         if (tIdx >= 0) {
+                           if (typeof d[targetKey][tIdx] === 'object') {
+                             d[targetKey][tIdx] = { ...d[targetKey][tIdx], ...actualUpdates };
+                           } else {
+                             d[targetKey][tIdx] = actualUpdates;
+                           }
+                         }
+                       }
+                     }
+
                      if (key === 'users') {
                        if (d.selectedUser && (d.selectedUser.id === updatedItem.id || d.selectedUser.userId === updatedItem.userId)) {
                          d.selectedUser = updatedItem;
@@ -2342,7 +2376,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 }
               });
               const configCols = ['locations', 'countries', 'companies', 'nationalities', 'containerTypes', 'loadingTypes', 'idTypes', 'extraDieselReasons', 'advanceReasons', 'emptyReturnYards', 'banks', 'branches', 'routingNumbers', 'currencies', 'genders', 'religions', 'professions', 'postOffices', 'policeStations', 'cities', 'states', 'walletIncomeSources', 'walletDeductionReasons', 'walletPaymentMethods', 'bankNames', 'mobileBankingWallets', 'relationships', 'loanPurposes'];
-              if (updatedItem && ['users', 'trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices'].includes(key)) {
+              if (updatedItem && ['users', 'trips', 'profiles', 'finances', 'monthlyFiles', 'payments', 'notifications', 'fuels', 'walletTransactions', 'loans', 'loanPayments', 'vehicles', 'vehicleServices', 'bankAccounts'].includes(key)) {
                 if (key === 'users') {
                   const coll = updatedItem.role === 'ADMIN' ? 'admins' : 'users';
                   saveFirebaseDoc(coll, updatedItem.id, updatedItem);
@@ -2394,7 +2428,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           'nationalities', 'containerTypes', 'loadingTypes', 'idTypes', 'extraDieselReasons', 'advanceReasons', 'emptyReturnYards',
           'genders', 'religions', 'professions', 'postOffices', 'policeStations', 'cities', 'states',
           'walletIncomeSources', 'walletDeductionReasons', 'walletPaymentMethods', 'bankNames', 'mobileBankingWallets', 'relationships', 'loanPurposes',
-          'dashboardOrder', 'banks', 'branches', 'routingNumbers', 'currencies', 'transactions', 'documents'
+          'dashboardOrder', 'banks', 'branches', 'routingNumbers', 'currencies', 'transactions', 'documents', 'bankAccounts', 'allBankAccounts'
         ];
         if (typeof prop === 'string' && arrayProps.includes(prop)) {
           return target[prop] || EMPTY_ARRAY;

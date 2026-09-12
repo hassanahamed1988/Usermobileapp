@@ -286,6 +286,52 @@
         "selectedCurrency": { "type": "string" }
       },
       "required": ["id"]
+    },
+    "BankAccount": {
+      "title": "BankAccount",
+      "description": "User bank account details including ATM card, mobile banking, and branch info",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "country": { "type": "string" },
+        "accountHolderName": { "type": "string" },
+        "accountName": { "type": "string" },
+        "bankName": { "type": "string" },
+        "accountNumber": { "type": "string" },
+        "accountType": { "type": "string" },
+        "currency": { "type": "string" },
+        "accountStatus": { "type": "string" },
+        "currentBalance": { "type": "number" },
+        "availableBalance": { "type": "number" },
+        "cardNumber": { "type": "string" },
+        "cardHolderName": { "type": "string" },
+        "cardType": { "type": "string" },
+        "cardExpiryDate": { "type": "string" },
+        "cardStatus": { "type": "string" },
+        "mobileProviderName": { "type": "string" },
+        "mobileRegisteredNumber": { "type": "string" },
+        "mobileAccountNumber": { "type": "string" },
+        "mobilePin": { "type": "string" },
+        "mobileStatus": { "type": "string" },
+        "ibankingUserId": { "type": "string" },
+        "ibankingPassword": { "type": "string" },
+        "ibankingTpin": { "type": "string" },
+        "ibankingRegisteredContact": { "type": "string" },
+        "ibankingRegisteredMobile": { "type": "string" },
+        "ibankingRegisteredEmail": { "type": "string" },
+        "ibankingStatus": { "type": "string" },
+        "branchName": { "type": "string" },
+        "branchCode": { "type": "string" },
+        "routingNumber": { "type": "string" },
+        "branchAddress": { "type": "string" },
+        "branchContactNumber": { "type": "string" },
+        "assistantOfficerNumber": { "type": "string" },
+        "branchManagerNumber": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "bankName", "accountNumber"]
     }
   },
   "firestore": {
@@ -296,6 +342,14 @@
     "users": {
       "schema": "User",
       "description": "Global user profiles database"
+    },
+    "users/{userId}/bankAccounts": {
+      "schema": "BankAccount",
+      "description": "User bank accounts list"
+    },
+    "admins/{adminId}/bankAccounts": {
+      "schema": "BankAccount",
+      "description": "Admin bank accounts list"
     },
     "users/{userId}/Contacts": {
       "schema": "Contact",
