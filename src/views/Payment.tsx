@@ -55,7 +55,8 @@ import {
   CheckSquare,
   Bell,
   Moon,
-  Sun
+  Sun,
+  Receipt
 } from 'lucide-react';
 
 import { downloadPdf } from '../utils/fileUtils';
@@ -127,6 +128,13 @@ const getCategoryCardDetails = (category: string) => {
       label: 'Vehicle Inspection',
     };
   }
+  if (cat.includes('advance')) {
+    return {
+      gradient: 'bg-gradient-to-br from-rose-500 via-rose-600 to-red-600',
+      icon: Receipt,
+      label: 'Advance',
+    };
+  }
   return {
     gradient: 'bg-gradient-to-br from-slate-500 via-slate-600 to-slate-700',
     icon: Info,
@@ -143,6 +151,7 @@ const getCategoryDisplayLabel = (category: string, lang: string) => {
     if (catUpper === 'FRIDAY') return 'শুক্রবার';
     if (catUpper === 'BONUS') return 'বোনাস';
     if (catUpper === 'VEHICLE INSPECTION' || catUpper === 'EXTRA FUEL' || catUpper === 'EXTRA_FUEL') return 'যানবাহন পরিদর্শন';
+    if (catUpper === 'ADVANCE') return 'অগ্রিম';
     if (catUpper === 'OTHERS') return 'অন্যান্য';
   }
   return category;
@@ -805,29 +814,99 @@ const PaymentView: React.FC = () => {
     });
   };
 
-  const handleReceivedCategoryClick = (category: string) => {
-    const normCategory = category.toUpperCase();
-    const matchedPayments = payments.filter(p => {
+  const getCategoryReceivedTotal = (
+    paymentsList: Payment[],
+    categoryName: string,
+    filterMonth: number | string,
+    filterYear: number | string
+  ): number => {
+    const normCategory = categoryName.toUpperCase();
+
+    if (normCategory === 'ADVANCE') {
+      let taken = 0;
+      let returned = 0;
+      paymentsList.forEach(p => {
+        if (p.status !== 'RECEIVED') return;
+        const monthMatch = filterMonth === 'ALL' ? true : Number(p.month) === Number(filterMonth);
+        const yearMatch = filterYear === 'ALL' ? true : Number(p.year) === Number(filterYear);
+        if (!monthMatch || !yearMatch) return;
+
+        if ((p.category || '').toUpperCase() === 'ADVANCE') {
+          if (p.details?.advanceType === 'TAKEN' && p.type === 'INCOME') {
+            taken += Number(p.amount) || 0;
+          } else if (p.details?.advanceType === 'RETURNED' && p.type === 'DEDUCTION') {
+            returned += Number(p.amount) || 0;
+          }
+        }
+      });
+      return Math.max(0, taken - returned);
+    }
+
+    const matchedPayments = paymentsList.filter(p => {
       if (p.type !== 'INCOME' || p.status !== 'RECEIVED') return false;
-      
+
+      const monthMatch = filterMonth === 'ALL' ? true : Number(p.month) === Number(filterMonth);
+      const yearMatch = filterYear === 'ALL' ? true : Number(p.year) === Number(filterYear);
+      if (!monthMatch || !yearMatch) return false;
+
       const pCat = (p.category || '').toUpperCase();
       if (normCategory === 'VEHICLE INSPECTION') {
         if (pCat === 'EXTRA FUEL' || pCat === 'EXTRA_FUEL') return true;
-        if (pCat === 'ADVANCE' && p.details?.advanceType === 'TAKEN') {
-          const target = getAdvanceTargetCategory(p);
-          return target === 'Extra Fuel';
-        }
         return false;
       }
 
       if (pCat === normCategory) return true;
 
-      if (pCat === 'ADVANCE' && p.details?.advanceType === 'TAKEN') {
-        const target = getAdvanceTargetCategory(p);
-        if (target && target.toUpperCase() === normCategory) {
+      if (normCategory === 'OTHERS') {
+        const standardCategories = ['SALARY', 'COMMISSION', 'FRIDAY', 'BONUS', 'TRIP DIESEL', 'EXTRA FUEL', 'EXTRA_FUEL', 'VEHICLE INSPECTION', 'ADVANCE'];
+        if (!standardCategories.includes(pCat)) {
           return true;
         }
-        if (!target && normCategory === 'OTHERS') {
+      }
+
+      return false;
+    });
+
+    let total = 0;
+    matchedPayments.forEach(p => {
+      const keys = Object.keys(p.details?.pendingItems || {});
+      if (keys.length > 0) {
+        keys.forEach(key => {
+          total += Number(p.details.pendingItems?.[key]) || 0;
+        });
+      } else {
+        total += Number(p.amount) || 0;
+      }
+    });
+
+    return total;
+  };
+
+  const handleReceivedCategoryClick = (category: string) => {
+    const normCategory = category.toUpperCase();
+    const matchedPayments = payments.filter(p => {
+      if (p.status !== 'RECEIVED') return false;
+      
+      if (normCategory === 'ADVANCE') {
+        if ((p.category || '').toUpperCase() === 'ADVANCE') {
+          return p.details?.advanceType === 'TAKEN' || p.details?.advanceType === 'RETURNED';
+        }
+        return false;
+      }
+
+      if (p.type !== 'INCOME') return false;
+      
+      const pCat = (p.category || '').toUpperCase();
+      if (normCategory === 'VEHICLE INSPECTION') {
+        if (pCat === 'EXTRA FUEL' || pCat === 'EXTRA_FUEL') return true;
+        return false;
+      }
+
+      if (pCat === normCategory) return true;
+
+      if (normCategory === 'OTHERS') {
+        const standardCategories = ['SALARY', 'COMMISSION', 'FRIDAY', 'BONUS', 'TRIP DIESEL', 'EXTRA FUEL', 'EXTRA_FUEL', 'VEHICLE INSPECTION', 'ADVANCE'];
+        if (!standardCategories.includes(pCat)) {
           return true;
         }
       }
@@ -981,10 +1060,11 @@ const PaymentView: React.FC = () => {
         );
 
         const isAdvance = (p.category || '').toUpperCase() === 'ADVANCE';
+        const displayAmount = isAdvance && p.details?.advanceType === 'RETURNED' ? -Number(p.amount) : p.amount;
         items.push({
           id: p.id,
           paymentId: p.id,
-          amount: p.amount,
+          amount: displayAmount,
           date: p.date,
           time: p.time,
           category: p.category,
@@ -1987,40 +2067,9 @@ setShowUserRenewSelection(false);
     };
     
     // 1. Process Received Payments for the selected month/year
-    payments.forEach(p => {
-      const monthMatch = selectedMonth === 'ALL' ? true : Number(p.month) === Number(selectedMonth);
-      const yearMatch = selectedYear === 'ALL' ? true : Number(p.year) === Number(selectedYear);
-      if (monthMatch && yearMatch) {
-        const catKey = (p.category || 'OTHERS').toUpperCase();
-        if (catKey === 'USER RENEW') return;
-        if (!breakdown[catKey]) {
-          breakdown[catKey] = { pending: 0, received: 0 };
-        }
-        if (p.status === 'RECEIVED') {
-          const pAmount = Number(p.amount) || 0;
-          if (p.type === 'INCOME') {
-            if (catKey === 'ADVANCE' && p.details?.advanceType !== 'RETURNED') {
-              const reason = (p.details?.advanceReason || p.details?.serviceName || '').toLowerCase();
-              const hasTarget = reason.includes('diesel') || reason.includes('ডিজেল') ||
-                             reason.includes('salary') || reason.includes('স্যালারি') ||
-                             reason.includes('commission') || reason.includes('কমিশন') ||
-                             reason.includes('friday') || reason.includes('ফ্রাইডে') ||
-                             reason.includes('bonus') || reason.includes('বোনাস') ||
-                             reason.includes('overtime') || reason.includes('ওভারটাইম') ||
-                             reason.includes('extra fuel') || reason.includes('এক্সট্রা ফুয়েল') || reason.includes('extra_fuel');
-              if (!hasTarget) {
-                breakdown[catKey].received -= pAmount;
-              }
-            } else {
-              breakdown[catKey].received += pAmount;
-            }
-          } else if (p.type === 'DEDUCTION') {
-            if (catKey === 'ADVANCE' && p.details?.advanceType === 'RETURNED') {
-              breakdown['ADVANCE'].received += pAmount;
-            }
-          }
-        }
-      }
+    const categoriesList = ['SALARY', 'COMMISSION', 'FRIDAY', 'BONUS', 'TRIP DIESEL', 'EXTRA FUEL', 'OTHERS', 'ADVANCE'];
+    categoriesList.forEach(catKey => {
+      breakdown[catKey].received = getCategoryReceivedTotal(payments, catKey, selectedMonth, selectedYear);
     });
 
     // 2. Process Trip Dues for the selected month/year using PaymentManager
@@ -4394,8 +4443,8 @@ setShowReceivedBreakdown(false);
                             {/* Right container: Amount, Method Badge & Chevron */}
                             <div className="flex items-center gap-3 shrink-0 pl-1">
                               <div className="flex flex-col items-end gap-1">
-                                <span className="font-black text-xs sm:text-sm text-emerald-500 dark:text-emerald-400 font-mono flex items-center">
-                                  +{(!Number.isNaN(Number(item.amount)) ? (item.amount || 0).toLocaleString() : '0')}
+                                <span className={`font-black text-xs sm:text-sm font-mono flex items-center ${Number(item.amount) < 0 ? 'text-rose-500 dark:text-rose-400' : 'text-emerald-500 dark:text-emerald-400'}`}>
+                                  {Number(item.amount) < 0 ? '-' : '+'}{Math.abs(Number(item.amount) || 0).toLocaleString()}
                                   <span className="text-[10px] font-bold ml-1 font-sans">{selectedCurrency}</span>
                                 </span>
 
@@ -4812,61 +4861,16 @@ setShowReceivedBreakdown(false);
                     'Friday': 0,
                     'Bonus': 0,
                     'Vehicle Inspection': 0,
+                    'Advance': 0,
                     'Others': 0
                   };
 
-                  payments.forEach(p => {
-                    const monthMatch = receivedListFilterMonth === 'ALL' ? true : Number(p.month) === Number(receivedListFilterMonth);
-                    const yearMatch = receivedListFilterYear === 'ALL' ? true : Number(p.year) === Number(receivedListFilterYear);
-                    if (monthMatch && yearMatch) {
-                      let catKey = p.category || 'Others';
-                      if (catKey.toUpperCase() === 'EXTRA FUEL' || catKey.toUpperCase() === 'EXTRA_FUEL') {
-                        catKey = 'Vehicle Inspection';
-                      }
-                      if (catKey.toUpperCase() === 'USER RENEW') return;
-                      
-                      const pAmount = Number(p.amount) || 0;
-                      let receivedAmount = 0;
-                      if (p.status === 'RECEIVED') {
-                        if (p.type === 'INCOME') {
-                          if (catKey.toUpperCase() === 'ADVANCE' && p.details?.advanceType !== 'RETURNED') {
-                            const reason = (p.details?.advanceReason || p.details?.serviceName || p.details?.note || '').toLowerCase();
-                            let targetCat = '';
-                            if (reason.includes('diesel') || reason.includes('ডিজেল')) targetCat = 'Trip Diesel';
-                            else if (reason.includes('salary') || reason.includes('স্যালারি')) targetCat = 'Salary';
-                            else if (reason.includes('commission') || reason.includes('কমিশন')) targetCat = 'Commission';
-                            else if (reason.includes('friday') || reason.includes('ফ্রাইডে')) targetCat = 'Friday';
-                            else if (reason.includes('bonus') || reason.includes('বোনাস')) targetCat = 'Bonus';
-                            else if (reason.includes('overtime') || reason.includes('ওভারটাইম')) targetCat = 'Others';
-                            else if (reason.includes('extra fuel') || reason.includes('এক্সট্রা ফুয়েল') || reason.includes('extra_fuel')) targetCat = 'Vehicle Inspection';
-                            
-                            if (targetCat) {
-                              catKey = targetCat;
-                              receivedAmount = pAmount;
-                            } else {
-                              receivedAmount = -pAmount;
-                            }
-                          } else {
-                            receivedAmount = pAmount;
-                          }
-                        } else if (p.type === 'DEDUCTION') {
-                          if (catKey.toUpperCase() === 'ADVANCE' && p.details?.advanceType === 'RETURNED') {
-                            receivedAmount = pAmount;
-                          }
-                        }
-                      }
-
-                      if (receivedAmount !== 0) {
-                        const matchingKey = Object.keys(localBreakdown).find(
-                          k => k.toLowerCase() === catKey.toLowerCase()
-                        ) || catKey;
-                        localBreakdown[matchingKey] = (localBreakdown[matchingKey] || 0) + receivedAmount;
-                      }
-                    }
+                  Object.keys(localBreakdown).forEach(cat => {
+                    localBreakdown[cat] = getCategoryReceivedTotal(payments, cat, receivedListFilterMonth, receivedListFilterYear);
                   });
 
                   const filteredEntries = Object.entries(localBreakdown).filter(([category, amount]) => {
-                    const defaultCategories = ['Salary', 'Commission', 'Trip Diesel', 'Friday', 'Bonus', 'Vehicle Inspection', 'Others'];
+                    const defaultCategories = ['Salary', 'Commission', 'Trip Diesel', 'Friday', 'Bonus', 'Vehicle Inspection', 'Advance', 'Others'];
                     const isNonEmpty = Math.abs(amount) > 0 || defaultCategories.includes(category);
                     if (!isNonEmpty) return false;
                     if (receivedListSearchQuery.trim() !== '') {
