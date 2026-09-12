@@ -24,7 +24,8 @@ import {
   Phone,
   Hash,
   Calendar,
-  Wallet
+  Wallet,
+  ExternalLink
 } from 'lucide-react';
 import { useStore } from '@/store';
 import { TRANSLATIONS } from '@/translations';
@@ -180,6 +181,63 @@ const maskCardNumber = (cardNo?: string) => {
   return '•••• •••• •••• ' + last4;
 };
 
+// Known App / Play Store link lookup
+const DEFAULT_APP_LINKS: Record<string, string> = {
+  'bkash': 'https://play.google.com/store/apps/details?id=com.bkash.app',
+  'nagad': 'https://play.google.com/store/apps/details?id=com.konapayment.nagad',
+  'rocket': 'https://play.google.com/store/apps/details?id=com.dbbl.mbb.mobilebanking',
+  'rocket (dbbl)': 'https://play.google.com/store/apps/details?id=com.dbbl.mbb.mobilebanking',
+  'upay': 'https://play.google.com/store/apps/details?id=com.ucb.upay',
+  'upay (ucb)': 'https://play.google.com/store/apps/details?id=com.ucb.upay',
+  'cellfin': 'https://play.google.com/store/apps/details?id=com.ibbl.cellfin',
+  'cellfin (ibbl)': 'https://play.google.com/store/apps/details?id=com.ibbl.cellfin',
+  'surecash': 'https://play.google.com/store/apps/details?id=com.progoti.surecash',
+  'tap': 'https://play.google.com/store/apps/details?id=bd.com.pbl.tap',
+  'dutch-bangla bank': 'https://play.google.com/store/apps/details?id=com.dbbl.nexuspay',
+  'brac bank': 'https://play.google.com/store/apps/details?id=com.bracbank.astha',
+  'islami bank bangladesh': 'https://play.google.com/store/apps/details?id=com.ibbl.cellfin',
+  'city bank': 'https://play.google.com/store/apps/details?id=com.thecitybank.citytouch',
+  'eastern bank': 'https://play.google.com/store/apps/details?id=com.ebl.skybanking',
+  'standard chartered': 'https://play.google.com/store/apps/details?id=com.sc.scmobile.bd',
+  'mutual trust bank': 'https://play.google.com/store/apps/details?id=com.mtb.mtbsmartbanking',
+  'prime bank': 'https://play.google.com/store/apps/details?id=com.primebank.myprime',
+  'bank asia': 'https://play.google.com/store/apps/details?id=com.bankasia.smartapp',
+  'united commercial bank (ucb)': 'https://play.google.com/store/apps/details?id=com.ucb.upay',
+};
+
+const handleOpenApp = (customLink?: string, appName?: string, providerOrBankName?: string) => {
+  let url = (customLink || '').trim();
+
+  if (!url) {
+    const key1 = (appName || '').trim().toLowerCase();
+    const key2 = (providerOrBankName || '').trim().toLowerCase();
+    
+    if (key1 && DEFAULT_APP_LINKS[key1]) {
+      url = DEFAULT_APP_LINKS[key1];
+    } else if (key2 && DEFAULT_APP_LINKS[key2]) {
+      url = DEFAULT_APP_LINKS[key2];
+    } else {
+      const matchedKey = Object.keys(DEFAULT_APP_LINKS).find(k => 
+        (key1 && (k.includes(key1) || key1.includes(k))) || 
+        (key2 && (k.includes(key2) || key2.includes(k)))
+      );
+      if (matchedKey) {
+        url = DEFAULT_APP_LINKS[matchedKey];
+      } else {
+        const query = encodeURIComponent(appName || providerOrBankName || 'banking app');
+        url = `https://play.google.com/store/search?q=${query}&c=apps`;
+      }
+    }
+  }
+
+  if (url) {
+    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.includes('://')) {
+      url = 'https://' + url;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+};
+
 type TabType = 'ACCOUNT_INFO' | 'CARD_INFO' | 'MOBILE_BANKING_INFO' | 'I_BANKING_INFO' | 'BRANCH_INFO';
 
 const BankAccountView: React.FC = () => {
@@ -245,6 +303,8 @@ const BankAccountView: React.FC = () => {
     mobileAccountNumber: '',
     mobilePin: '',
     mobileStatus: 'Active',
+    mobileAppName: '',
+    mobileAppLink: '',
     ibankingUserId: '',
     ibankingPassword: '',
     ibankingTpin: '',
@@ -252,6 +312,8 @@ const BankAccountView: React.FC = () => {
     ibankingRegisteredMobile: '',
     ibankingRegisteredEmail: '',
     ibankingStatus: 'Active',
+    ibankingAppName: '',
+    ibankingAppLink: '',
     branchName: '',
     branchCode: '',
     routingNumber: '',
@@ -312,6 +374,8 @@ const BankAccountView: React.FC = () => {
         mobileAccountNumber: account.mobileAccountNumber || '',
         mobilePin: account.mobilePin || '',
         mobileStatus: account.mobileStatus || 'Active',
+        mobileAppName: account.mobileAppName || '',
+        mobileAppLink: account.mobileAppLink || '',
         ibankingUserId: account.ibankingUserId || '',
         ibankingPassword: account.ibankingPassword || '',
         ibankingTpin: account.ibankingTpin || '',
@@ -319,6 +383,8 @@ const BankAccountView: React.FC = () => {
         ibankingRegisteredMobile: account.ibankingRegisteredMobile || '',
         ibankingRegisteredEmail: account.ibankingRegisteredEmail || '',
         ibankingStatus: account.ibankingStatus || 'Active',
+        ibankingAppName: account.ibankingAppName || '',
+        ibankingAppLink: account.ibankingAppLink || '',
         branchName: account.branchName || '',
         branchCode: account.branchCode || '',
         routingNumber: account.routingNumber || '',
@@ -345,11 +411,15 @@ const BankAccountView: React.FC = () => {
         mobileRegisteredNumber: '',
         mobileAccountNumber: '',
         mobileStatus: 'Active',
+        mobileAppName: '',
+        mobileAppLink: '',
         ibankingUserId: '',
         ibankingRegisteredContact: '',
         ibankingRegisteredMobile: '',
         ibankingRegisteredEmail: '',
         ibankingStatus: 'Active',
+        ibankingAppName: '',
+        ibankingAppLink: '',
         branchName: '',
         branchCode: '',
         routingNumber: '',
@@ -388,6 +458,8 @@ const BankAccountView: React.FC = () => {
       mobileAccountNumber: selectedAccount.mobileAccountNumber || '',
       mobilePin: selectedAccount.mobilePin || '',
       mobileStatus: selectedAccount.mobileStatus || 'Active',
+      mobileAppName: selectedAccount.mobileAppName || '',
+      mobileAppLink: selectedAccount.mobileAppLink || '',
       ibankingUserId: selectedAccount.ibankingUserId || '',
       ibankingPassword: selectedAccount.ibankingPassword || '',
       ibankingTpin: selectedAccount.ibankingTpin || '',
@@ -395,6 +467,8 @@ const BankAccountView: React.FC = () => {
       ibankingRegisteredMobile: selectedAccount.ibankingRegisteredMobile || '',
       ibankingRegisteredEmail: selectedAccount.ibankingRegisteredEmail || '',
       ibankingStatus: selectedAccount.ibankingStatus || 'Active',
+      ibankingAppName: selectedAccount.ibankingAppName || '',
+      ibankingAppLink: selectedAccount.ibankingAppLink || '',
       branchName: selectedAccount.branchName || '',
       branchCode: selectedAccount.branchCode || '',
       routingNumber: selectedAccount.routingNumber || '',
@@ -472,7 +546,9 @@ const BankAccountView: React.FC = () => {
           mobileRegisteredNumber: formData.mobileRegisteredNumber?.trim() || '',
           mobileAccountNumber: formData.mobileAccountNumber?.trim() || '',
           mobilePin: formData.mobilePin?.trim() || '',
-          mobileStatus: formData.mobileStatus || 'Active'
+          mobileStatus: formData.mobileStatus || 'Active',
+          mobileAppName: formData.mobileAppName?.trim() || '',
+          mobileAppLink: formData.mobileAppLink?.trim() || ''
         };
       } else if (editingSection === 'I_BANKING_INFO') {
         updatedAccount = {
@@ -483,7 +559,9 @@ const BankAccountView: React.FC = () => {
           ibankingRegisteredContact: formData.ibankingRegisteredMobile?.trim() || formData.ibankingRegisteredContact?.trim() || '',
           ibankingRegisteredMobile: formData.ibankingRegisteredMobile?.trim() || '',
           ibankingRegisteredEmail: formData.ibankingRegisteredEmail?.trim() || '',
-          ibankingStatus: formData.ibankingStatus || 'Active'
+          ibankingStatus: formData.ibankingStatus || 'Active',
+          ibankingAppName: formData.ibankingAppName?.trim() || '',
+          ibankingAppLink: formData.ibankingAppLink?.trim() || ''
         };
       }
 
@@ -1266,7 +1344,7 @@ const BankAccountView: React.FC = () => {
           {/* TAB 4: Mobile Banking Info */}
           {activeTab === 'MOBILE_BANKING_INFO' && (
             <div className="space-y-4 sm:space-y-6">
-              {!selectedAccount.mobileProviderName && !selectedAccount.mobileAccountNumber ? (
+              {!selectedAccount.mobileProviderName && !selectedAccount.mobileAccountNumber && !selectedAccount.mobileAppName ? (
                 <EmptyTabState 
                   icon={<Smartphone size={36} />}
                   title={language === 'bn' ? 'কোনো মোবাইল ব্যাংকিং তথ্য নেই' : 'No Mobile Banking Details'}
@@ -1280,7 +1358,7 @@ const BankAccountView: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Smartphone size={18} className="text-pink-500" />
                       <h3 className="font-bold text-sm text-text-main">
-                        {language === 'bn' ? 'মোবাইল ব্যাংকিং বিবরণ' : 'Mobile banking Details'}
+                        {language === 'bn' ? 'মোবাইল ব্যাংকিং বিবরণ' : 'Mobile Banking Details'}
                       </h3>
                     </div>
                     <Button 
@@ -1302,7 +1380,32 @@ const BankAccountView: React.FC = () => {
                     isMono 
                     icon={<Lock size={15} className="text-pink-500" />}
                   />
+                  <DetailRow label={language === 'bn' ? 'অ্যাপ্লিকেশনের নাম' : 'Application Name'} value={selectedAccount.mobileAppName || selectedAccount.mobileProviderName} icon={<Smartphone size={15} className="text-pink-500" />} />
                   <DetailRow label={language === 'bn' ? 'স্ট্যাটাস' : 'Status'} value={selectedAccount.mobileStatus} icon={<Info size={15} className="text-pink-500" />} />
+
+                  {/* Open App Action Row */}
+                  <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Smartphone size={15} className="text-pink-500 shrink-0" />
+                      <div className="min-w-0">
+                        <h4 className="text-xs sm:text-sm font-bold text-text-main truncate">
+                          {selectedAccount.mobileAppName || (selectedAccount.mobileProviderName ? `${selectedAccount.mobileProviderName} App` : 'Mobile App')}
+                        </h4>
+                        <p className="text-[11px] text-text-muted truncate">
+                          {language === 'bn' ? 'অ্যাপ ইনস্টল করা থাকলে ওপেন হবে বা প্লে স্টোরে যাবে' : 'Launches app or redirects to Play Store'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleOpenApp(selectedAccount.mobileAppLink, selectedAccount.mobileAppName, selectedAccount.mobileProviderName)}
+                      icon={<ExternalLink size={14} />}
+                      className="bg-pink-600 hover:bg-pink-700 text-white w-full sm:w-auto font-bold px-3.5 py-1.5 shrink-0 justify-center text-xs"
+                    >
+                      {language === 'bn' ? 'ওপেন অ্যাপ' : 'Open App'}
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
@@ -1311,7 +1414,7 @@ const BankAccountView: React.FC = () => {
           {/* TAB 5: I-Banking Info */}
           {activeTab === 'I_BANKING_INFO' && (
             <div className="space-y-4 sm:space-y-6">
-              {!selectedAccount.ibankingUserId && !selectedAccount.ibankingRegisteredMobile && !selectedAccount.ibankingRegisteredEmail && !selectedAccount.ibankingRegisteredContact ? (
+              {!selectedAccount.ibankingUserId && !selectedAccount.ibankingRegisteredMobile && !selectedAccount.ibankingRegisteredEmail && !selectedAccount.ibankingRegisteredContact && !selectedAccount.ibankingAppName ? (
                 <EmptyTabState 
                   icon={<Monitor size={36} />}
                   title={language === 'bn' ? 'কোনো ইন্টারনেট ব্যাংকিং তথ্য নেই' : 'No Internet Banking Details'}
@@ -1362,7 +1465,32 @@ const BankAccountView: React.FC = () => {
                     value={selectedAccount.ibankingRegisteredEmail} 
                     icon={<Mail size={15} className="text-amber-500" />}
                   />
+                  <DetailRow label={language === 'bn' ? 'অ্যাপ্লিকেশনের নাম' : 'Application Name'} value={selectedAccount.ibankingAppName || `${selectedAccount.bankName || ''} App`.trim()} icon={<Monitor size={15} className="text-amber-500" />} />
                   <DetailRow label={language === 'bn' ? 'স্ট্যাটাস' : 'Status'} value={selectedAccount.ibankingStatus} icon={<Info size={15} className="text-amber-500" />} />
+
+                  {/* Open App Action Row */}
+                  <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Monitor size={15} className="text-amber-500 shrink-0" />
+                      <div className="min-w-0">
+                        <h4 className="text-xs sm:text-sm font-bold text-text-main truncate">
+                          {selectedAccount.ibankingAppName || `${selectedAccount.bankName || 'I-Banking'} App`}
+                        </h4>
+                        <p className="text-[11px] text-text-muted truncate">
+                          {language === 'bn' ? 'অ্যাপ ইনস্টল করা থাকলে ওপেন হবে বা প্লে স্টোরে যাবে' : 'Launches app or redirects to Play Store'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleOpenApp(selectedAccount.ibankingAppLink, selectedAccount.ibankingAppName, selectedAccount.bankName)}
+                      icon={<ExternalLink size={14} />}
+                      className="bg-amber-600 hover:bg-amber-700 text-white w-full sm:w-auto font-bold px-3.5 py-1.5 shrink-0 justify-center text-xs"
+                    >
+                      {language === 'bn' ? 'ওপেন অ্যাপ' : 'Open App'}
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
@@ -1666,7 +1794,23 @@ const BankAccountView: React.FC = () => {
                   placeholder="Enter PIN Number"
                 />
 
-                <div onClick={() => setShowMobileStatusSelect(true)} className="relative cursor-pointer group">
+                <InputField
+                  label={language === 'bn' ? 'অ্যাপ্লিকেশনের নাম (App Name)' : 'Application Name'}
+                  name="mobileAppName"
+                  value={formData.mobileAppName || ''}
+                  onChange={e => handleFieldChange('mobileAppName', e.target.value)}
+                  placeholder={language === 'bn' ? 'যেমন: bKash / Nagad App' : 'e.g. bKash, Nagad App'}
+                />
+
+                <InputField
+                  label={language === 'bn' ? 'অ্যাপ্লিকেশনের লিংক (App Link / Play Store)' : 'Application Link (Play Store / Deep Link)'}
+                  name="mobileAppLink"
+                  value={formData.mobileAppLink || ''}
+                  onChange={e => handleFieldChange('mobileAppLink', e.target.value)}
+                  placeholder="https://play.google.com/store/apps/details?id=..."
+                />
+
+                <div onClick={() => setShowMobileStatusSelect(true)} className="relative cursor-pointer group md:col-span-2">
                   <InputField
                     label={language === 'bn' ? 'মোবাইল ওয়ালেট স্ট্যাটাস' : 'Wallet Status'}
                     name="mobileStatus"
@@ -1732,6 +1876,22 @@ const BankAccountView: React.FC = () => {
                   value={formData.ibankingRegisteredEmail || ''}
                   onChange={e => handleFieldChange('ibankingRegisteredEmail', e.target.value)}
                   placeholder="e.g. user@example.com"
+                />
+
+                <InputField
+                  label={language === 'bn' ? 'অ্যাপ্লিকেশনের নাম (App Name)' : 'Application Name'}
+                  name="ibankingAppName"
+                  value={formData.ibankingAppName || ''}
+                  onChange={e => handleFieldChange('ibankingAppName', e.target.value)}
+                  placeholder={language === 'bn' ? 'যেমন: Citytouch / Astha / Skybanking' : 'e.g. Citytouch, Astha, Skybanking'}
+                />
+
+                <InputField
+                  label={language === 'bn' ? 'অ্যাপ্লিকেশনের লিংক (App Link / Play Store)' : 'Application Link (Play Store / Deep Link)'}
+                  name="ibankingAppLink"
+                  value={formData.ibankingAppLink || ''}
+                  onChange={e => handleFieldChange('ibankingAppLink', e.target.value)}
+                  placeholder="https://play.google.com/store/apps/details?id=..."
                 />
 
                 <div onClick={() => setShowIBankingStatusSelect(true)} className="relative cursor-pointer group">
@@ -2217,7 +2377,23 @@ const BankAccountView: React.FC = () => {
                     placeholder="Enter PIN Number"
                   />
 
-                  <div onClick={() => setShowMobileStatusSelect(true)} className="relative cursor-pointer group">
+                  <InputField
+                    label={language === 'bn' ? 'অ্যাপ্লিকেশনের নাম (App Name)' : 'Application Name'}
+                    name="mobileAppName"
+                    value={formData.mobileAppName || ''}
+                    onChange={e => handleFieldChange('mobileAppName', e.target.value)}
+                    placeholder={language === 'bn' ? 'যেমন: bKash / Nagad App' : 'e.g. bKash, Nagad App'}
+                  />
+
+                  <InputField
+                    label={language === 'bn' ? 'অ্যাপ্লিকেশনের লিংক (App Link / Play Store)' : 'Application Link (Play Store / Deep Link)'}
+                    name="mobileAppLink"
+                    value={formData.mobileAppLink || ''}
+                    onChange={e => handleFieldChange('mobileAppLink', e.target.value)}
+                    placeholder="https://play.google.com/store/apps/details?id=..."
+                  />
+
+                  <div onClick={() => setShowMobileStatusSelect(true)} className="relative cursor-pointer group md:col-span-2">
                     <InputField
                       label={language === 'bn' ? 'মোবাইল ওয়ালেট স্ট্যাটাস' : 'Wallet Status'}
                       name="mobileStatus"
@@ -2285,6 +2461,22 @@ const BankAccountView: React.FC = () => {
                     value={formData.ibankingRegisteredEmail || ''}
                     onChange={e => handleFieldChange('ibankingRegisteredEmail', e.target.value)}
                     placeholder="e.g. user@example.com"
+                  />
+
+                  <InputField
+                    label={language === 'bn' ? 'অ্যাপ্লিকেশনের নাম (App Name)' : 'Application Name'}
+                    name="ibankingAppName"
+                    value={formData.ibankingAppName || ''}
+                    onChange={e => handleFieldChange('ibankingAppName', e.target.value)}
+                    placeholder={language === 'bn' ? 'যেমন: Citytouch / Astha / Skybanking' : 'e.g. Citytouch, Astha, Skybanking'}
+                  />
+
+                  <InputField
+                    label={language === 'bn' ? 'অ্যাপ্লিকেশনের লিংক (App Link / Play Store)' : 'Application Link (Play Store / Deep Link)'}
+                    name="ibankingAppLink"
+                    value={formData.ibankingAppLink || ''}
+                    onChange={e => handleFieldChange('ibankingAppLink', e.target.value)}
+                    placeholder="https://play.google.com/store/apps/details?id=..."
                   />
 
                   <div onClick={() => setShowIBankingStatusSelect(true)} className="relative cursor-pointer group">

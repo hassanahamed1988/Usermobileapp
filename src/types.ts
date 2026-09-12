@@ -439,6 +439,8 @@ export interface BankAccount {
   mobileAccountNumber?: string;
   mobilePin?: string;
   mobileStatus?: string;
+  mobileAppName?: string;
+  mobileAppLink?: string;
   ibankingUserId?: string;
   ibankingPassword?: string;
   ibankingTpin?: string;
@@ -446,6 +448,8 @@ export interface BankAccount {
   ibankingRegisteredMobile?: string;
   ibankingRegisteredEmail?: string;
   ibankingStatus?: string;
+  ibankingAppName?: string;
+  ibankingAppLink?: string;
   branchName?: string;
   branchCode?: string;
   routingNumber?: string;
