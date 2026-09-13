@@ -1,7 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useStore } from '../store'; import { TRANSLATIONS, GLOBAL_DASHBOARD_MODULES } from '../constants';
+import { useStore } from '../store'; import { TRANSLATIONS, GLOBAL_DASHBOARD_MODULES, isModuleVisible } from '../constants';
 import { 
   Truck, 
   Users, 
@@ -448,13 +448,12 @@ const Dashboard: React.FC = () => {
     // Admin-type modules are completely removed — never show them
     if (item.type === 'admin') return false;
 
-    // All user-type modules are visible to all users
-    // Only respect explicit deniedPermissions from user profile
-    if (user?.deniedPermissions && user.deniedPermissions.includes(item.id)) {
-      return false;
-    }
+    // Admins themselves bypass the permission system entirely — it exists
+    // to control what a regular mobile-app USER can see, not to restrict
+    // an admin's own access to their own tools.
+    if (user?.role === 'ADMIN') return true;
 
-    return true;
+    return isModuleVisible(item.id, user?.permissions, user?.deniedPermissions);
   });
 
   const sortedItems: any[] = [...visibleItems];

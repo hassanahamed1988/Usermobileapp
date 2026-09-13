@@ -51,6 +51,41 @@ export const GLOBAL_DASHBOARD_MODULES = [
   { id: 'BANK_ACCOUNT', labelKey: 'BANK_ACCOUNT', icon: <Landmark size={18} />, color: '#0ea5e9', type: 'user' },
 ];
 
+// Modules considered safe/common enough to be ON by default — an admin can
+// explicitly DENY one via user.deniedPermissions to turn it off for a
+// specific user. Every other user-type module in GLOBAL_DASHBOARD_MODULES
+// is the opposite: OFF by default, requiring an admin to explicitly ALLOW
+// it via user.permissions before that user sees it anywhere. BANK_ACCOUNT
+// is deliberately left out of this list (opt-in) since it's a brand new,
+// financially-sensitive feature — no existing user should suddenly gain
+// access to it just because this list exists; an admin has to decide.
+//
+// This is the single source of truth for that split — Dashboard.tsx (main
+// tile grid), Layout.tsx (side/hamburger menu), and AdminProfileUpdate.tsx
+// (this app's own permission editor) all import it from here rather than
+// keeping their own copy, and the web admin app's permissionModules.ts
+// mirrors this exact same list on its side. Keep both in sync if this
+// list ever changes.
+export const DEFAULT_OVERRIDABLE_PERMISSIONS = ['SECURITY', 'THEME', 'DOWNLOAD', 'SEARCH', 'USER_PROFILE', 'SUPPORT', 'SETTINGS', 'STATEMENT', 'INVOICE', 'PAYMENT', 'LEAVE_SETTLEMENT', 'FUEL', 'WALLET', 'CHAT', 'CONTACTS'];
+
+// Single shared resolver for "can this user see this module": overridable
+// modules default to visible unless explicitly denied; everything else
+// defaults to hidden unless explicitly allowed. Both Dashboard.tsx and
+// Layout.tsx call this now instead of each re-implementing (and silently
+// drifting from) their own version of this same check.
+export function isModuleVisible(
+  moduleId: string,
+  permissions: string[] | undefined,
+  deniedPermissions: string[] | undefined
+): boolean {
+  const allowed = Array.isArray(permissions) ? permissions : [];
+  const denied = Array.isArray(deniedPermissions) ? deniedPermissions : [];
+  if (DEFAULT_OVERRIDABLE_PERMISSIONS.includes(moduleId)) {
+    return !denied.includes(moduleId);
+  }
+  return allowed.includes(moduleId);
+}
+
 export const PRESET_BACKGROUNDS = [
   { name: 'Midnight', color: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' },
   { name: 'Ocean', color: 'linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%)' },

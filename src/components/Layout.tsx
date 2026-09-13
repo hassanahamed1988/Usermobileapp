@@ -51,7 +51,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore, GLOBAL_TRANSITION, GLOBAL_VARIANTS } from '../store';
-import { TRANSLATIONS } from '../constants';
+import { TRANSLATIONS, isModuleVisible } from '../constants';
 
 import { THEMES } from '../constants';
 import { getContrastColor, getHexColor } from '../utils/colorUtils';
@@ -265,10 +265,14 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
 
   const filterItems = (items: any[]) => {
     if (isAdmin) return items;
-    const defaultItems = ['SETTINGS', 'SUPPORT', 'USER_PROFILE', 'DASHBOARD', 'PRAYER_TIMES', 'SEARCH', 'PAYMENT'];
+    // DASHBOARD (the home button) and PRAYER_TIMES aren't entries in
+    // GLOBAL_DASHBOARD_MODULES at all — they're plain navigation, not
+    // permission-gated modules — so they stay unconditionally visible
+    // exactly as before.
+    const alwaysVisible = ['DASHBOARD', 'PRAYER_TIMES'];
     return items.filter(item => {
-      const hasSpecificPermission = Array.isArray(user?.permissions) && user.permissions.includes(item.id);
-      return (defaultItems.includes(item.id) || publicMenuItems.includes(item.id) || hasSpecificPermission);
+      if (alwaysVisible.includes(item.id) || publicMenuItems.includes(item.id)) return true;
+      return isModuleVisible(item.id, user?.permissions, user?.deniedPermissions);
     });
   };
 
@@ -305,10 +309,10 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
     { id: 'WALLET_LINK_USER', icon: <UserPlus size={20} />, label: language === 'bn' ? 'ওয়ালেট লিঙ্ক ইউজার' : 'Wallet Link User', color: '#fbbf24' },
   ]) : [];
 
-  const vehicleItems = !isAdmin ? [
+  const vehicleItems = user ? filterItems([
     { id: 'VEHICLE_LIST', icon: <Car size={20} />, label: language === 'bn' ? 'যানবাহন তালিকা' : 'Vehicle List', color: '#10b981' },
     { id: 'VEHICLE_SERVICES', icon: <Settings size={20} />, label: language === 'bn' ? 'যানবাহন সার্ভিস' : 'Vehicle Services', color: '#3b82f6' }
-  ] : [];
+  ]) : [];
 
   const paymentItem = { id: 'PAYMENT', icon: <Wallet size={22} />, label: t.PAYMENT };
   const showPayment = user && (isAdmin || publicMenuItems.includes('PAYMENT'));
@@ -351,7 +355,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
     { id: 'DASHBOARD', icon: <DashboardIcon size={26} />, label: t.DASHBOARD, show: true, color: '#10b981' },
     { id: 'SEARCH', icon: <Search size={26} />, label: t.SEARCH, show: isAdmin, color: '#818cf8' },
     { id: 'PAYMENT', icon: <Wallet size={26} />, label: t.PAYMENT, show: showPayment, color: '#fbbf24' },
-    { id: 'BANK_ACCOUNT', icon: <Landmark size={26} />, label: t.BANK_ACCOUNT || 'Bank Accounts', show: !!user, color: '#0ea5e9' },
+    { id: 'BANK_ACCOUNT', icon: <Landmark size={26} />, label: t.BANK_ACCOUNT || 'Bank Accounts', show: isAdmin || isModuleVisible('BANK_ACCOUNT', user?.permissions, user?.deniedPermissions), color: '#0ea5e9' },
     { id: 'WALLET', icon: <Wallet size={26} />, label: t.WALLET, show: isAdmin, isAccordion: true, subItems: walletItems, isOpen: isWalletOpen, toggle: () => setIsWalletOpen(!isWalletOpen), color: '#159938' },
     { id: 'STATEMENT', icon: <FileText size={26} />, label: t.STATEMENT, show: !!user, color: '#10b981' },
     { id: 'LEAVE_SETTLEMENT', icon: <CalendarCheck size={26} />, label: t.LEAVE_SETTLEMENT || 'Leave & Settlement', show: !!user, color: '#ef4444' },

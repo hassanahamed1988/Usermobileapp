@@ -12,7 +12,7 @@ const ICON_MAP: Record<string, any> = {
   LayoutDashboard, Clock, FileText, PlusCircle, User: UserIcon, Files, UserCheck, UserX, CreditCard, LifeBuoy, Settings, Search, Wallet, UserCircle, Shield, Trash2, MessageSquare
 };
 import { DIVISIONS, DISTRICTS, POLICE_STATIONS, POST_OFFICES } from '../constants/countries';
-import { THEMES, APP_MODULES, GLOBAL_DASHBOARD_MODULES } from '../constants';
+import { THEMES, APP_MODULES, GLOBAL_DASHBOARD_MODULES, DEFAULT_OVERRIDABLE_PERMISSIONS } from '../constants';
 import { compressImage } from '@/utils/imageUtils';
 import { getContrastColor } from '@/utils/colorUtils';
 
@@ -22,7 +22,9 @@ import FormWindow from '@/components/FormWindow';
 
 const ID_TYPES = ['DRIVING LICENSE', 'NATIONAL ID', 'BIRTH CERTIFICATE', 'PASSPORT'];
 
-const DEFAULT_OVERRIDABLE_PERMISSIONS = ['SECURITY', 'THEME', 'DOWNLOAD', 'SEARCH', 'USER_PROFILE', 'SUPPORT', 'SETTINGS', 'STATEMENT', 'INVOICE', 'PAYMENT', 'LEAVE_SETTLEMENT', 'FUEL', 'WALLET', 'CHAT', 'CONTACTS'];
+// DEFAULT_OVERRIDABLE_PERMISSIONS now imported from '../constants' (single
+// source of truth shared with Dashboard.tsx, Layout.tsx, and the web
+// admin app's permissionModules.ts).
 
 const AdminProfileUpdate: React.FC = () => {
   const { setView, language, user, setUser, countries, idTypes, showFeedback, theme, selectedUser, setSelectedUser, updateUser, payments, wallpaper, backgroundColor, headerBg, appThemeMode, setIsEntryFormOpen, setAppThemeMode, notifications, appGrid, postOffices, policeStations, cities, states } = useStore();
