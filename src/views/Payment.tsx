@@ -163,7 +163,7 @@ const DetailItem = ({ icon: Icon, label, value }: any) => (
       <Icon size={12} />
     </div>
     <div className="min-w-0 flex-1">
-      <p className="text-[9px] font-bold text-text-muted uppercase tracking-wider leading-none mb-1">{label}</p>
+      <p className="text-[8px] font-bold text-text-muted uppercase tracking-wider leading-none mb-1">{label}</p>
       <p className="text-xs font-semibold text-text-main leading-tight truncate">{value || 'N/A'}</p>
     </div>
   </div>
@@ -2113,7 +2113,7 @@ setShowUserRenewSelection(false);
   const renderEntryFormContent = () => (
     <div className={isDesktop ? 'space-y-6' : 'flex-1 overflow-y-auto p-4 sm:p-6 pb-[60px] space-y-6 min-h-0'}>
       {/* Type Selector Card */}
-      <div className="bg-theme-card px-4 py-4 rounded-[10px] shadow-sm space-y-2">
+      <div className="bg-theme-card px-4 py-4 rounded-[10px] shadow-sm space-y-1.5">
         <label className="block text-[10px] font-black uppercase text-text-main tracking-widest mb-1">{t.TRANSACTION_TYPE || "Transaction Type"}</label>
         <div className="flex bg-nested-card border border-black/5 dark:border-white/5 rounded-[10px] items-center shadow-sm relative">
           <button 
@@ -2162,7 +2162,7 @@ setShowUserRenewSelection(false);
       </div>
 
       {/* Payment Method Card */}
-      <div className="bg-theme-card px-4 py-4 rounded-[10px] shadow-sm space-y-2">
+      <div className="bg-theme-card px-4 py-4 rounded-[10px] shadow-sm space-y-1.5">
         <label 
           className="block text-[10px] font-black uppercase tracking-widest mb-1"
           style={{ color: dynamicTextColor }}
@@ -2215,7 +2215,7 @@ setShowUserRenewSelection(false);
                 className="bg-theme-card px-4 py-4 rounded-[10px] shadow-sm space-y-4 animate-none"
                 style={{ transition: 'none' }}
               >
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase text-text-main tracking-widest">{t.COUNTRY || "Country"}</label>
                   <button 
                     type="button"
@@ -2252,7 +2252,7 @@ setShowUserRenewSelection(false);
                 }}
               />
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase text-text-main tracking-widest">{t.BANK_NAME || "Bank Name"}</label>
                 <button 
                   type="button"
@@ -2281,7 +2281,7 @@ setShowUserRenewSelection(false);
                 }}
               />
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase text-text-main tracking-widest">{t.BRANCH_NAME || "Branch Name"}</label>
                 <button 
                   type="button"
@@ -2294,13 +2294,13 @@ setShowUserRenewSelection(false);
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase text-text-main tracking-widest">{t.ROUTING_NUMBER || "Routing Number"}</label>
                   <div className="w-full h-14 px-4 rounded-[10px] bg-nested-card border border-black/5 dark:border-white/5 flex items-center text-xs font-bold text-text-muted">
                     <span className="truncate">{formDetails.routingNumber || 'Auto-filled'}</span>
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase text-text-main tracking-widest">{t.SWIFT_CODE || "SWIFT Code"}</label>
                   <div className="w-full h-14 px-4 rounded-[10px] bg-nested-card border border-black/5 dark:border-white/5 flex items-center text-xs font-bold text-text-muted">
                     <span className="truncate">{formDetails.swiftCode || 'Auto-filled'}</span>
@@ -2363,7 +2363,7 @@ setShowUserRenewSelection(false);
                 className="bg-theme-card px-4 py-4 rounded-[10px] shadow-sm space-y-4 animate-none"
                 style={{ transition: 'none' }}
               >
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase text-text-main tracking-widest">{t.COUNTRY || "Country"}</label>
                   <button 
                     type="button"
@@ -2397,7 +2397,7 @@ setShowUserRenewSelection(false);
                 }}
               />
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase text-text-main tracking-widest">{t.SERVICE_PROVIDER || "Service Provider"}</label>
                 <button 
                   type="button"
@@ -2509,13 +2509,13 @@ setShowUserRenewSelection(false);
         <div className="flex gap-4 pb-[100px]">
           <button 
             onClick={() => setIsEntryFormOpen(false)}
-            className="flex-1 h-14 bg-rose-500 text-white rounded-[10px] text-xs font-black uppercase tracking-widest shadow-lg shadow-rose-500/20 active:scale-95 transition-all flex items-center justify-center"
+            className="flex-1 h-14 bg-rose-500 text-white rounded-[10px] text-[11px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/20 active:scale-95 transition-all flex items-center justify-center"
           >
             {t.CANCEL || "Cancel"}
           </button>
           <button 
             onClick={handleSubmit}
-            className="flex-1 h-14 bg-emerald-500 text-white rounded-[10px] text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center"
+            className="flex-1 h-14 bg-emerald-500 text-white rounded-[10px] text-[11px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center"
           >
             {t.SUBMIT || "Submit"}
           </button>
@@ -2673,7 +2673,7 @@ setShowUserRenewSelection(false);
                             <span className="block text-[10px] font-black uppercase tracking-wider opacity-85 mb-1.5 text-center">
                               {language === 'bn' ? `${cardDetails.label} পেন্ডিং ব্যালেন্স` : `Pending ${cardDetails.label} Balance`}
                             </span>
-                            <h2 className="text-3xl font-black text-center font-sans tracking-tight mb-3">
+                            <h2 className="text-3xl font-black text-center font-sans tracking-tight mb-2">
                               {selectedCurrency} {totalAmountNum.toLocaleString()}
                             </h2>
                             <div className="flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-white/20 border border-white/10 w-fit mx-auto">
@@ -2687,7 +2687,7 @@ setShowUserRenewSelection(false);
                       })()}
 
                       {/* Filters Panel */}
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         <div className="grid grid-cols-2 gap-2">
                           {/* Month Select */}
                           <div className="relative">
@@ -2721,7 +2721,7 @@ setShowUserRenewSelection(false);
                         </div>
 
                         <div className="pt-2 pb-1 border-b border-black/5 dark:border-white/5 flex justify-start">
-                          <h4 className="text-xs font-black uppercase tracking-wider text-text-muted text-left">
+                          <h4 className="text-[11px] font-black uppercase tracking-wider text-text-muted text-left">
                             {language === 'bn' ? 'Pending History' : 'Pending History'}
                           </h4>
                         </div>
@@ -2743,7 +2743,7 @@ setShowUserRenewSelection(false);
                             const monthYearLabel = language === 'bn' ? `${monthNameBn} ${val.year}` : `${monthNameEn} ${val.year}`;
                             
                             return (
-                              <div key={`${val.month}-${val.year}`} className="space-y-3 mb-3">
+                              <div key={`${val.month}-${val.year}`} className="space-y-3 mb-2">
                                 {val.salary && val.salary.total > 0 && (
                                   val.salary.items
                                     .filter((item: any) => {
@@ -3140,13 +3140,13 @@ setShowUserRenewSelection(false);
               {createPortal(
                 <>
                   {selectedSalaryPendingForPopup && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm overflow-y-auto flex pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] px-4 animate-fade-in">
                       <div 
-                        className="bg-theme-card border border-black/5 dark:border-white/10 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+                        className="bg-theme-card border border-black/5 dark:border-white/10 rounded-3xl m-auto w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {/* Modal Header */}
-                        <div className="p-5 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/[0.02] dark:bg-white/[0.02]">
+                        <div className="p-3 sm:p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/[0.02] dark:bg-white/[0.02]">
                           <div className="text-left">
                             <span className="text-[10px] font-black uppercase text-orange-500 tracking-wider">
                               {language === 'bn' ? 'বকেয়া স্যালারি' : 'Pending Salary'}
@@ -3166,9 +3166,9 @@ setShowUserRenewSelection(false);
                         </div>
 
                         {/* Modal Body */}
-                        <div className="p-5 overflow-y-auto space-y-5 flex-1 text-left">
+                        <div className="p-3 sm:p-4 overflow-y-auto space-y-4 flex-1 text-left">
                           {/* Metadata Grid */}
-                          <div className="bg-black/[0.02] dark:bg-white/[0.02] rounded-2xl p-4 border border-black/5 dark:border-white/5 space-y-3">
+                          <div className="bg-black/[0.02] dark:bg-white/[0.02] rounded-2xl p-4 border border-black/5 dark:border-white/5 flex flex-col">
                             <div className="flex items-center justify-between text-xs font-semibold">
                               <span className="text-text-muted">{language === 'bn' ? 'স্যালারি মাস' : 'Salary Month'}</span>
                               <span className="text-text-main font-bold">
@@ -3226,7 +3226,7 @@ setShowUserRenewSelection(false);
                         {/* Modal Footer */}
                         <div className="p-4 border-t border-black/5 dark:border-white/5 bg-black/[0.01] dark:bg-white/[0.01] flex flex-col gap-3">
                           <div className="flex items-center justify-between px-2">
-                            <span className="text-xs font-black uppercase text-text-main">
+                            <span className="text-[11px] font-black uppercase text-text-main">
                               {language === 'bn' ? 'মোট বকেয়া স্যালারি' : 'Total Pending Salary'}
                             </span>
                             <span className="text-base font-black text-orange-500">
@@ -3245,7 +3245,7 @@ setShowUserRenewSelection(false);
                                   }
                                 );
                               }}
-                              className="py-2.5 px-4 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 text-xs font-black uppercase rounded-2xl transition-all flex items-center justify-center gap-1.5 shrink-0"
+                              className="py-2.5 px-4 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 text-[11px] font-black uppercase rounded-2xl transition-all flex items-center justify-center gap-1.5 shrink-0"
                               title={language === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
                             >
                               <Trash2 size={16} />
@@ -3254,7 +3254,7 @@ setShowUserRenewSelection(false);
                             <button
                               type="button"
                               onClick={() => setSelectedSalaryPendingForPopup(null)}
-                              className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-black uppercase rounded-2xl transition-all shadow-md shadow-orange-500/10"
+                              className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-[11px] font-black uppercase rounded-2xl transition-all shadow-md shadow-orange-500/10"
                             >
                               {language === 'bn' ? 'ঠিক আছে' : 'OK'}
                             </button>
@@ -3265,13 +3265,13 @@ setShowUserRenewSelection(false);
                   )}
 
                   {selectedCommissionPendingForPopup && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm overflow-y-auto flex pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] px-4 animate-fade-in">
                       <div 
-                        className="bg-theme-card border border-black/5 dark:border-white/10 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+                        className="bg-theme-card border border-black/5 dark:border-white/10 rounded-3xl m-auto w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {/* Modal Header */}
-                        <div className="p-5 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/[0.02] dark:bg-white/[0.02]">
+                        <div className="p-3 sm:p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/[0.02] dark:bg-white/[0.02]">
                           <div className="text-left">
                             <span className="text-[10px] font-black uppercase text-orange-500 tracking-wider">
                               {language === 'bn' ? 'বকেয়া কমিশন' : 'Pending Commission'}
@@ -3293,7 +3293,7 @@ setShowUserRenewSelection(false);
                         {/* Modal Body */}
                         <div className="p-5 overflow-y-auto space-y-4 flex-1 text-left">
                           {/* Metadata Summary */}
-                          <div className="bg-black/[0.02] dark:bg-white/[0.02] rounded-2xl p-4 border border-black/5 dark:border-white/5 space-y-2">
+                          <div className="bg-black/[0.02] dark:bg-white/[0.02] rounded-2xl p-4 border border-black/5 dark:border-white/5 space-y-1.5">
                             <div className="flex items-center justify-between text-xs font-semibold">
                               <span className="text-text-muted">{language === 'bn' ? 'কমিশন মাস' : 'Commission Month'}</span>
                               <span className="text-text-main font-bold">
@@ -3335,7 +3335,7 @@ setShowUserRenewSelection(false);
                                     </p>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <span className="text-xs font-black text-orange-500 font-mono">
+                                    <span className="text-[11px] font-black text-orange-500 font-mono">
                                       {item.pending?.toLocaleString()} {selectedCurrency}
                                     </span>
                                     <button
@@ -3380,7 +3380,7 @@ setShowUserRenewSelection(false);
                         {/* Modal Footer */}
                         <div className="p-4 border-t border-black/5 dark:border-white/5 bg-black/[0.01] dark:bg-white/[0.01] flex flex-col gap-3">
                           <div className="flex items-center justify-between px-2">
-                            <span className="text-xs font-black uppercase text-text-main">
+                            <span className="text-[11px] font-black uppercase text-text-main">
                               {language === 'bn' ? 'মোট কমিশন বকেয়া' : 'Total Commission Dues'}
                             </span>
                             <span className="text-base font-black text-orange-500">
@@ -3403,7 +3403,7 @@ setShowUserRenewSelection(false);
                                   }
                                 );
                               }}
-                              className="py-2.5 px-4 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 text-xs font-black uppercase rounded-2xl transition-all flex items-center justify-center gap-1.5 shrink-0"
+                              className="py-2.5 px-4 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 text-[11px] font-black uppercase rounded-2xl transition-all flex items-center justify-center gap-1.5 shrink-0"
                               title={language === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
                             >
                               <Trash2 size={16} />
@@ -3412,7 +3412,7 @@ setShowUserRenewSelection(false);
                             <button
                               type="button"
                               onClick={() => setSelectedCommissionPendingForPopup(null)}
-                              className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-black uppercase rounded-2xl transition-all shadow-md shadow-orange-500/10"
+                              className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-[11px] font-black uppercase rounded-2xl transition-all shadow-md shadow-orange-500/10"
                             >
                               {language === 'bn' ? 'ঠিক আছে' : 'OK'}
                             </button>
@@ -3423,13 +3423,13 @@ setShowUserRenewSelection(false);
                   )}
 
                   {selectedGenericPendingForPopup && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm overflow-y-auto flex pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] px-4 animate-fade-in">
                       <div 
-                        className="bg-theme-card border border-black/5 dark:border-white/10 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+                        className="bg-theme-card border border-black/5 dark:border-white/10 rounded-3xl m-auto w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {/* Modal Header */}
-                        <div className="p-5 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/[0.02] dark:bg-white/[0.02]">
+                        <div className="p-3 sm:p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/[0.02] dark:bg-white/[0.02]">
                           <div className="text-left">
                             <span className="text-[10px] font-black uppercase text-orange-500 tracking-wider">
                               {selectedPendingCategory || 'Transaction'}
@@ -3518,7 +3518,7 @@ setShowUserRenewSelection(false);
                         {/* Modal Footer */}
                         <div className="p-4 border-t border-black/5 dark:border-white/5 bg-black/[0.01] dark:bg-white/[0.01] flex flex-col gap-3">
                           <div className="flex items-center justify-between px-2">
-                            <span className="text-xs font-black uppercase text-text-main">
+                            <span className="text-[11px] font-black uppercase text-text-main">
                               {language === 'bn' ? 'বকেয়া ব্যালেন্স' : 'Pending Balance'}
                             </span>
                             <span className="text-base font-black text-orange-500">
@@ -3540,7 +3540,7 @@ setShowUserRenewSelection(false);
                                   }
                                 );
                               }}
-                              className="py-2.5 px-4 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 text-xs font-black uppercase rounded-2xl transition-all flex items-center justify-center gap-1.5 shrink-0"
+                              className="py-2.5 px-4 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 text-[11px] font-black uppercase rounded-2xl transition-all flex items-center justify-center gap-1.5 shrink-0"
                               title={language === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
                             >
                               <Trash2 size={16} />
@@ -3549,7 +3549,7 @@ setShowUserRenewSelection(false);
                             <button
                               type="button"
                               onClick={() => setSelectedGenericPendingForPopup(null)}
-                              className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-black uppercase rounded-2xl transition-all shadow-md shadow-orange-500/10"
+                              className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-[11px] font-black uppercase rounded-2xl transition-all shadow-md shadow-orange-500/10"
                             >
                               {language === 'bn' ? 'ঠিক আছে' : 'OK'}
                             </button>
@@ -3560,16 +3560,16 @@ setShowUserRenewSelection(false);
                   )}
 
                   {selectedConsolidatedTripForPopup && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm overflow-y-auto flex pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] px-4 animate-fade-in">
                       <div 
                         
                         
                         
-                        className="bg-theme-card border border-black/5 dark:border-white/10 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+                        className="bg-theme-card border border-black/5 dark:border-white/10 rounded-3xl m-auto w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {/* Modal Header */}
-                        <div className="p-5 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/[0.02] dark:bg-white/[0.02]">
+                        <div className="p-3 sm:p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/[0.02] dark:bg-white/[0.02]">
                           <div className="text-left">
                             <span className="text-[10px] font-black uppercase text-orange-500 tracking-wider">
                               {selectedPendingCategory?.toUpperCase() === 'EXTRA FUEL' || selectedConsolidatedTripForPopup.category === 'EXTRA FUEL'
@@ -3593,7 +3593,7 @@ setShowUserRenewSelection(false);
                         {/* Modal Body */}
                         <div className="p-5 overflow-y-auto space-y-4 flex-1 text-left">
                           {/* Trip Metadata */}
-                          <div className="bg-black/[0.02] dark:bg-white/[0.02] rounded-2xl p-4 border border-black/5 dark:border-white/5 space-y-2">
+                          <div className="bg-black/[0.02] dark:bg-white/[0.02] rounded-2xl p-4 border border-black/5 dark:border-white/5 space-y-1.5">
                             <div className="flex items-center justify-between text-xs font-semibold">
                               <span className="text-text-muted">{language === 'bn' ? 'লোডিং ডেট' : 'Loading Date'}</span>
                               <span className="text-text-main font-bold">
@@ -3645,7 +3645,7 @@ setShowUserRenewSelection(false);
                           </div>
 
                           {/* Sub-items List */}
-                          <div className="space-y-3">
+                          <div className="flex flex-col">
                             <span className="text-[10px] font-black uppercase text-text-muted tracking-wider">
                               {language === 'bn' ? 'বকেয়া আইটেম সমূহ' : 'Dues Sub-items'}
                             </span>
@@ -3688,7 +3688,7 @@ setShowUserRenewSelection(false);
                                       </span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                      <span className={`text-xs font-black ${isPaid ? 'text-emerald-500' : 'text-orange-500'}`}>
+                                      <span className={`text-[11px] font-black ${isPaid ? 'text-emerald-500' : 'text-orange-500'}`}>
                                         {subItem.pending.toLocaleString()} {selectedCurrency}
                                       </span>
                                       <button
@@ -3728,7 +3728,7 @@ setShowUserRenewSelection(false);
                         {/* Modal Footer */}
                         <div className="p-4 border-t border-black/5 dark:border-white/5 bg-black/[0.01] dark:bg-white/[0.01] flex flex-col gap-3">
                           <div className="flex items-center justify-between px-2">
-                            <span className="text-xs font-black uppercase text-text-main">
+                            <span className="text-[11px] font-black uppercase text-text-main">
                               {language === 'bn' ? 'মোট বকেয়া ব্যালেন্স' : 'Total Pending Balance'}
                             </span>
                             <span className="text-base font-black text-orange-500">
@@ -3751,7 +3751,7 @@ setShowUserRenewSelection(false);
                                   }
                                 );
                               }}
-                              className="py-2.5 px-4 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 text-xs font-black uppercase rounded-2xl transition-all flex items-center justify-center gap-1.5 shrink-0"
+                              className="py-2.5 px-4 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 text-[11px] font-black uppercase rounded-2xl transition-all flex items-center justify-center gap-1.5 shrink-0"
                               title={language === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
                             >
                               <Trash2 size={16} />
@@ -3760,7 +3760,7 @@ setShowUserRenewSelection(false);
                             <button
                               type="button"
                               onClick={() => setSelectedConsolidatedTripForPopup(null)}
-                              className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-black uppercase rounded-2xl transition-all shadow-md shadow-orange-500/10"
+                              className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-[11px] font-black uppercase rounded-2xl transition-all shadow-md shadow-orange-500/10"
                             >
                               {language === 'bn' ? 'ঠিক আছে' : 'OK'}
                             </button>
@@ -4010,7 +4010,7 @@ setShowReceivedBreakdown(false);
 
                         {/* Payment History Header */}
                         <div className="pt-2 pb-1 border-b border-black/5 dark:border-white/5 flex justify-start">
-                          <h4 className="text-xs font-black uppercase tracking-wider text-text-muted text-left">
+                          <h4 className="text-[11px] font-black uppercase tracking-wider text-text-muted text-left">
                             {language === 'bn' ? 'Payment History' : 'Payment History'}
                           </h4>
                         </div>
@@ -4275,7 +4275,7 @@ setShowReceivedBreakdown(false);
                               {isExtraFuelItem ? (
                                 <>
                                   <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                                    <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate">
+                                    <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate">
                                       {displayTitle}
                                     </span>
                                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-500/10 shrink-0">
@@ -4302,7 +4302,7 @@ setShowReceivedBreakdown(false);
                               ) : isSalaryItem ? (
                                 <>
                                   <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                                    <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate">
+                                    <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate">
                                       {displayTitle}
                                     </span>
                                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-500/10 shrink-0">
@@ -4331,7 +4331,7 @@ setShowReceivedBreakdown(false);
                               ) : isCommissionItem ? (
                                 <>
                                   <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                                    <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate">
+                                    <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate">
                                       {displayTitle}
                                     </span>
                                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-500/10 shrink-0">
@@ -4362,7 +4362,7 @@ setShowReceivedBreakdown(false);
                               ) : selectedReceivedCategory?.toUpperCase() === 'TRIP DIESEL' ? (
                                 <>
                                   <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                                    <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate">
+                                    <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate">
                                       {displayTitle}
                                     </span>
                                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-500/10 shrink-0">
@@ -4401,7 +4401,7 @@ setShowReceivedBreakdown(false);
                               ) : (
                                 <>
                                   <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                                    <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate">
+                                    <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate">
                                       {displayTitle}
                                     </span>
                                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-500/10 shrink-0">
@@ -4469,7 +4469,7 @@ setShowReceivedBreakdown(false);
                   return (
                     <div className="space-y-4">
                       {renderCategoryFiltersAndCard()}
-                      <div className="space-y-3">
+                      <div className="flex flex-col">
                         {mappedList}
                       </div>
                     </div>
@@ -4481,9 +4481,9 @@ setShowReceivedBreakdown(false);
               {createPortal(
                 <>
                   {selectedReceivedItemForPopup && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm overflow-y-auto flex pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] px-4 animate-fade-in">
                     <div 
-                      className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/10 rounded-[24px] w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+                      className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/10 rounded-[24px] m-auto w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {/* Modal Header (Category Based Stylings) */}
@@ -4559,7 +4559,7 @@ setShowReceivedBreakdown(false);
                               <Building size={11} className="text-indigo-500" />
                               {language === 'bn' ? 'আয়ের উৎস' : 'Source of Income'}
                             </span>
-                            <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase truncate">
+                            <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase truncate">
                               {(() => {
                                 const catUpper = selectedReceivedItemForPopup.category?.toUpperCase() || '';
                                 if (catUpper === 'SALARY') {
@@ -4581,7 +4581,7 @@ setShowReceivedBreakdown(false);
                               <Calendar size={11} className="text-teal-500" />
                               {language === 'bn' ? 'পেমেন্ট ডেট' : 'Payment Date'}
                             </span>
-                            <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate font-mono">
+                            <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 truncate font-mono">
                               {selectedReceivedItemForPopup.paymentDate || 'N/A'}
                             </span>
                           </div>
@@ -4594,7 +4594,7 @@ setShowReceivedBreakdown(false);
                                   <Clock size={11} className="text-cyan-500" />
                                   {language === 'bn' ? 'স্যালারি মাস' : 'Salary For'}
                                 </span>
-                                <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
+                                <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 truncate">
                                   {selectedReceivedItemForPopup.salaryFor || 'N/A'}
                                 </span>
                               </div>
@@ -4606,7 +4606,7 @@ setShowReceivedBreakdown(false);
                                   <Truck size={11} className="text-blue-500" />
                                   {language === 'bn' ? 'মোট ট্রিপ' : 'Total Trips'}
                                 </span>
-                                <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate font-mono">
+                                <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 truncate font-mono">
                                   {selectedReceivedItemForPopup.totalTrip || '0'}
                                 </span>
                               </div>
@@ -4618,7 +4618,7 @@ setShowReceivedBreakdown(false);
                                   <Fuel size={11} className="text-orange-500" />
                                   {language === 'bn' ? 'ট্রিপ ডিজেল' : 'Trip Diesel'}
                                 </span>
-                                <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate font-mono">
+                                <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 truncate font-mono">
                                   {(selectedReceivedItemForPopup.tripDiesel || 0).toLocaleString()} {selectedCurrency}
                                 </span>
                               </div>
@@ -4628,7 +4628,7 @@ setShowReceivedBreakdown(false);
                                   <Fuel size={11} className="text-amber-500" />
                                   {language === 'bn' ? 'জেনারেটর ডিজেল' : 'Generator Diesel'}
                                 </span>
-                                <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate font-mono">
+                                <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 truncate font-mono">
                                   {(selectedReceivedItemForPopup.extraDiesel || 0).toLocaleString()} {selectedCurrency}
                                 </span>
                               </div>
@@ -4663,7 +4663,7 @@ setShowReceivedBreakdown(false);
                                   <Truck size={11} className="text-blue-500" />
                                   {language === 'bn' ? 'গাড়ির ধরন' : 'Vehicle Type'}
                                 </span>
-                                <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
+                                <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 truncate">
                                   {selectedReceivedItemForPopup.item?.deliveryPlace || selectedReceivedItemForPopup.item?.vehicleType || (language === 'bn' ? 'ট্রেইলার' : 'Trailer')}
                                 </span>
                               </div>
@@ -4673,7 +4673,7 @@ setShowReceivedBreakdown(false);
                                   <Tag size={11} className="text-purple-500" />
                                   {language === 'bn' ? 'ক্যাটাগরি' : 'Category'}
                                 </span>
-                                <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
+                                <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 truncate">
                                   {selectedReceivedItemForPopup.category || 'N/A'}
                                 </span>
                               </div>
@@ -4685,7 +4685,7 @@ setShowReceivedBreakdown(false);
                                   <Tag size={11} className="text-purple-500" />
                                   {language === 'bn' ? 'ক্যাটাগরি' : 'Category'}
                                 </span>
-                                <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
+                                <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 truncate">
                                   {selectedReceivedItemForPopup.category || 'N/A'}
                                 </span>
                               </div>
@@ -4696,7 +4696,7 @@ setShowReceivedBreakdown(false);
                                     <Clock size={11} className="text-amber-500" />
                                     {language === 'bn' ? 'মাস ও বছর' : 'Month & Year'}
                                   </span>
-                                  <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
+                                  <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 truncate">
                                     {selectedReceivedItemForPopup.tripMonthAndYear}
                                   </span>
                                 </div>
@@ -4710,7 +4710,7 @@ setShowReceivedBreakdown(false);
                               <CreditCard size={11} className="text-violet-500" />
                               {language === 'bn' ? 'পেমেন্ট পদ্ধতি' : 'Payment Method'}
                             </span>
-                            <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate uppercase">
+                            <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 truncate uppercase">
                               {selectedReceivedItemForPopup.method || (language === 'bn' ? 'ক্যাশ' : 'Cash')}
                             </span>
                           </div>
@@ -4721,7 +4721,7 @@ setShowReceivedBreakdown(false);
                               <CheckCircle2 size={11} className="text-emerald-500" />
                               {language === 'bn' ? 'পেমেন্ট স্ট্যাটাস' : 'Payment Status'}
                             </span>
-                            <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 truncate uppercase">
+                            <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 truncate uppercase">
                               {language === 'bn' ? 'পরিশোধিত' : 'Paid'}
                             </span>
                           </div>
@@ -4733,7 +4733,7 @@ setShowReceivedBreakdown(false);
                                 <Clock size={11} className="text-sky-500" />
                                 {language === 'bn' ? 'সময়' : 'Time'}
                               </span>
-                              <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate font-mono">
+                              <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 truncate font-mono">
                                 {selectedReceivedItemForPopup.time}
                               </span>
                             </div>
@@ -4769,7 +4769,7 @@ setShowReceivedBreakdown(false);
                               }
                             );
                           }}
-                          className="py-2.5 px-4 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 text-xs font-black uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shrink-0"
+                          className="py-2.5 px-4 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 text-[11px] font-black uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shrink-0"
                           title={language === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
                         >
                           <Trash2 size={16} />
@@ -4778,7 +4778,7 @@ setShowReceivedBreakdown(false);
                         <button
                           type="button"
                           onClick={() => setSelectedReceivedItemForPopup(null)}
-                          className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black uppercase rounded-xl transition-all shadow-md shadow-emerald-500/15"
+                          className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-black uppercase rounded-xl transition-all shadow-md shadow-emerald-500/15"
                         >
                           {language === 'bn' ? 'ঠিক আছে' : 'OK'}
                         </button>
@@ -5151,7 +5151,7 @@ setShowPendingBreakdown(false);
                         {totalExcessDieselAdvance > 0 && (
                           <div className="bg-orange-500/10 border border-orange-500/30 p-4 rounded-[10px] flex items-center justify-between gap-3 text-orange-500">
                             <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-xl bg-orange-500/20 flex items-center justify-center shrink-0">
+                              <div className="w-7 h-7 rounded-xl bg-orange-500/20 flex items-center justify-center shrink-0">
                                 <Sparkles size={16} className="text-orange-500 animate-pulse" />
                               </div>
                               <div>
@@ -5403,7 +5403,7 @@ setShowPendingBreakdown(false);
       {/* Transaction History */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-black text-text-main uppercase tracking-widest">Transaction History</h3>
+          <h3 className="text-[11px] font-black text-text-main uppercase tracking-widest">Transaction History</h3>
           <div className="flex bg-theme-card rounded-[10px] items-center shadow-sm relative">
             <button 
               onClick={() => setActiveTab('INCOME')}
@@ -5660,7 +5660,7 @@ setShowPendingBreakdown(false);
                         onClick={() => setSelectedTransaction(p)}
                       >
                         <div>
-                          <p className="text-xs font-black text-text-main uppercase">{(p.method || 'CASH').replace('_', ' ')}</p>
+                          <p className="text-[11px] font-black text-text-main uppercase">{(p.method || 'CASH').replace('_', ' ')}</p>
                           <p className="text-[10px] font-bold text-text-main uppercase">
                             {new Date(p.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} • {p.time}
                           </p>
@@ -5713,25 +5713,25 @@ setShowPendingBreakdown(false);
 
       {/* Entry Form Modal */}
       {isEntryFormOpen && formCategory?.toUpperCase() === 'ADVANCE' ? createPortal(
-        <div id="payment_advance_dialog" className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div id="payment_advance_dialog" className="fixed inset-0 z-[9999] overflow-y-auto flex pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] px-4">
           <div 
             id="payment_advance_backdrop"
             onClick={() => {
               setIsEntryFormOpen(false);
               setFormCategory('');
             }}
-            className="absolute inset-0 z-0 bg-slate-950/45 backdrop-blur-[6px] transition-all duration-300 animate-in fade-in"
+            className="fixed inset-0 z-0 bg-slate-950/45 backdrop-blur-[6px] transition-all duration-300 animate-in fade-in"
           />
           <div 
             id="payment_advance_box"
-            className={`relative w-full max-w-md rounded-[24px] p-6 md:p-8 shadow-2xl border z-[10000] overflow-visible font-sans allow-animation transition-all duration-300 transform animate-in zoom-in-95 duration-200 ${
+            className={`relative m-auto w-full max-w-md rounded-[24px] p-6 md:p-8 shadow-2xl border z-[10000] overflow-visible font-sans allow-animation transition-all duration-300 transform animate-in zoom-in-95 duration-200 ${
               isDarkMode 
                 ? 'bg-zinc-950 text-white border-zinc-800/80 shadow-black/80' 
                 : 'bg-white text-zinc-900 border-zinc-100 shadow-zinc-200/50'
             }`}
           >
             {/* Header */}
-            <div className="flex items-center justify-between mb-3 pb-3 border-b border-zinc-100 dark:border-zinc-800/60">
+            <div className="flex items-center justify-between mb-2 pb-3 border-b border-zinc-100 dark:border-zinc-800/60">
               <div>
                 <h3 className="text-md font-bold tracking-tight">
                   {language === 'bn' ? 'অগ্রিম ট্রানজেকশন' : (language === 'ar' ? 'معاملة الدفعة المقدمة' : 'Advance Transaction')}
@@ -6111,7 +6111,7 @@ setShowPendingSelection(false);
                         className="w-full bg-theme-card p-5 rounded-2xl shadow-sm flex items-center justify-between hover:scale-[1.01] active:scale-95 transition-all"
                       >
                         <div className="text-left">
-                          <p className="text-xs font-black text-text-main uppercase tracking-widest">
+                          <p className="text-[11px] font-black text-text-main uppercase tracking-widest">
                             {new Date(0, file.month - 1).toLocaleString('default', { month: 'long' })} {file.year}
                           </p>
                           <p className="text-[10px] font-bold text-text-muted mt-1">
@@ -6132,10 +6132,10 @@ setShowPendingSelection(false);
                       {selectedPendingFile.categories.map((cat: any) => (
                         <div key={cat.name} className="bg-theme-card rounded-2xl shadow-sm overflow-hidden">
                           <div className="p-4 bg-black/5 dark:bg-white/5 flex justify-between items-center">
-                            <p className="text-xs font-black text-text-main uppercase tracking-widest">{cat.name}</p>
-                            <p className="text-xs font-black text-rose-500">{cat.totalPending.toLocaleString()}</p>
+                            <p className="text-[11px] font-black text-text-main uppercase tracking-widest">{cat.name}</p>
+                            <p className="text-[11px] font-black text-rose-500">{cat.totalPending.toLocaleString()}</p>
                           </div>
-                          <div className="p-4 space-y-3">
+                          <div className="p-4 flex flex-col">
                             {cat.items.map((item: any) => (
                               <div key={item.id} className="flex items-center gap-3">
                                 <input 
@@ -6165,7 +6165,7 @@ setShowPendingSelection(false);
                       ))}
 
                       {/* Inline Summary and Action Cards - Scrolling with page as requested */}
-                      <div className="pt-4 pb-8 space-y-3">
+                      <div className="pt-4 pb-8 flex flex-col">
                         <div className="grid grid-cols-2 gap-4 bg-theme-card p-4 rounded-2xl shadow-sm border border-black/5 dark:border-white/5">
                           <div className="text-left">
                             <p className="text-[10px] font-black text-text-main uppercase tracking-wider">Total Selected</p>
@@ -6183,7 +6183,7 @@ setShowPendingSelection(false);
 
                         <button 
                           onClick={handlePendingSelectionNext}
-                          className="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                          className="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
                         >
                           <span>Next</span>
                         </button>
@@ -6242,7 +6242,7 @@ setShowTripDieselSubPage(false);
               <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 min-h-0">
                 {/* Custom Category Filter Panel - Render ONLY for TRIP DIESEL Category */}
                 {formCategory?.toUpperCase() === 'TRIP DIESEL' && (
-                  <div className="bg-theme-card p-4 rounded-xl shadow-md border border-black/5 dark:border-white/5 space-y-3">
+                  <div className="bg-theme-card p-4 rounded-xl shadow-md border border-black/5 dark:border-white/5 flex flex-col">
                     <h4 className="text-[10px] font-black uppercase text-text-muted tracking-wide">
                       Custom-select Sub-categories
                     </h4>
@@ -6295,7 +6295,7 @@ setShowTripDieselSubPage(false);
                 )}
 
                 {/* Flat Trip Items list */}
-                <div className="space-y-3">
+                <div className="flex flex-col">
                   <div className="bg-theme-card px-4 py-3 rounded-[8px] shadow-sm flex justify-between items-center border border-black/5 dark:border-white/5">
                     <h4 className="text-[10px] font-black uppercase text-text-main tracking-widest">
                       Trip Wise Outstanding Dues ({groupedTripItems.length})
@@ -6546,7 +6546,7 @@ setShowTripDieselSubPage(false);
                   )}
 
                   {/* Inline Summary and Action Cards - Scrolling with page as requested */}
-                  <div className="pt-4 pb-8 space-y-3">
+                  <div className="pt-4 pb-8 flex flex-col">
                     <div className="grid grid-cols-2 gap-4 bg-theme-card p-4 rounded-2xl shadow-sm border border-black/5 dark:border-white/5">
                       <div className="text-left">
                         <p className="text-[10px] font-black text-text-main uppercase tracking-wider">Total Received</p>
@@ -6569,7 +6569,7 @@ setShowTripDieselSubPage(false);
 
                     <button 
                       onClick={handleTripDieselAllocationSave}
-                      className="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                      className="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
                     >
                       <span>Save & Apply Allocation</span>
                     </button>
@@ -6581,16 +6581,16 @@ setShowTripDieselSubPage(false);
               {createPortal(
                 <>
                   {selectedTripGroupForPopup && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm overflow-y-auto flex pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] px-4 animate-fade-in">
                     <div 
                       
                       
                       
-                      className="bg-theme-card border border-black/5 dark:border-white/10 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+                      className="bg-theme-card border border-black/5 dark:border-white/10 rounded-3xl m-auto w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {/* Modal Header */}
-                      <div className="p-5 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/[0.02] dark:bg-white/[0.02]">
+                      <div className="p-3 sm:p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/[0.02] dark:bg-white/[0.02]">
                         <div className="text-left">
                           <span className="text-[10px] font-black uppercase text-orange-500 tracking-wider">
                             {selectedTripGroupForPopup.category === 'EXTRA FUEL'
@@ -6674,7 +6674,7 @@ setShowTripDieselSubPage(false);
                         })()}
 
                         {/* Sub-items List */}
-                        <div className="space-y-3">
+                        <div className="flex flex-col">
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] font-black uppercase text-text-muted tracking-wider">
                               {language === 'bn' ? 'বকেয়া আইটেম সমূহ' : 'Dues Sub-items'}
@@ -6788,7 +6788,7 @@ setShowTripDieselSubPage(false);
                                             setSelectedItems(newSelected);
                                           }}
                                           placeholder="0"
-                                          className="w-20 h-8 text-center text-xs font-black border border-black/10 dark:border-white/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white dark:bg-zinc-800 text-text-main"
+                                          className="w-20 h-8 text-center text-[11px] font-black border border-black/10 dark:border-white/10 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white dark:bg-zinc-800 text-text-main"
                                         />
                                       </div>
                                     </div>
@@ -6824,7 +6824,7 @@ setShowTripDieselSubPage(false);
                               }
                             );
                           }}
-                          className="py-2.5 px-3 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 text-xs font-black uppercase rounded-2xl transition-all flex items-center justify-center gap-1 shrink-0"
+                          className="py-2.5 px-3 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-500 text-[11px] font-black uppercase rounded-2xl transition-all flex items-center justify-center gap-1 shrink-0"
                           title={language === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
                         >
                           <Trash2 size={15} />
@@ -6833,7 +6833,7 @@ setShowTripDieselSubPage(false);
                         <button
                           type="button"
                           onClick={() => setSelectedTripGroupForPopup(null)}
-                          className="flex-1 py-2.5 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-text-main text-xs font-black uppercase rounded-2xl transition-all"
+                          className="flex-1 py-2.5 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-text-main text-[11px] font-black uppercase rounded-2xl transition-all"
                         >
                           {language === 'bn' ? 'বন্ধ করুন' : 'Close'}
                         </button>
@@ -6843,7 +6843,7 @@ setShowTripDieselSubPage(false);
                             setSelectedTripGroupForPopup(null);
                             showFeedback(language === 'bn' ? 'বরাদ্দ করা বকেয়া প্রয়োগ করা হয়েছে' : 'Allocated dues applied');
                           }}
-                          className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black uppercase rounded-2xl transition-all shadow-md shadow-emerald-500/10"
+                          className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-black uppercase rounded-2xl transition-all shadow-md shadow-emerald-500/10"
                         >
                           {language === 'bn' ? 'প্রয়োগ করুন' : 'Apply'}
                         </button>
@@ -6918,7 +6918,7 @@ setShowTripDieselSubPage(false);
                             {u.name?.[0]?.toUpperCase()}
                           </div>
                           <div className="text-left">
-                            <p className="text-xs font-black text-text-main">{u.name}</p>
+                            <p className="text-[11px] font-black text-text-main">{u.name}</p>
                             <p className="text-[10px] font-bold text-text-muted">ID: {u.id}</p>
                           </div>
                         </div>
@@ -7423,13 +7423,7 @@ setShowTripDieselSubPage(false);
               }
             } else {
               // Default Fallback details
-              if (selectedTransaction.type === 'INCOME') {
-                detailsList.push({
-                  label: language === 'bn' ? 'সোর্স নাম' : 'Source Name',
-                  value: getSourceName(),
-                  icon: <Building size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
-                });
-              } else {
+              if (selectedTransaction.type !== 'INCOME') {
                 // Deduction/Expense fallback details: Remove Source Name, show relevant fields
                 const txnUser = users.find(u => u.id === selectedTransaction.userId);
                 if (txnUser) {
@@ -7472,7 +7466,7 @@ setShowTripDieselSubPage(false);
 
             return (
               <div 
-                className="fixed inset-0 z-[9999] bg-black/40 sm:bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center p-3 sm:p-5 overflow-y-auto animate-fade-in"
+                className="fixed inset-0 z-[9999] bg-black/40 sm:bg-black/50 backdrop-blur-sm overflow-y-auto animate-fade-in flex pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] px-3 sm:px-5"
                 onClick={(e) => {
                   if (e.target === e.currentTarget) {
                     setSelectedTransaction(null);
@@ -7480,25 +7474,26 @@ setShowTripDieselSubPage(false);
                 }}
               >
                 <div 
-                  className="w-full max-w-md my-auto space-y-3 relative z-10 animate-scale-in"
+                  className="w-full max-w-md m-auto space-y-1 relative z-10 animate-scale-in flex flex-col max-h-full"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* CARD 1: THE SINGLE UNIFIED PREMIUM WHITE DETAILS CARD */}
-                  <div className="bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-zinc-800 shadow-[0_12px_35px_-5px_rgba(0,0,0,0.08),0_4px_12px_rgba(0,0,0,0.04)] overflow-hidden p-5 sm:p-6 transition-all">
-                    {/* Top Row: Category Header and Close X Button */}
-                    <div className="flex items-center justify-between pb-3.5 mb-3.5 border-b border-slate-100 dark:border-zinc-800/80">
+                  <div className="bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-zinc-800 shadow-[0_12px_35px_-5px_rgba(0,0,0,0.08),0_4px_12px_rgba(0,0,0,0.04)] overflow-hidden transition-all flex flex-col min-h-0">
+                    <div className="flex-1 overflow-y-auto p-3 sm:p-4 min-h-0">
+                      {/* Top Row: Category Header and Close X Button */}
+                      <div className="flex items-center justify-between pb-3 mb-1.5 border-b border-slate-100 dark:border-zinc-800/80">
                       <div className="flex items-center gap-2.5">
                         <div 
-                          className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                          className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
                           style={{ backgroundColor: iconBg, color: iconColor }}
                         >
                           <CatIcon size={16} />
                         </div>
                         <div className="text-left">
-                          <h3 className="text-xs font-black text-slate-800 dark:text-zinc-100 tracking-tight">
+                          <h3 className="text-[11px] font-black text-slate-800 dark:text-zinc-100 tracking-tight">
                             {language === 'bn' ? 'ট্রানজেকশন বিবরণ' : 'Transaction Details'}
                           </h3>
-                          <p className="text-[9px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+                          <p className="text-[8px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
                             {catDisplay}
                           </p>
                         </div>
@@ -7553,21 +7548,58 @@ setShowTripDieselSubPage(false);
                           ? 'bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/10 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400'
                           : 'bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/10 dark:border-amber-500/20 text-amber-700 dark:text-amber-400';
 
+                        const advanceVal = Number(selectedTransaction.details?.advanceDeducted) || Number(selectedTransaction.details?.advanceAmount) || 0;
+                        const remBalanceVal = Number(selectedTransaction.details?.remainingBalance) || (advanceVal ? selectedTransaction.amount + advanceVal : 0);
+
                         return (
-                          <div className={`w-full rounded-2xl p-4 border flex flex-col items-center justify-center text-center my-3 ${amountBgClass}`}>
-                            <span className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1.5">
+                          <div className={`w-full rounded-2xl p-3 border flex flex-col items-center justify-center text-center my-1.5 ${amountBgClass}`}>
+                            <span className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">
                               {catDisplay}
                             </span>
                             
-                            {/* Money Amount in the Center */}
-                            <h2 className="text-3xl sm:text-4xl font-black tracking-tight font-sans flex items-baseline justify-center gap-1.5 leading-tight">
-                              <span className="opacity-60 font-semibold">{isIncome ? '+' : '-'}</span>
-                              <span>{selectedTransaction.amount.toLocaleString()}</span>
-                              <span className="text-xs sm:text-sm font-bold opacity-60 tracking-normal ml-0.5">{selectedCurrency}</span>
-                            </h2>
+                            {advanceVal > 0 ? (
+                              <div className="w-full mt-1.5 space-y-1.5 px-1.5 text-left">
+                                {/* Total / Remaining Balance */}
+                                <div className="flex justify-between items-center text-[11px] py-1 border-b border-black/5 dark:border-white/5">
+                                  <span className="opacity-75 font-semibold">
+                                    {language === 'bn' ? 'রিমাইনিং ব্যালেন্স' : 'Remaining Balance'}
+                                  </span>
+                                  <span className="font-mono font-black">
+                                    {remBalanceVal.toLocaleString()} {selectedCurrency}
+                                  </span>
+                                </div>
+                                {/* Advance Deducted */}
+                                <div className="flex justify-between items-center text-[11px] py-1 border-b border-black/5 dark:border-white/5 text-rose-500 dark:text-rose-400">
+                                  <span className="opacity-75 font-semibold">
+                                    {language === 'bn' ? 'বাদ অ্যাডভান্স' : 'Less Advance'}
+                                  </span>
+                                  <span className="font-mono font-black">
+                                    - {advanceVal.toLocaleString()} {selectedCurrency}
+                                  </span>
+                                </div>
+                                {/* Net Amount */}
+                                <div className="flex justify-between items-center pt-1.5">
+                                  <span className="text-[11px] font-black uppercase tracking-wider">
+                                    {language === 'bn' ? 'পরিশোধিত অ্যামাউন্ট' : 'Paid Amount'}
+                                  </span>
+                                  <h2 className="text-xl sm:text-2xl font-black tracking-tight font-sans flex items-baseline gap-1 leading-tight">
+                                    <span className="opacity-60 font-semibold">{isIncome ? '+' : '-'}</span>
+                                    <span>{selectedTransaction.amount.toLocaleString()}</span>
+                                    <span className="text-[10px] font-bold opacity-60 tracking-normal ml-0.5">{selectedCurrency}</span>
+                                  </h2>
+                                </div>
+                              </div>
+                            ) : (
+                              /* Money Amount in the Center */
+                              <h2 className="text-2xl sm:text-3xl font-black tracking-tight font-sans flex items-baseline justify-center gap-1.5 leading-tight">
+                                <span className="opacity-60 font-semibold">{isIncome ? '+' : '-'}</span>
+                                <span>{selectedTransaction.amount.toLocaleString()}</span>
+                                <span className="text-xs sm:text-sm font-bold opacity-60 tracking-normal ml-0.5">{selectedCurrency}</span>
+                              </h2>
+                            )}
 
                             {/* Status Badge inside the card */}
-                            <div className="mt-2.5">
+                            <div className="mt-2">
                               <span className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
                                 isPaid
                                   ? 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
@@ -7587,64 +7619,64 @@ setShowTripDieselSubPage(false);
                     </div>
 
                     {/* Subtle Divider Line */}
-                    <div className="my-4 sm:my-5 border-t border-slate-100 dark:border-zinc-800/80" />
+                    <div className="my-2 sm:my-3 border-t border-slate-100 dark:border-zinc-800/80" />
 
                     {/* Remaining Details Inside the SAME Single Card */}
-                    <div className="space-y-3">
+                    <div className="flex flex-col">
                       {(categoryUpper === 'SALARY' || categoryUpper === 'COMMISSION') ? (
                         <>
                           {selectedTransaction.month && (
-                            <div className="flex items-center justify-between gap-3 py-2 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
+                            <div className="flex items-center justify-between gap-3 py-1 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
                               <div className="flex items-center gap-2 min-w-0">
                                 <Calendar size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                                 <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">
                                   {language === 'bn' ? 'বেতন মাস' : 'Salary Period'}
                                 </span>
                               </div>
-                              <span className="text-xs font-black text-slate-800 dark:text-zinc-200 text-right">
+                              <span className="text-[11px] font-black text-slate-800 dark:text-zinc-200 text-right">
                                 {displayMonth} {displayYear}
                               </span>
                             </div>
                           )}
 
-                          <div className="flex items-center justify-between gap-3 py-2 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
+                          <div className="flex items-center justify-between gap-3 py-1 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
                             <div className="flex items-center gap-2 min-w-0">
                               <Hash size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                               <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">
                                 {language === 'bn' ? 'রেফারেন্স আইডি' : 'Reference ID'}
                               </span>
                             </div>
-                            <span className="text-xs font-black font-mono text-slate-800 dark:text-zinc-200 text-right">
+                            <span className="text-[11px] font-black font-mono text-slate-800 dark:text-zinc-200 text-right">
                               {selectedTransaction.transactionId || 'N/A'}
                             </span>
                           </div>
 
-                          <div className="flex items-center justify-between gap-3 py-2 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
+                          <div className="flex items-center justify-between gap-3 py-1 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
                             <div className="flex items-center gap-2 min-w-0">
                               <Clock size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                               <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">
                                 {language === 'bn' ? 'তারিখ ও সময়' : 'Date & Time'}
                               </span>
                             </div>
-                            <span className="text-xs font-black text-slate-800 dark:text-zinc-200 text-right">
+                            <span className="text-[11px] font-black text-slate-800 dark:text-zinc-200 text-right">
                               {selectedTransaction.date} {selectedTransaction.time ? `• ${selectedTransaction.time}` : ''}
                             </span>
                           </div>
 
-                          <div className="flex items-center justify-between gap-3 py-2 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
+                          <div className="flex items-center justify-between gap-3 py-1 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
                             <div className="flex items-center gap-2 min-w-0">
                               <CreditCard size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                               <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">
                                 {language === 'bn' ? 'পেমেন্ট মেথড' : 'Payment Method'}
                               </span>
                             </div>
-                            <span className="text-xs font-black text-slate-800 dark:text-zinc-200 text-right uppercase">
+                            <span className="text-[11px] font-black text-slate-800 dark:text-zinc-200 text-right uppercase">
                               {selectedTransaction.method ? selectedTransaction.method.replace('_', ' ') : 'CASH'}
                             </span>
                           </div>
 
                           {selectedTransaction.details?.note && (
-                            <div className="flex items-center justify-between gap-3 py-2 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
+                            <div className="flex items-center justify-between gap-3 py-1 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
                               <div className="flex items-center gap-2 min-w-0">
                                 <FileText size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                                 <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">
@@ -7661,7 +7693,7 @@ setShowTripDieselSubPage(false);
                         detailsList.map((item, index) => (
                           <div 
                             key={index} 
-                            className="flex items-center justify-between gap-3 py-2 border-b border-slate-100/80 dark:border-zinc-800/60 last:border-0 text-left"
+                            className="flex items-center justify-between gap-3 py-1 border-b border-slate-100/80 dark:border-zinc-800/60 last:border-0 text-left"
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               {item.icon}
@@ -7669,7 +7701,7 @@ setShowTripDieselSubPage(false);
                                 {item.label}
                               </span>
                             </div>
-                            <span className={`text-xs font-black text-slate-800 dark:text-zinc-200 text-right break-words max-w-[65%] leading-relaxed ${item.isMono ? 'font-mono' : ''}`}>
+                            <span className={`text-[11px] font-black text-slate-800 dark:text-zinc-200 text-right break-words max-w-[65%] leading-relaxed ${item.isMono ? 'font-mono' : ''}`}>
                               {item.value}
                             </span>
                           </div>
@@ -7678,7 +7710,7 @@ setShowTripDieselSubPage(false);
 
                       {/* Online Bank Details if method === 'ONLINE_BANK' inside the SAME card */}
                       {selectedTransaction.method === 'ONLINE_BANK' && (
-                        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-zinc-800/80 space-y-2 text-left">
+                        <div className="mt-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800/80 space-y-1 text-left">
                           <span className="text-[10px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-widest block mb-1">
                             {language === 'bn' ? 'ব্যাংক লেনদেনের তথ্য' : 'Bank Transfer Information'}
                           </span>
@@ -7709,8 +7741,8 @@ setShowTripDieselSubPage(false);
 
                       {/* Paid Trips Breakdown if present inside the SAME card */}
                       {tripsList.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-zinc-800/80 space-y-2 text-left">
-                          <div className="flex justify-between items-center mb-1.5">
+                        <div className="mt-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800/80 space-y-1 text-left">
+                          <div className="flex justify-between items-center mb-1">
                             <span className="text-[10px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-widest">
                               {language === 'bn' ? 'পরিশোধিত ট্রিপ সমূহের তালিকা' : 'Paid Trips Breakdown'}
                             </span>
@@ -7718,9 +7750,9 @@ setShowTripDieselSubPage(false);
                               {tripsCount} {tripsCount === 1 ? (language === 'bn' ? 'ট্রিপ' : 'Trip') : (language === 'bn' ? 'ট্রিপ' : 'Trips')}
                             </span>
                           </div>
-                          <div className="max-h-[160px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                          <div className="max-h-[160px] overflow-y-auto space-y-1 pr-1 custom-scrollbar">
                             {tripsList.map(t => (
-                              <div key={t.tripId} className="flex justify-between items-start py-1.5 border-b border-slate-100/60 dark:border-zinc-800/40 last:border-0 text-[11px] gap-2">
+                              <div key={t.tripId} className="flex justify-between items-start py-1 border-b border-slate-100/60 dark:border-zinc-800/40 last:border-0 text-[11px] gap-2">
                                 <div className="flex flex-col text-left min-w-0 flex-1">
                                   <span className="font-extrabold text-slate-800 dark:text-zinc-200 break-words leading-tight flex items-center gap-1">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
@@ -7742,9 +7774,10 @@ setShowTripDieselSubPage(false);
                       )}
                     </div>
                   </div>
+                  </div>
 
                   {/* CARD 2: DEDICATED ACTION BUTTONS CARD (Download, Edit, Delete, Done) */}
-                  <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-100 dark:border-zinc-800 shadow-[0_8px_25px_-4px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] p-3 sm:p-3.5 flex items-center gap-2">
+                  <div className="shrink-0 mt-3 sm:mt-4 bg-white dark:bg-zinc-900 rounded-2xl border border-slate-100 dark:border-zinc-800 shadow-[0_8px_25px_-4px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] p-3 sm:p-3.5 flex items-center gap-2">
                     {/* Download Button */}
                     <button
                       onClick={() => downloadTransactionReceipt(selectedTransaction, tripsList)}
@@ -7817,12 +7850,12 @@ setShowTripDieselSubPage(false);
 
       {/* Vehicle Inspection Detail Item Popup Modal */}
       {selectedVehicleInspectionItem && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-lg animate-fade-in">
+        <div className="fixed inset-0 z-[9999] overflow-y-auto flex pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] px-4 bg-black/60 backdrop-blur-lg animate-fade-in">
           <div 
-            className="bg-theme-card border border-black/5 dark:border-white/10 rounded-[10px] w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-scale-in"
+            className="bg-theme-card m-auto border border-black/5 dark:border-white/10 rounded-[10px] w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-scale-in"
           >
             {/* Modal Header */}
-            <div className="p-5 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/[0.02] dark:bg-white/[0.02]">
+            <div className="p-3 sm:p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/[0.02] dark:bg-white/[0.02]">
               <div className="text-left">
                 <span className="text-[10px] font-black uppercase text-orange-500 tracking-wider">
                   {language === 'bn' ? 'যানবাহন পরিদর্শন' : 'Vehicle Inspection'}
@@ -7900,7 +7933,7 @@ setShowTripDieselSubPage(false);
               </div>
 
               {/* Sub-items List */}
-              <div className="space-y-3">
+              <div className="flex flex-col">
                 <span className="text-[10px] font-black uppercase text-text-muted tracking-wider block mb-1">
                   {language === 'bn' ? 'বকেয়া আইটেম সমূহ' : 'Dues Sub-items'}
                 </span>
@@ -7925,7 +7958,7 @@ setShowTripDieselSubPage(false);
                           ) : (
                             <Clock size={18} className="text-orange-500 shrink-0" />
                           )}
-                          <span className="text-xs font-black text-text-main block truncate leading-tight">
+                          <span className="text-[11px] font-black text-text-main block truncate leading-tight">
                             {language === 'bn' ? 'পেমেন্ট স্ট্যাটাস' : 'Payment Status'}
                           </span>
                         </div>
@@ -7937,7 +7970,7 @@ setShowTripDieselSubPage(false);
                       </div>
 
                       {/* Full width amount box with soft background color */}
-                      <div className={`rounded-2xl p-4 border flex flex-col items-center justify-center text-center w-full ${amountBgClass}`}>
+                      <div className={`rounded-2xl p-3 border flex flex-col items-center justify-center text-center w-full ${amountBgClass}`}>
                         <span className="text-[10px] font-black uppercase tracking-wider mb-1 opacity-80">
                           {isPaid 
                             ? (language === 'bn' ? 'পরিশোধিত এমাউন্ট' : 'Paid Amount') 
@@ -7958,7 +7991,7 @@ setShowTripDieselSubPage(false);
               <button
                 type="button"
                 onClick={() => setSelectedVehicleInspectionItem(null)}
-                className="flex-1 py-2.5 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-text-main text-xs font-black uppercase rounded-2xl transition-all"
+                className="flex-1 py-2.5 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-text-main text-[11px] font-black uppercase rounded-2xl transition-all"
               >
                 {language === 'bn' ? 'বন্ধ করুন' : 'Close'}
               </button>

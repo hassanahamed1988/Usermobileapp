@@ -2948,9 +2948,12 @@ const MonthlyFileDetails: React.FC = () => {
                const tripAmount = isExtraFuel 
                  ? (trip.extraDiesel || trip.totalAmount || 0)
                  : (trip.totalAmount || 0);
+               const tripDue = isExtraFuel 
+                 ? Math.max(0, (trip.extraDiesel || 0) - (trip.extraDieselPaid || 0))
+                 : getTripDue(trip);
                const isCompleted = isExtraFuel 
                  ? ((trip.extraDieselPaid || 0) >= (trip.extraDiesel || 0) && (trip.extraDiesel || 0) > 0)
-                 : (trip.status === 'COMPLETED' || trip.tariffStatus?.toLowerCase() === 'complete' || trip.tariffStatus?.toLowerCase() === 'completed');
+                 : (trip.status === 'COMPLETED' || trip.tariffStatus?.toLowerCase() === 'complete' || trip.tariffStatus?.toLowerCase() === 'completed' || trip.paymentStatus === 'PAID' || getTripDue(trip) === 0);
                const statusText = (() => {
                  if (isExtraFuel) {
                    return isCompleted ? 'Paid' : 'Pending';
@@ -3030,9 +3033,13 @@ const MonthlyFileDetails: React.FC = () => {
                    </div>
                    
                    <div className="flex items-center gap-2 shrink-0 ml-2">
-                     <span className="text-[12px] sm:text-[13px] font-black text-[#001F3F] dark:text-white tracking-tight whitespace-nowrap">
-                       {`${currency.code} ${tripAmount.toLocaleString()}`}
-                     </span>
+                     {tripDue > 0 && (
+                       <div className="flex flex-col items-end text-right">
+                         <span className="text-[12px] sm:text-[13px] font-black text-[#001F3F] dark:text-white tracking-tight whitespace-nowrap">
+                           {`${currency.code} ${tripDue.toLocaleString()}`}
+                         </span>
+                       </div>
+                     )}
                      <ChevronRight size={20} className="text-[#8B5E3C] transition-colors shrink-0" />
                    </div>
                  </div>
