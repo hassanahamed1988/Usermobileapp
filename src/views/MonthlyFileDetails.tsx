@@ -2946,8 +2946,8 @@ const MonthlyFileDetails: React.FC = () => {
              {filteredTrips.map((trip) => {
                const isExtraFuel = trip.category === 'EXTRA_FUEL';
                const tripAmount = isExtraFuel 
-                 ? (trip.extraDiesel || trip.totalAmount || 0)
-                 : (trip.totalAmount || 0);
+                 ? Math.max(0, (trip.extraDiesel || trip.totalAmount || 0) - (trip.extraDieselPaid || trip.paidAmount || 0))
+                 : Math.max(0, (trip.totalAmount || 0) - (trip.paidAmount || 0));
                const isCompleted = isExtraFuel 
                  ? ((trip.extraDieselPaid || 0) >= (trip.extraDiesel || 0) && (trip.extraDiesel || 0) > 0)
                  : (trip.status === 'COMPLETED' || trip.tariffStatus?.toLowerCase() === 'complete' || trip.tariffStatus?.toLowerCase() === 'completed');

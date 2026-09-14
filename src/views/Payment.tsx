@@ -811,26 +811,14 @@ const PaymentView: React.FC = () => {
       if (p.type !== 'INCOME' || p.status !== 'RECEIVED') return false;
       
       const pCat = (p.category || '').toUpperCase();
+      if (pCat === 'ADVANCE') return false; // Exclude all Advance transactions from category received details
+      
       if (normCategory === 'VEHICLE INSPECTION') {
         if (pCat === 'EXTRA FUEL' || pCat === 'EXTRA_FUEL') return true;
-        if (pCat === 'ADVANCE' && p.details?.advanceType === 'TAKEN') {
-          const target = getAdvanceTargetCategory(p);
-          return target === 'Extra Fuel';
-        }
         return false;
       }
 
       if (pCat === normCategory) return true;
-
-      if (pCat === 'ADVANCE' && p.details?.advanceType === 'TAKEN') {
-        const target = getAdvanceTargetCategory(p);
-        if (target && target.toUpperCase() === normCategory) {
-          return true;
-        }
-        if (!target && normCategory === 'OTHERS') {
-          return true;
-        }
-      }
 
       return false;
     });
@@ -4503,206 +4491,270 @@ setShowReceivedBreakdown(false);
                         </div>
 
                         {/* Grid Details */}
-                        <div className="grid grid-cols-2 gap-2.5">
-                          {/* Common Source Card */}
-                          <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left">
-                            <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                              <Building size={11} className="text-indigo-500" />
-                              {language === 'bn' ? 'আয়ের উৎস' : 'Source of Income'}
-                            </span>
-                            <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase truncate">
+                        {(() => {
+                          const isTripDieselCat = selectedReceivedItemForPopup.category?.toUpperCase() === 'TRIP DIESEL' || selectedReceivedItemForPopup.category?.toUpperCase() === 'TRIP_DIESEL';
+                          return (
+                            <div className="grid grid-cols-2 gap-2.5">
                               {(() => {
-                                const catUpper = selectedReceivedItemForPopup.category?.toUpperCase() || '';
-                                if (catUpper === 'SALARY') {
-                                  return language === 'bn' ? 'স্যালারি' : 'Salary';
-                                } else if (catUpper === 'COMMISSION') {
-                                  return language === 'bn' ? 'কমিশন' : 'Commission';
-                                } else if (catUpper === 'FRIDAY' || catUpper.includes('FRIDAY')) {
-                                  return language === 'bn' ? 'ফ্রাইডে' : 'Friday';
-                                } else {
-                                  return getCategoryDisplayLabel(selectedReceivedItemForPopup.category || '', language);
+                                const isTripDieselCat = selectedReceivedItemForPopup.category?.toUpperCase() === 'TRIP DIESEL' || selectedReceivedItemForPopup.category?.toUpperCase() === 'TRIP_DIESEL';
+                                if (isTripDieselCat) {
+                                  return (
+                                    <>
+                                      {/* Row 1: Company Name (Full Width) with Container Number inside */}
+                                      <div className="col-span-2 bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-[8px] shadow-sm p-3.5 flex flex-col gap-1 text-left">
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                          <Building size={11} className="text-indigo-500" />
+                                          {language === 'bn' ? 'কোম্পানি নেম' : 'Company Name'}
+                                        </span>
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mt-0.5">
+                                          <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase truncate">
+                                            {selectedReceivedItemForPopup.sourceName || 'N/A'}
+                                          </span>
+                                          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 font-mono">
+                                            Container Number: {selectedReceivedItemForPopup.item?.containerNumber || 'N/A'}
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      {/* Row 2: Loading Point beside Delivery Point */}
+                                      <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-[8px] shadow-sm p-3.5 flex flex-col gap-1 text-left">
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                          <MapPin size={11} className="text-emerald-500" />
+                                          {language === 'bn' ? 'লোডিং পয়েন্ট' : 'Loading Point'}
+                                        </span>
+                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mt-0.5 truncate">
+                                          {selectedReceivedItemForPopup.item?.loadingPlace || 'N/A'}
+                                        </span>
+                                      </div>
+
+                                      <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-[8px] shadow-sm p-3.5 flex flex-col gap-1 text-left">
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                          <MapPin size={11} className="text-rose-500" />
+                                          {language === 'bn' ? 'ডেলিভারি পয়েন্ট' : 'Delivery Point'}
+                                        </span>
+                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mt-0.5 truncate">
+                                          {selectedReceivedItemForPopup.item?.deliveryPlace || 'N/A'}
+                                        </span>
+                                      </div>
+
+                                      {/* Row 3: Trip Diesel beside Generator Diesel */}
+                                      <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-[8px] shadow-sm p-3.5 flex flex-col gap-1 text-left">
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                          <Fuel size={11} className="text-orange-500" />
+                                          {language === 'bn' ? 'ট্রিপ ডিজেল' : 'Trip Diesel'}
+                                        </span>
+                                        <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate font-mono mt-0.5">
+                                          {(selectedReceivedItemForPopup.tripDiesel || 0).toLocaleString()} {selectedCurrency}
+                                        </span>
+                                      </div>
+
+                                      <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-[8px] shadow-sm p-3.5 flex flex-col gap-1 text-left">
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                          <Fuel size={11} className="text-amber-500" />
+                                          {language === 'bn' ? 'জেনারেটর ডিজেল' : 'Generator Diesel'}
+                                        </span>
+                                        <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate font-mono mt-0.5">
+                                          {(selectedReceivedItemForPopup.extraDiesel || 0).toLocaleString()} {selectedCurrency}
+                                        </span>
+                                      </div>
+
+                                      {/* Row 4: Payment Method beside Payment Status */}
+                                      <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-[8px] shadow-sm p-3.5 flex flex-col gap-1 text-left">
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                          <CreditCard size={11} className="text-violet-500" />
+                                          {language === 'bn' ? 'পেমেন্ট পদ্ধতি' : 'Payment Method'}
+                                        </span>
+                                        <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate uppercase mt-0.5">
+                                          {selectedReceivedItemForPopup.method || (language === 'bn' ? 'ক্যাশ' : 'Cash')}
+                                        </span>
+                                      </div>
+
+                                      <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-[8px] shadow-sm p-3.5 flex flex-col gap-1 text-left">
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                          <CheckCircle2 size={11} className="text-emerald-500" />
+                                          {language === 'bn' ? 'পেমেন্ট স্ট্যাটাস' : 'Payment Status'}
+                                        </span>
+                                        <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 truncate uppercase mt-0.5">
+                                          {language === 'bn' ? 'পরিশোধিত' : 'Paid'}
+                                        </span>
+                                      </div>
+
+                                      {/* Row 5: Payment Date beside Payment Time */}
+                                      <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-[8px] shadow-sm p-3.5 flex flex-col gap-1 text-left">
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                          <Calendar size={11} className="text-teal-500" />
+                                          {language === 'bn' ? 'পেমেন্ট ডেট' : 'Payment Date'}
+                                        </span>
+                                        <span className="text-xs font-black text-slate-800 dark:text-slate-100 font-mono mt-0.5 truncate">
+                                          {selectedReceivedItemForPopup.paymentDate || 'N/A'}
+                                        </span>
+                                      </div>
+
+                                      <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-[8px] shadow-sm p-3.5 flex flex-col gap-1 text-left">
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                          <Clock size={11} className="text-sky-500" />
+                                          {language === 'bn' ? 'পেমেন্ট টাইম' : 'Payment Time'}
+                                        </span>
+                                        <span className="text-xs font-black text-slate-800 dark:text-slate-100 font-mono mt-0.5 truncate">
+                                          {selectedReceivedItemForPopup.time || 'N/A'}
+                                        </span>
+                                      </div>
+
+
+                                    </>
+                                  );
                                 }
+
+                                // Default/Common category layout
+                                return (
+                                  <>
+                                    {/* Common Source Card */}
+                                    <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 p-3.5 flex flex-col gap-1 text-left rounded-xl">
+                                      <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                        <Building size={11} className="text-indigo-500" />
+                                        {language === 'bn' ? 'আয়ের উৎস' : 'Source of Income'}
+                                      </span>
+                                      <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase truncate mt-0.5">
+                                        {(() => {
+                                          const catUpper = selectedReceivedItemForPopup.category?.toUpperCase() || '';
+                                          if (catUpper === 'SALARY') {
+                                            return language === 'bn' ? 'স্যালারি' : 'Salary';
+                                          } else if (catUpper === 'COMMISSION') {
+                                            return language === 'bn' ? 'কমিশন' : 'Commission';
+                                          } else if (catUpper === 'FRIDAY' || catUpper.includes('FRIDAY')) {
+                                            return language === 'bn' ? 'ফ্রাইডে' : 'Friday';
+                                          } else {
+                                            return getCategoryDisplayLabel(selectedReceivedItemForPopup.category || '', language);
+                                          }
+                                        })()}
+                                      </span>
+                                    </div>
+
+                                    {/* Common Payment Date Card */}
+                                    <div className="col-span-2 bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 p-3.5 flex flex-col gap-1 text-left rounded-xl">
+                                      <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                        <Calendar size={11} className="text-teal-500" />
+                                        {language === 'bn' ? 'পেমেন্ট ডেট ও সময়' : 'Payment Date & Time'}
+                                      </span>
+                                      <span className="text-xs font-black text-slate-800 dark:text-slate-100 font-mono mt-0.5">
+                                        {selectedReceivedItemForPopup.paymentDate || 'N/A'}
+                                        {selectedReceivedItemForPopup.time ? ` • ${selectedReceivedItemForPopup.time}` : ''}
+                                      </span>
+                                    </div>
+
+                                    {/* Render Category Specifics inside beautiful grid items */}
+                                    {selectedReceivedItemForPopup.category?.toUpperCase() === 'SALARY' ? (
+                                      <>
+                                        <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left col-span-2">
+                                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                            <Clock size={11} className="text-cyan-500" />
+                                            {language === 'bn' ? 'স্যালারি মাস' : 'Salary For'}
+                                          </span>
+                                          <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
+                                            {selectedReceivedItemForPopup.salaryFor || 'N/A'}
+                                          </span>
+                                        </div>
+                                      </>
+                                    ) : selectedReceivedItemForPopup.category?.toUpperCase() === 'COMMISSION' ? (
+                                      <>
+                                        <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left col-span-2">
+                                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                            <Truck size={11} className="text-blue-500" />
+                                            {language === 'bn' ? 'মোট ট্রিপ' : 'Total Trips'}
+                                          </span>
+                                          <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate font-mono">
+                                            {selectedReceivedItemForPopup.totalTrip || '0'}
+                                          </span>
+                                        </div>
+                                      </>
+                                    ) : (selectedReceivedItemForPopup.category?.toUpperCase() === 'EXTRA FUEL' || selectedReceivedItemForPopup.category?.toUpperCase() === 'EXTRA_FUEL') ? (
+                                      <>
+                                        <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left">
+                                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                            <Truck size={11} className="text-blue-500" />
+                                            {language === 'bn' ? 'গাড়ির ধরন' : 'Vehicle Type'}
+                                          </span>
+                                          <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
+                                            {selectedReceivedItemForPopup.item?.deliveryPlace || selectedReceivedItemForPopup.item?.vehicleType || (language === 'bn' ? 'ট্রেইলার' : 'Trailer')}
+                                          </span>
+                                        </div>
+
+                                        <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left">
+                                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                            <Tag size={11} className="text-purple-500" />
+                                            {language === 'bn' ? 'ক্যাটাগরি' : 'Category'}
+                                          </span>
+                                          <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
+                                            {selectedReceivedItemForPopup.category || 'N/A'}
+                                          </span>
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left">
+                                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                            <Tag size={11} className="text-purple-500" />
+                                            {language === 'bn' ? 'ক্যাটাগরি' : 'Category'}
+                                          </span>
+                                          <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
+                                            {selectedReceivedItemForPopup.category || 'N/A'}
+                                          </span>
+                                        </div>
+
+                                        {selectedReceivedItemForPopup.tripMonthAndYear && selectedReceivedItemForPopup.tripMonthAndYear !== 'N/A' && (
+                                          <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left">
+                                            <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                              <Clock size={11} className="text-amber-500" />
+                                              {language === 'bn' ? 'মাস ও বছর' : 'Month & Year'}
+                                            </span>
+                                            <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
+                                              {selectedReceivedItemForPopup.tripMonthAndYear}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </>
+                                    )}
+
+                                    {/* Common Payment Method Card */}
+                                    <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left">
+                                      <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                        <CreditCard size={11} className="text-violet-500" />
+                                        {language === 'bn' ? 'পেমেন্ট পদ্ধতি' : 'Payment Method'}
+                                      </span>
+                                      <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate uppercase">
+                                        {selectedReceivedItemForPopup.method || (language === 'bn' ? 'ক্যাশ' : 'Cash')}
+                                      </span>
+                                    </div>
+
+                                    {/* Common Payment Status Card - Always Paid */}
+                                    <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left">
+                                      <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                                        <CheckCircle2 size={11} className="text-emerald-500" />
+                                        {language === 'bn' ? 'পেমেন্ট স্ট্যাটাস' : 'Payment Status'}
+                                      </span>
+                                      <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 truncate uppercase">
+                                        {language === 'bn' ? 'পরিশোধিত' : 'Paid'}
+                                      </span>
+                                    </div>
+                                  </>
+                                );
                               })()}
-                            </span>
-                          </div>
 
-                          {/* Common Payment Date Card */}
-                          <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left">
-                            <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                              <Calendar size={11} className="text-teal-500" />
-                              {language === 'bn' ? 'পেমেন্ট ডেট' : 'Payment Date'}
-                            </span>
-                            <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate font-mono">
-                              {selectedReceivedItemForPopup.paymentDate || 'N/A'}
-                            </span>
-                          </div>
-
-                          {/* Render Category Specifics inside beautiful grid items */}
-                          {selectedReceivedItemForPopup.category?.toUpperCase() === 'SALARY' ? (
-                            <>
-                              <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left col-span-2">
-                                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                                  <Clock size={11} className="text-cyan-500" />
-                                  {language === 'bn' ? 'স্যালারি মাস' : 'Salary For'}
-                                </span>
-                                <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
-                                  {selectedReceivedItemForPopup.salaryFor || 'N/A'}
-                                </span>
-                              </div>
-                            </>
-                          ) : selectedReceivedItemForPopup.category?.toUpperCase() === 'COMMISSION' ? (
-                            <>
-                              <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left col-span-2">
-                                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                                  <Truck size={11} className="text-blue-500" />
-                                  {language === 'bn' ? 'মোট ট্রিপ' : 'Total Trips'}
-                                </span>
-                                <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate font-mono">
-                                  {selectedReceivedItemForPopup.totalTrip || '0'}
-                                </span>
-                              </div>
-                            </>
-                          ) : (selectedReceivedItemForPopup.category?.toUpperCase() === 'TRIP DIESEL' || selectedReceivedItemForPopup.category?.toUpperCase() === 'TRIP_DIESEL') ? (
-                            <>
-                              <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left">
-                                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                                  <Fuel size={11} className="text-orange-500" />
-                                  {language === 'bn' ? 'ট্রিপ ডিজেল' : 'Trip Diesel'}
-                                </span>
-                                <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate font-mono">
-                                  {(selectedReceivedItemForPopup.tripDiesel || 0).toLocaleString()} {selectedCurrency}
-                                </span>
-                              </div>
-
-                              <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left">
-                                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                                  <Fuel size={11} className="text-amber-500" />
-                                  {language === 'bn' ? 'জেনারেটর ডিজেল' : 'Generator Diesel'}
-                                </span>
-                                <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate font-mono">
-                                  {(selectedReceivedItemForPopup.extraDiesel || 0).toLocaleString()} {selectedCurrency}
-                                </span>
-                              </div>
-
-                              <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left col-span-2">
-                                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                                  <Coins size={11} className="text-emerald-500" />
-                                  {language === 'bn' ? 'মোট ডিজেল' : 'Total Diesel'}
-                                </span>
-                                <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 truncate font-mono">
-                                  {(selectedReceivedItemForPopup.totalDiesel || 0).toLocaleString()} {selectedCurrency}
-                                </span>
-                              </div>
-
-                              {/* Delivery Places / Route - full width */}
-                              {selectedReceivedItemForPopup.item && (selectedReceivedItemForPopup.item.loadingPlace || selectedReceivedItemForPopup.item.deliveryPlace) && (
-                                <div className="col-span-2 bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left">
-                                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                                    <MapPin size={11} className="text-rose-500" />
-                                    {language === 'bn' ? 'লোড এবং ডেলিভারি রুট' : 'Loading & Delivery Route'}
+                              {/* Custom Notes / Description Section - Span 2 Columns if present */}
+                              {selectedReceivedItemForPopup.note && (
+                                <div className="col-span-2 bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/10 rounded-xl p-3.5 flex flex-col gap-1.5 text-left">
+                                  <span className="text-[9px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                                    <FileText size={11} className="text-amber-500" />
+                                    {language === 'bn' ? 'বিশেষ নোট / বিবরণ' : 'Note / Description'}
                                   </span>
-                                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                    {selectedReceivedItemForPopup.item.loadingPlace || 'N/A'} ➔ {selectedReceivedItemForPopup.item.deliveryPlace || 'N/A'}
+                                  <span className="text-xs font-medium text-slate-600 dark:text-slate-300 leading-relaxed italic">
+                                    "{selectedReceivedItemForPopup.note}"
                                   </span>
                                 </div>
                               )}
-                            </>
-                          ) : (selectedReceivedItemForPopup.category?.toUpperCase() === 'EXTRA FUEL' || selectedReceivedItemForPopup.category?.toUpperCase() === 'EXTRA_FUEL') ? (
-                            <>
-                              <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left">
-                                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                                  <Truck size={11} className="text-blue-500" />
-                                  {language === 'bn' ? 'গাড়ির ধরন' : 'Vehicle Type'}
-                                </span>
-                                <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
-                                  {selectedReceivedItemForPopup.item?.deliveryPlace || selectedReceivedItemForPopup.item?.vehicleType || (language === 'bn' ? 'ট্রেইলার' : 'Trailer')}
-                                </span>
-                              </div>
-
-                              <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left">
-                                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                                  <Tag size={11} className="text-purple-500" />
-                                  {language === 'bn' ? 'ক্যাটাগরি' : 'Category'}
-                                </span>
-                                <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
-                                  {selectedReceivedItemForPopup.category || 'N/A'}
-                                </span>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left">
-                                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                                  <Tag size={11} className="text-purple-500" />
-                                  {language === 'bn' ? 'ক্যাটাগরি' : 'Category'}
-                                </span>
-                                <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
-                                  {selectedReceivedItemForPopup.category || 'N/A'}
-                                </span>
-                              </div>
-
-                              {selectedReceivedItemForPopup.tripMonthAndYear && selectedReceivedItemForPopup.tripMonthAndYear !== 'N/A' && (
-                                <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left">
-                                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                                    <Clock size={11} className="text-amber-500" />
-                                    {language === 'bn' ? 'মাস ও বছর' : 'Month & Year'}
-                                  </span>
-                                  <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
-                                    {selectedReceivedItemForPopup.tripMonthAndYear}
-                                  </span>
-                                </div>
-                              )}
-                            </>
-                          )}
-
-                          {/* Common Payment Method Card */}
-                          <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left">
-                            <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                              <CreditCard size={11} className="text-violet-500" />
-                              {language === 'bn' ? 'পেমেন্ট পদ্ধতি' : 'Payment Method'}
-                            </span>
-                            <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate uppercase">
-                              {selectedReceivedItemForPopup.method || (language === 'bn' ? 'ক্যাশ' : 'Cash')}
-                            </span>
-                          </div>
-
-                          {/* Common Payment Status Card - Always Paid */}
-                          <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left">
-                            <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                              <CheckCircle2 size={11} className="text-emerald-500" />
-                              {language === 'bn' ? 'পেমেন্ট স্ট্যাটাস' : 'Payment Status'}
-                            </span>
-                            <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 truncate uppercase">
-                              {language === 'bn' ? 'পরিশোধিত' : 'Paid'}
-                            </span>
-                          </div>
-
-                          {/* Extra time if present and not in common */}
-                          {selectedReceivedItemForPopup.time && (
-                            <div className="bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-white/5 rounded-xl p-3 flex flex-col gap-1 text-left">
-                              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                                <Clock size={11} className="text-sky-500" />
-                                {language === 'bn' ? 'সময়' : 'Time'}
-                              </span>
-                              <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate font-mono">
-                                {selectedReceivedItemForPopup.time}
-                              </span>
                             </div>
-                          )}
-
-                          {/* Custom Notes / Description Section - Span 2 Columns if present */}
-                          {selectedReceivedItemForPopup.note && (
-                            <div className="col-span-2 bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/10 rounded-xl p-3.5 flex flex-col gap-1.5 text-left">
-                              <span className="text-[9px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                                <FileText size={11} className="text-amber-500" />
-                                {language === 'bn' ? 'বিশেষ নোট / বিবরণ' : 'Note / Description'}
-                              </span>
-                              <span className="text-xs font-medium text-slate-600 dark:text-slate-300 leading-relaxed italic">
-                                "{selectedReceivedItemForPopup.note}"
-                              </span>
-                            </div>
-                          )}
-                        </div>
+                          );
+                        })()}
                       </div>
 
                       {/* Modal Footer */}
@@ -4805,64 +4857,75 @@ setShowReceivedBreakdown(false);
                   const currentYear = new Date().getFullYear();
                   const yearsList = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
-                  const localBreakdown: Record<string, number> = {
-                    'Salary': 0,
-                    'Commission': 0,
-                    'Trip Diesel': 0,
-                    'Friday': 0,
-                    'Bonus': 0,
-                    'Vehicle Inspection': 0,
-                    'Others': 0
+                  const getCategoryTotalReceived = (category: string, month: number | 'ALL', year: number | 'ALL'): number => {
+                    const normCategory = category.toUpperCase();
+                    const matchedPayments = payments.filter(p => {
+                      if (p.type !== 'INCOME' || p.status !== 'RECEIVED') return false;
+                      
+                      const mMatch = month === 'ALL' ? true : Number(p.month) === Number(month);
+                      const yMatch = year === 'ALL' ? true : Number(p.year) === Number(year);
+                      if (!mMatch || !yMatch) return false;
+
+                      const pCat = (p.category || '').toUpperCase();
+                      if (pCat === 'ADVANCE') return false; // Exclude Advance from Received Details
+                      
+                      if (normCategory === 'VEHICLE INSPECTION') {
+                        if (pCat === 'EXTRA FUEL' || pCat === 'EXTRA_FUEL') return true;
+                        return false;
+                      }
+
+                      if (pCat === normCategory) return true;
+
+                      return false;
+                    });
+
+                    // Sum up the amounts precisely mapped
+                    let total = 0;
+                    matchedPayments.forEach(p => {
+                      const keys = Object.keys(p.details?.pendingItems || {});
+                      if (keys.length > 0) {
+                        keys.forEach(key => {
+                          const amountPaid = p.details.pendingItems?.[key] || 0;
+                          total += Number(amountPaid) || 0;
+                        });
+                      } else {
+                        total += Number(p.amount) || 0;
+                      }
+                    });
+
+                    return total;
                   };
 
-                  payments.forEach(p => {
-                    const monthMatch = receivedListFilterMonth === 'ALL' ? true : Number(p.month) === Number(receivedListFilterMonth);
-                    const yearMatch = receivedListFilterYear === 'ALL' ? true : Number(p.year) === Number(receivedListFilterYear);
-                    if (monthMatch && yearMatch) {
-                      let catKey = p.category || 'Others';
-                      if (catKey.toUpperCase() === 'EXTRA FUEL' || catKey.toUpperCase() === 'EXTRA_FUEL') {
-                        catKey = 'Vehicle Inspection';
-                      }
-                      if (catKey.toUpperCase() === 'USER RENEW') return;
-                      
-                      const pAmount = Number(p.amount) || 0;
-                      let receivedAmount = 0;
-                      if (p.status === 'RECEIVED') {
-                        if (p.type === 'INCOME') {
-                          if (catKey.toUpperCase() === 'ADVANCE' && p.details?.advanceType !== 'RETURNED') {
-                            const reason = (p.details?.advanceReason || p.details?.serviceName || p.details?.note || '').toLowerCase();
-                            let targetCat = '';
-                            if (reason.includes('diesel') || reason.includes('ডিজেল')) targetCat = 'Trip Diesel';
-                            else if (reason.includes('salary') || reason.includes('স্যালারি')) targetCat = 'Salary';
-                            else if (reason.includes('commission') || reason.includes('কমিশন')) targetCat = 'Commission';
-                            else if (reason.includes('friday') || reason.includes('ফ্রাইডে')) targetCat = 'Friday';
-                            else if (reason.includes('bonus') || reason.includes('বোনাস')) targetCat = 'Bonus';
-                            else if (reason.includes('overtime') || reason.includes('ওভারটাইম')) targetCat = 'Others';
-                            else if (reason.includes('extra fuel') || reason.includes('এক্সট্রা ফুয়েল') || reason.includes('extra_fuel')) targetCat = 'Vehicle Inspection';
-                            
-                            if (targetCat) {
-                              catKey = targetCat;
-                              receivedAmount = pAmount;
-                            } else {
-                              receivedAmount = -pAmount;
-                            }
-                          } else {
-                            receivedAmount = pAmount;
-                          }
-                        } else if (p.type === 'DEDUCTION') {
-                          if (catKey.toUpperCase() === 'ADVANCE' && p.details?.advanceType === 'RETURNED') {
-                            receivedAmount = pAmount;
-                          }
-                        }
-                      }
+                  const normalizeCategoryName = (name: string): string => {
+                    const upper = name.toUpperCase().trim();
+                    if (upper === 'SALARY') return 'Salary';
+                    if (upper === 'COMMISSION') return 'Commission';
+                    if (upper === 'TRIP DIESEL' || upper === 'TRIP_DIESEL') return 'Trip Diesel';
+                    if (upper === 'FRIDAY') return 'Friday';
+                    if (upper === 'BONUS') return 'Bonus';
+                    if (upper === 'VEHICLE INSPECTION') return 'Vehicle Inspection';
+                    if (upper === 'OTHERS') return 'Others';
+                    
+                    return name.trim().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                  };
 
-                      if (receivedAmount !== 0) {
-                        const matchingKey = Object.keys(localBreakdown).find(
-                          k => k.toLowerCase() === catKey.toLowerCase()
-                        ) || catKey;
-                        localBreakdown[matchingKey] = (localBreakdown[matchingKey] || 0) + receivedAmount;
+                  const categoriesSet = new Set(['Salary', 'Commission', 'Trip Diesel', 'Friday', 'Bonus', 'Vehicle Inspection', 'Others']);
+                  payments.forEach(p => {
+                    if (p.category) {
+                      let cat = p.category;
+                      if (cat.toUpperCase() === 'EXTRA FUEL' || cat.toUpperCase() === 'EXTRA_FUEL') {
+                        cat = 'Vehicle Inspection';
+                      }
+                      const norm = normalizeCategoryName(cat);
+                      if (norm.toUpperCase() !== 'ADVANCE' && norm.toUpperCase() !== 'USER RENEW') {
+                        categoriesSet.add(norm);
                       }
                     }
+                  });
+
+                  const localBreakdown: Record<string, number> = {};
+                  categoriesSet.forEach(cat => {
+                    localBreakdown[cat] = getCategoryTotalReceived(cat, receivedListFilterMonth, receivedListFilterYear);
                   });
 
                   const filteredEntries = Object.entries(localBreakdown).filter(([category, amount]) => {
@@ -6957,6 +7020,8 @@ setShowTripDieselSubPage(false);
               invoiceNumber: string;
               amount: number;
               subKeys: { label: string; amount: number }[];
+              loadingPoint?: string;
+              deliveryPoint?: string;
             }
 
             const getPayoutTrips = (): PayoutTripDetails[] => {
@@ -6996,7 +7061,9 @@ setShowTripDieselSubPage(false);
                             containerNumber: t.containerNumber || 'N/A',
                             invoiceNumber: t.invoiceNumber || 'N/A',
                             amount: 0,
-                            subKeys: []
+                            subKeys: [],
+                            loadingPoint: t.loadingPlace || '',
+                            deliveryPoint: t.deliveryPlace || ''
                           };
                         }
                         tripMap[tripId].amount += share;
@@ -7028,7 +7095,9 @@ setShowTripDieselSubPage(false);
                         containerNumber: trip.containerNumber || 'N/A',
                         invoiceNumber: trip.invoiceNumber || 'N/A',
                         amount: 0,
-                        subKeys: []
+                        subKeys: [],
+                        loadingPoint: trip.loadingPlace || '',
+                        deliveryPoint: trip.deliveryPlace || ''
                       };
                     }
                     tripMap[tripId].amount += numericAmount;
@@ -7420,11 +7489,7 @@ setShowTripDieselSubPage(false);
             } else {
               // Default Fallback details
               if (selectedTransaction.type === 'INCOME') {
-                detailsList.push({
-                  label: language === 'bn' ? 'সোর্স নাম' : 'Source Name',
-                  value: getSourceName(),
-                  icon: <Building size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
-                });
+                // Removed Source Name as requested by user
               } else {
                 // Deduction/Expense fallback details: Remove Source Name, show relevant fields
                 const txnUser = users.find(u => u.id === selectedTransaction.userId);
@@ -7468,21 +7533,22 @@ setShowTripDieselSubPage(false);
 
             return (
               <div 
-                className="fixed inset-0 z-[9999] bg-black/40 sm:bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center p-3 sm:p-5 overflow-y-auto animate-fade-in"
+                className="fixed inset-0 z-[9999] bg-black/40 sm:bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center pt-[56px] pb-[calc(64px+env(safe-area-inset-bottom))] sm:pt-8 sm:pb-8 px-4 sm:px-6 animate-fade-in"
                 onClick={(e) => {
                   if (e.target === e.currentTarget) {
                     setSelectedTransaction(null);
                   }
                 }}
               >
+                {/* THE SINGLE UNIFIED ALL-IN-ONE DETAILS CARD */}
                 <div 
-                  className="w-full max-w-md my-auto space-y-3 relative z-10 animate-scale-in"
+                  className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-zinc-800 shadow-[0_12px_35px_-5px_rgba(0,0,0,0.08),0_4px_12px_rgba(0,0,0,0.04)] relative z-10 animate-scale-in flex flex-col overflow-hidden h-[82vh] max-h-[85vh] sm:h-auto sm:max-h-[82vh]"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {/* CARD 1: THE SINGLE UNIFIED PREMIUM WHITE DETAILS CARD */}
-                  <div className="bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-zinc-800 shadow-[0_12px_35px_-5px_rgba(0,0,0,0.08),0_4px_12px_rgba(0,0,0,0.04)] overflow-hidden p-5 sm:p-6 transition-all">
+                  {/* Scrollable Details Body */}
+                  <div className="flex-1 overflow-y-auto p-4 sm:p-5 custom-scrollbar">
                     {/* Top Row: Category Header and Close X Button */}
-                    <div className="flex items-center justify-between pb-3.5 mb-3.5 border-b border-slate-100 dark:border-zinc-800/80">
+                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-zinc-800/80">
                       <div className="flex items-center gap-2.5">
                         <div 
                           className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
@@ -7515,7 +7581,7 @@ setShowTripDieselSubPage(false);
                         const isPaid = selectedTransaction.status === 'RECEIVED' || selectedTransaction.status === 'COMPLETED';
                         if (isPaid) {
                           return (
-                            <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border-2 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.25)] mb-2.5">
+                            <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border-2 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.25)] mb-1.5">
                               <motion.svg 
                                 className="w-6 h-6 text-emerald-500" 
                                 viewBox="0 0 24 24" 
@@ -7536,7 +7602,7 @@ setShowTripDieselSubPage(false);
                           );
                         } else {
                           return (
-                            <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-500/10 border-2 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.25)] mb-2.5">
+                            <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-500/10 border-2 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.25)] mb-1.5">
                               <Clock size={20} className="text-amber-500 animate-pulse" />
                             </div>
                           );
@@ -7550,8 +7616,8 @@ setShowTripDieselSubPage(false);
                           : 'bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/10 dark:border-amber-500/20 text-amber-700 dark:text-amber-400';
 
                         return (
-                          <div className={`w-full rounded-2xl p-4 border flex flex-col items-center justify-center text-center my-3 ${amountBgClass}`}>
-                            <span className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1.5">
+                          <div className={`w-full rounded-2xl p-3 border flex flex-col items-center justify-center text-center my-2 ${amountBgClass}`}>
+                            <span className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">
                               {catDisplay}
                             </span>
                             
@@ -7563,7 +7629,7 @@ setShowTripDieselSubPage(false);
                             </h2>
 
                             {/* Status Badge inside the card */}
-                            <div className="mt-2.5">
+                            <div className="mt-2">
                               <span className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
                                 isPaid
                                   ? 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
@@ -7583,14 +7649,14 @@ setShowTripDieselSubPage(false);
                     </div>
 
                     {/* Subtle Divider Line */}
-                    <div className="my-4 sm:my-5 border-t border-slate-100 dark:border-zinc-800/80" />
+                    <div className="my-2.5 sm:my-3 border-t border-slate-100 dark:border-zinc-800/80" />
 
                     {/* Remaining Details Inside the SAME Single Card */}
-                    <div className="space-y-3">
+                    <div className="space-y-0">
                       {(categoryUpper === 'SALARY' || categoryUpper === 'COMMISSION') ? (
                         <>
                           {selectedTransaction.month && (
-                            <div className="flex items-center justify-between gap-3 py-2 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
+                            <div className="flex items-center justify-between gap-3 py-1.5 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
                               <div className="flex items-center gap-2 min-w-0">
                                 <Calendar size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                                 <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">
@@ -7603,7 +7669,7 @@ setShowTripDieselSubPage(false);
                             </div>
                           )}
 
-                          <div className="flex items-center justify-between gap-3 py-2 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
+                          <div className="flex items-center justify-between gap-3 py-1.5 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
                             <div className="flex items-center gap-2 min-w-0">
                               <Hash size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                               <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">
@@ -7615,7 +7681,7 @@ setShowTripDieselSubPage(false);
                             </span>
                           </div>
 
-                          <div className="flex items-center justify-between gap-3 py-2 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
+                          <div className="flex items-center justify-between gap-3 py-1.5 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
                             <div className="flex items-center gap-2 min-w-0">
                               <Clock size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                               <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">
@@ -7627,7 +7693,7 @@ setShowTripDieselSubPage(false);
                             </span>
                           </div>
 
-                          <div className="flex items-center justify-between gap-3 py-2 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
+                          <div className="flex items-center justify-between gap-3 py-1.5 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
                             <div className="flex items-center gap-2 min-w-0">
                               <CreditCard size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                               <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">
@@ -7640,7 +7706,7 @@ setShowTripDieselSubPage(false);
                           </div>
 
                           {selectedTransaction.details?.note && (
-                            <div className="flex items-center justify-between gap-3 py-2 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
+                            <div className="flex items-center justify-between gap-3 py-1.5 border-b border-slate-100/80 dark:border-zinc-800/60 text-left">
                               <div className="flex items-center gap-2 min-w-0">
                                 <FileText size={14} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                                 <span className="text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">
@@ -7657,7 +7723,7 @@ setShowTripDieselSubPage(false);
                         detailsList.map((item, index) => (
                           <div 
                             key={index} 
-                            className="flex items-center justify-between gap-3 py-2 border-b border-slate-100/80 dark:border-zinc-800/60 last:border-0 text-left"
+                            className="flex items-center justify-between gap-3 py-1.5 border-b border-slate-100/80 dark:border-zinc-800/60 last:border-0 text-left"
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               {item.icon}
@@ -7674,12 +7740,12 @@ setShowTripDieselSubPage(false);
 
                       {/* Online Bank Details if method === 'ONLINE_BANK' inside the SAME card */}
                       {selectedTransaction.method === 'ONLINE_BANK' && (
-                        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-zinc-800/80 space-y-2 text-left">
+                        <div className="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-zinc-800/80 space-y-1 text-left">
                           <span className="text-[10px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-widest block mb-1">
                             {language === 'bn' ? 'ব্যাংক লেনদেনের তথ্য' : 'Bank Transfer Information'}
                           </span>
                           {selectedTransaction.details?.bankName && (
-                            <div className="flex justify-between items-center text-[11px] py-0.5">
+                            <div className="flex justify-between items-center text-[11px] py-1">
                               <span className="text-slate-400 dark:text-zinc-500 font-bold">{language === 'bn' ? 'ব্যাংক নাম' : 'Bank Name'}</span>
                               <span className="font-black text-slate-800 dark:text-zinc-200 text-right">
                                 {banks.find(b => b.id === selectedTransaction.details.bankName)?.name || selectedTransaction.details.bankName}
@@ -7687,13 +7753,13 @@ setShowTripDieselSubPage(false);
                             </div>
                           )}
                           {selectedTransaction.details?.accountNumber && (
-                            <div className="flex justify-between items-center text-[11px] py-0.5">
+                            <div className="flex justify-between items-center text-[11px] py-1">
                               <span className="text-slate-400 dark:text-zinc-500 font-bold">{language === 'bn' ? 'অ্যাকাউন্ট নম্বর' : 'Account Number'}</span>
                               <span className="font-mono font-black text-slate-800 dark:text-zinc-200 text-right">{selectedTransaction.details.accountNumber}</span>
                             </div>
                           )}
                           {selectedTransaction.details?.branchName && (
-                            <div className="flex justify-between items-center text-[11px] py-0.5">
+                            <div className="flex justify-between items-center text-[11px] py-1">
                               <span className="text-slate-400 dark:text-zinc-500 font-bold">{language === 'bn' ? 'ব্রাঞ্চ নাম' : 'Branch Name'}</span>
                               <span className="font-black text-slate-800 dark:text-zinc-200 text-right">
                                 {branches.find(b => b.id === selectedTransaction.details.branchName)?.name || selectedTransaction.details.branchName}
@@ -7714,33 +7780,78 @@ setShowTripDieselSubPage(false);
                               {tripsCount} {tripsCount === 1 ? (language === 'bn' ? 'ট্রিপ' : 'Trip') : (language === 'bn' ? 'ট্রিপ' : 'Trips')}
                             </span>
                           </div>
-                          <div className="max-h-[160px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                            {tripsList.map(t => (
-                              <div key={t.tripId} className="flex justify-between items-start py-1.5 border-b border-slate-100/60 dark:border-zinc-800/40 last:border-0 text-[11px] gap-2">
-                                <div className="flex flex-col text-left min-w-0 flex-1">
-                                  <span className="font-extrabold text-slate-800 dark:text-zinc-200 break-words leading-tight flex items-center gap-1">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                                    {language === 'bn' ? 'কন্টেইনার:' : 'Cont:'} {t.containerNumber}
-                                  </span>
-                                  {t.subKeys.length > 0 && (
-                                    <span className="text-[9px] text-slate-400 dark:text-zinc-500 break-words leading-normal mt-0.5 ml-2.5">
+                          <div className={`overflow-y-auto pr-1 custom-scrollbar ${
+                            categoryUpper === 'TRIP DIESEL' || categoryUpper === 'TRIP_DIESEL' 
+                              ? 'max-h-[380px] sm:max-h-[420px]' 
+                              : 'max-h-[160px]'
+                          } space-y-2`}>
+                            {tripsList.map(t => {
+                              const isTripDieselCat = categoryUpper === 'TRIP DIESEL' || categoryUpper === 'TRIP_DIESEL';
+                              return (
+                                <div 
+                                  key={t.tripId} 
+                                  className={`flex flex-col py-3 last:border-0 text-[11px] gap-2 transition-all ${
+                                    isTripDieselCat 
+                                      ? 'bg-white dark:bg-zinc-900/60 p-3.5 rounded-xl border border-slate-100 dark:border-zinc-800/80 my-2 shadow-sm' 
+                                      : 'border-b border-slate-100/60 dark:border-zinc-800/40'
+                                  }`}
+                                >
+                                  <div className="flex justify-between items-center gap-2">
+                                    <div className="flex items-center text-left min-w-0 flex-1 gap-1.5">
+                                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isTripDieselCat ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                                      {!isTripDieselCat && (
+                                        <span className="text-slate-400 dark:text-zinc-500 text-[10px] font-bold uppercase tracking-wider">
+                                          {language === 'bn' ? 'কন্টেইনার:' : 'Cont:'}
+                                        </span>
+                                      )}
+                                      <span className="font-black text-slate-800 dark:text-zinc-100">{t.containerNumber}</span>
+                                    </div>
+                                    <div className="font-mono font-black text-slate-800 dark:text-zinc-200 shrink-0 text-right bg-slate-50 dark:bg-zinc-800/50 px-2 py-0.5 rounded-md border border-slate-100 dark:border-zinc-800/60 shadow-2xs">
+                                      {selectedCurrency} {t.amount.toLocaleString()}
+                                    </div>
+                                  </div>
+
+                                  {!isTripDieselCat && t.subKeys.length > 0 && (
+                                    <div className="text-[9px] text-slate-400 dark:text-zinc-500 break-words leading-normal ml-3 font-semibold text-left">
                                       ({t.subKeys.map(sk => `${sk.label}: ${sk.amount.toLocaleString()}`).join(' | ')})
-                                    </span>
+                                    </div>
+                                  )}
+
+                                  {/* Beautiful side-by-side Loading/Delivery Point inside specific Trip card */}
+                                  {isTripDieselCat && (t.loadingPoint || t.deliveryPoint) && (
+                                    <div className="ml-3 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[9.5px] leading-relaxed text-slate-500 dark:text-zinc-400">
+                                      {t.loadingPoint && (
+                                        <span className="flex items-center gap-1">
+                                          <span className="font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider text-[8px]">
+                                            {language === 'bn' ? 'লোডিং পয়েন্ট' : 'Loading Point'}
+                                          </span>
+                                          <span className="font-black text-slate-700 dark:text-zinc-200">{t.loadingPoint}</span>
+                                        </span>
+                                      )}
+                                      {t.loadingPoint && t.deliveryPoint && (
+                                        <span className="text-slate-300 dark:text-zinc-700 mx-0.5 font-bold">•</span>
+                                      )}
+                                      {t.deliveryPoint && (
+                                        <span className="flex items-center gap-1">
+                                          <span className="font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider text-[8px]">
+                                            {language === 'bn' ? 'ডেলিভারি পয়েন্ট' : 'Delivery Point'}
+                                          </span>
+                                          <span className="font-black text-slate-700 dark:text-zinc-200">{t.deliveryPoint}</span>
+                                        </span>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
-                                <div className="font-mono font-black text-slate-800 dark:text-zinc-200 shrink-0 text-right">
-                                  {selectedCurrency} {t.amount.toLocaleString()}
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  {/* CARD 2: DEDICATED ACTION BUTTONS CARD (Download, Edit, Delete, Done) */}
-                  <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-100 dark:border-zinc-800 shadow-[0_8px_25px_-4px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] p-3 sm:p-3.5 flex items-center gap-2">
+                  {/* FIXED CARD FOOTER: DEDICATED ACTION BUTTONS (Download, Edit, Delete, Done) INSIDE THE SAME SINGLE CARD */}
+                  <div className="border-t border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-900/50 p-3 sm:p-3.5 flex items-center gap-2 shrink-0">
                     {/* Download Button */}
                     <button
                       onClick={() => downloadTransactionReceipt(selectedTransaction, tripsList)}
