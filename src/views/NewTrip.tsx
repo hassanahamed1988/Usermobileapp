@@ -494,10 +494,10 @@ const NewTrip: React.FC = () => {
         cleanMessage = isBangla 
           ? 'এই মুহূর্তে সার্ভারে অনেক চাপ রয়েছে। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।' 
           : 'The artificial intelligence system is currently experiencing high demand. Please try again later.';
-      } else if (cleanMessage.toLowerCase().includes('quota exceeded') || cleanMessage.includes('429') || cleanMessage.toLowerCase().includes('rate limit') || cleanMessage.toLowerCase().includes('free_tier_requests') || cleanMessage.toLowerCase().includes('generate_content_free_tier')) {
+      } else if (cleanMessage.toLowerCase().includes('quota exceeded') || cleanMessage.includes('429') || cleanMessage.toLowerCase().includes('rate limit') || cleanMessage.toLowerCase().includes('free_tier_requests') || cleanMessage.toLowerCase().includes('generate_content_free_tier') || cleanMessage.toLowerCase().includes('prepayment credits')) {
         cleanMessage = isBangla
           ? 'এপিআই কোটা বা লিমিট শেষ হয়ে গেছে। স্ক্যানিং বর্তমানে বন্ধ আছে, অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন অথবা সাপোর্ট টিমের সাথে যোগাযোগ করুন।'
-          : 'Scanning service limit reached (API Quota Exceeded). Please try again later or contact support to upgrade the billing plan.';
+          : 'Scanning service limit reached (API Quota Exceeded or Depleted Credits). Please try again later or contact support to upgrade the billing plan.';
       } else if (cleanMessage.toLowerCase().includes('api key expired') || cleanMessage.toLowerCase().includes('api key not valid')) {
         cleanMessage = isBangla
           ? 'এপিআই কী মেয়দোত্তীর্ণ বা ভুল। দয়া করে সেটিংস থেকে নতুন এপিআই কী সেট করুন।'
