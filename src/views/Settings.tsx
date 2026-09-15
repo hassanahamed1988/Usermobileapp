@@ -178,7 +178,6 @@ const Settings: React.FC = () => {
   const [twoFASecret, setTwoFASecret] = useState('');
   const [twoFAUrl, setTwoFAUrl] = useState('');
   const [isFontSelectOpen, setIsFontSelectOpen] = useState(false);
-  const [tempApiUrl, setTempApiUrl] = useState(() => localStorage.getItem('API_BASE_URL') || '');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -584,18 +583,6 @@ const Settings: React.FC = () => {
                 }} 
                 color="#0f766e"
               />
-              {user?.role === 'ADMIN' && (
-                <MenuItem 
-                  icon={<Smartphone />} 
-                  title="Server Connection (APK)" 
-                  subtitle={language === 'bn' ? 'এক্সটার্নাল সার্ভার হোস্ট কনফিগার করুন' : 'Configure external server hosts'}
-                  onClick={() => {
-                    setNavigationDirection('forward');
-                    setActiveSection('SERVER_CONNECTION');
-                  }} 
-                  color="#4b5563"
-                />
-              )}
             </div>
 
              <div className="mt-8">
@@ -716,74 +703,6 @@ const Settings: React.FC = () => {
                           ? 'বি.দ্র.: কাস্টম লোগো আপলোড করলে এটি অ্যাপের হেডার, নেভিগেশন ও লগইন স্ক্রিনে পরিবর্তন হবে। কাস্টম লোগো এবং অ্যান্ড্রয়েড APK অ্যাপ্লিকেশন বিল্ডের লোগো সম্পূর্ণ ভিন্ন ও স্বাধীন থাকবে।'
                           : 'Note: Uploading a custom logo updates all web/app headers and sign-in screens in real time. Custom web logo and native Android APK launcher build logos are independent.'}
                       </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeSection === 'SERVER_CONNECTION' && (
-              <div className="space-y-6">
-                <div className="p-4 bg-theme-card rounded-lg border-[var(--dynamic-card-border)] shadow-[var(--dynamic-card-shadow)] space-y-6">
-                  <div className="flex flex-col items-center text-center gap-2">
-                    <div className="w-16 h-16 bg-[var(--primary)]/10 rounded-full flex items-center justify-center mb-2" style={{ color: primaryColor, backgroundColor: `${primaryColor}10` }}>
-                      <Smartphone size={32} />
-                    </div>
-                    <h2 className="text-lg font-black text-text-main uppercase">Server Connection</h2>
-                    <p className="text-xs text-text-muted font-bold max-w-[280px]">
-                      Configure the remote backend API address for document scanning (OCR) and Gemini AI Chat inside the Release APK.
-                    </p>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <InputField
-                        label="API Base URL / Server Domain"
-                        name="apiUrl"
-                        type="url"
-                        value={tempApiUrl}
-                        onChange={(e) => setTempApiUrl(e.target.value)}
-                      />
-                      <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-2 font-black uppercase">
-                        Current Effective API Endpoint:
-                        <code className="block bg-gray-100 dark:bg-zinc-850 p-2 rounded mt-1 font-mono break-all text-xs text-[var(--primary)] font-normal normal-case">
-                          {tempApiUrl.trim() || 'https://fleetpromanager-1991.web.app'}
-                        </code>
-                      </p>
-                    </div>
-                    <div className="flex gap-2 bg-yellow-50 dark:bg-yellow-950/20 p-3 rounded-lg border border-yellow-100 dark:border-yellow-900/30">
-                      <p className="text-[10px] text-yellow-700 dark:text-yellow-500 font-bold leading-normal">
-                        Note: Leave empty to automatically fallback to FleetPro's default system servers. If you host a private backend server, enter its full secure address starting with https://.
-                      </p>
-                    </div>
-                    <div className="flex justify-end pt-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setTempApiUrl('');
-                          localStorage.removeItem('API_BASE_URL');
-                          deleteFirebaseDoc('settings', 'backend');
-                          showFeedback('Reset to Default Server URL for all users');
-                        }}
-                        className="text-xs font-black uppercase tracking-wider text-red-500 bg-red-500/10 hover:bg-red-500/20 h-10 px-4 rounded-lg flex items-center gap-1 transition-colors"
-                      >
-                        <X size={14} />
-                        Reset
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (tempApiUrl.trim()) {
-                            localStorage.setItem('API_BASE_URL', tempApiUrl.trim());
-                            saveFirebaseDoc('settings', 'backend', { url: tempApiUrl.trim() });
-                            showFeedback('Server URL saved for all users');
-                          }
-                        }}
-                        className="text-xs font-black uppercase tracking-wider text-white h-10 px-6 rounded-lg flex items-center gap-1 transition-colors"
-                        style={{ backgroundColor: primaryColor }}
-                      >
-                        <Check size={14} />
-                        Save for All Users
-                      </button>
                     </div>
                   </div>
                 </div>

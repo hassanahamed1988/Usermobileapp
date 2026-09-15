@@ -136,26 +136,13 @@ async function startServer() {
         }
       }
 
-      // Short numeric id, same format/uniqueness-checked-against-'users'
-      // pattern the web admin's own "New Account" form uses, so an
-      // approved applicant gets a normal-looking user id to log in with
-      // instead of the long APP-timestamp-xxxx tracking code.
-      let userId = '';
-      let isUnique = false;
-      while (!isUnique) {
-        userId = Math.floor(1000000 + Math.random() * 9000000).toString();
-        const existing = await getDoc(doc(serverDb, "users", userId));
-        isUnique = !existing.exists();
-      }
-
       const accountType = formData.accountType || "PERSONAL";
       const mobile = formData.mobile || "";
       const country = formData.country || "";
       const addressLine1 = formData.addressLine1 || "";
 
       const newUser = {
-        id: userId,
-        userId: userId,
+        id: applicationId,
         applicationId: applicationId,
         name: formData.fullName || "",
         fullName: formData.fullName || "",
@@ -164,15 +151,6 @@ async function startServer() {
         mobileNumber: mobile,
         countryCode: formData.countryCode || "+974",
         accountType: accountType,
-        // Both PERSONAL and COMPANY self-registrations become a plain
-        // mobile-app USER. Admin-panel access is never granted from a
-        // public signup form — that's only ever created deliberately by
-        // an existing admin, via the web admin app's own "New Admin"
-        // form. Getting this wrong would also silently break the fix
-        // above: ADMIN-role accounts are excluded from every list in the
-        // web admin (including Pending) and live in a different
-        // Firestore collection entirely, so this registration would once
-        // again become invisible to any admin.
         role: "USER",
         status: "PENDING",
         nationality: formData.nationality || "",
@@ -201,9 +179,9 @@ async function startServer() {
         statusTimestamp: createdAt,
       };
 
-      await setDoc(doc(serverDb, "users", userId), newUser);
+      await setDoc(doc(serverDb, "users", applicationId), newUser);
 
-      console.log(`Successfully saved registration request to 'users' collection with id: ${userId} (application ${applicationId})`);
+      console.log(`Successfully saved registration request to 'users' collection with applicationId: ${applicationId} (Pending Approval)`);
 
       res.json({
         success: true,

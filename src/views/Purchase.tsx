@@ -274,7 +274,7 @@ export default function Purchase() {
     setFormBuildingNumber(u.buildingNumber || '');
     setFormElectricityNumber(u.electricityNumber || '');
     setFormAreaName(u.addressLine1 || u.city || u.manualAddress || '');
-    setFormAccountType((u.role as any) === 'MANAGER' ? 'MANAGER' : 'PARTNER');
+    setFormAccountType(isAdmin && (u.role as any) === 'MANAGER' ? 'MANAGER' : 'PARTNER');
     
     setIsUserListOpen(false);
     setIsPartnerFormOpen(true);
@@ -1218,13 +1218,15 @@ const fileName = `Invoice_${purchase.id}.pdf`;
       ,createdAt: Date.now()
       ,avatar: selectedUser.avatar || null
       ,accountType: formAccountType
+      ,managerId: existingPartner?.managerId || (isManager ? (currentManagerId || user?.id || '') : (selectedUser.managerId || ''))
     };
 
     try {
       await saveFirebaseDoc('partners' ,partnerData.id ,partnerData);
-      // Update associated user's role in the database
+      // Update associated user's role and managerId in the database
       await saveFirebaseDoc('users' ,selectedUser.id ,{
-        role: formAccountType === 'MANAGER' ? 'MANAGER' : 'USER'
+        role: formAccountType === 'MANAGER' ? 'MANAGER' : 'USER',
+        managerId: partnerData.managerId || selectedUser.managerId || ''
       });
       showFeedback('Partner saved successfully!' ,'success');
       handleClosePartnerForm();
@@ -1633,25 +1635,66 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                 </div>
 
                 <div className="p-4 overflow-y-auto space-y-3">
-                  {globalUsers.filter(u => u.role !== 'ADMIN' && !partners.some(p => String(p.userId) === String(u.id) && p.status !== 'deleted')).map(u => (
-                    <div 
-                      key={u.id}
-                      onClick={() => handleSelectUser(u)}
-                      className="bg-background-main border border-border-main/50 hover:border-purple-500/50 rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-all hover:shadow-sm"
-                    >
-                      <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0 overflow-hidden">
-                        {u.avatar ? (
-                          <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <UserIcon size={24} />
-                        )}
+                  {(() => {
+                    const selectableUsers = globalUsers.filter(u => {
+                      if (u.role === 'ADMIN') return false;
+                      const isAlreadyPartner = partners.some(p => String(p.userId) === String(u.id) && p.status !== 'deleted');
+                      if (isAlreadyPartner) return false;
+
+                      if (isAdmin) {
+                        return true;
+                      }
+
+                      if (isManager) {
+                        // Managers can ONLY see users assigned to them by Admin
+                        const isAssignedToMe = (currentManagerId && (String(u.managerId) === String(currentManagerId))) ||
+                          (currentUserPartner?.id && (String(u.managerId) === String(currentUserPartner.id))) ||
+                          (currentUserPartner?.partnerId && (String(u.managerId) === String(currentUserPartner.partnerId))) ||
+                          (user?.id && String(u.managerId) === String(user.id)) ||
+                          (user?.userId && String(u.managerId) === String(user.userId));
+                        return Boolean(isAssignedToMe);
+                      }
+
+                      // Normal users cannot add partners/users
+                      return false;
+                    });
+
+                    if (selectableUsers.length === 0) {
+                      return (
+                        <div className="text-center py-8 px-4">
+                          <p className="text-sm font-bold text-gray-500 dark:text-gray-400">
+                            {isManager 
+                              ? (language === 'bn' 
+                                  ? 'এডমিন কর্তৃক আপনার অধীনে কোনো ইউজার যোগ করা হয়নি।' 
+                                  : 'No users have been assigned to you by the Admin.')
+                              : (language === 'bn' 
+                                  ? 'কোনো ইউজার পাওয়া যায়নি।' 
+                                  : 'No available users found.')}
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return selectableUsers.map(u => (
+                      <div 
+                        key={u.id}
+                        onClick={() => handleSelectUser(u)}
+                        className="bg-background-main border border-border-main/50 hover:border-purple-500/50 rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-all hover:shadow-sm"
+                      >
+                        <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0 overflow-hidden">
+                          {u.avatar ? (
+                            <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <UserIcon size={24} />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{u.name}</p>
+                          <p className="text-xs font-medium mt-0.5 text-gray-600 dark:text-gray-400">ID: {u.userId || u.id.slice(0 ,8)}</p>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{u.name}</p>
-                        <p className="text-xs font-medium mt-0.5 text-gray-600 dark:text-gray-400">ID: {u.userId || u.id.slice(0 ,8)}</p>
-                      </div>
-                    </div>
-                  ))}
+                    ));
+                  })()}
                 </div>
               </div>
             </div>
@@ -1701,19 +1744,30 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                     onChange={(e: any) => setFormName(e.target.value)}
                     icon={<UserIcon size={16} />}
                   />
-                  <InputField
-                    label="Account Type"
-                    name="accountType"
-                    type="select"
-                    options={[
-                      { value: 'MANAGER' ,label: 'Manager Profile' }
-                      ,{ value: 'PARTNER' ,label: 'Partner' }
-                    ]}
-                    value={formAccountType === 'MANAGER' ? 'Manager Profile' : 'Partner'}
-                    onChange={() => {}}
-                    onOpenModal={handleOpenSubSelectModal}
-                    icon={<Users size={16} />}
-                  />
+                  {isAdmin ? (
+                    <InputField
+                      label="Account Type"
+                      name="accountType"
+                      type="select"
+                      options={[
+                        { value: 'MANAGER' ,label: 'Manager Profile' }
+                        ,{ value: 'PARTNER' ,label: 'Partner' }
+                      ]}
+                      value={formAccountType === 'MANAGER' ? 'Manager Profile' : 'Partner'}
+                      onChange={() => {}}
+                      onOpenModal={handleOpenSubSelectModal}
+                      icon={<Users size={16} />}
+                    />
+                  ) : (
+                    <InputField
+                      label="Account Type"
+                      name="accountType"
+                      value="Partner"
+                      onChange={() => {}}
+                      icon={<Users size={16} />}
+                      readOnly
+                    />
+                  )}
                   <InputField
                     label="Mobile Number"
                     name="mobile"
@@ -3616,7 +3670,7 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                     </div>
                   </button>
                   
-                  {user?.role === 'ADMIN' && (
+                  {(user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
                     <button
                       onClick={handleOpenNewPartner}
                       className="flex items-center justify-end gap-3 group cursor-pointer"

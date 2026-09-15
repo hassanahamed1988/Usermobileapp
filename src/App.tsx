@@ -29,7 +29,6 @@ import Login from '@/views/Login';
 import Settings from '@/views/Settings';
 import UserProfile from '@/views/UserProfile';
 import Search from '@/views/Search';
-import NewAccount from '@/views/NewAccount';
 import ActiveUser from '@/views/ActiveUser';
 import BlockList from '@/views/BlockList';
 import UserAccounts from '@/views/UserAccounts';
@@ -1000,7 +999,6 @@ const renderView = (view: StoreState['currentView'], language: string) => {
     case 'PAYMENT': return <PaymentView />;
     case 'STATEMENT': return <Statement />;
     case 'INVOICE': return <InvoiceView />;
-    case 'ACCOUNT': return <NewAccount />;
     case 'ACTIVE_USER': return <ActiveUser />;
     case 'BLOCK_LIST': return <BlockList />;
     case 'USER_ACCOUNTS': return <UserAccounts />;

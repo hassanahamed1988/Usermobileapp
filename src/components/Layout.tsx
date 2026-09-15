@@ -288,13 +288,12 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
 
   const userViewItems = user ? filterItems([
     { id: 'USER_ACCOUNTS', icon: <Users size={20} />, label: t.USER_ACCOUNTS, color: '#10b981' },
-    { id: 'ACCOUNT', icon: <UserPlus size={20} />, label: t.ACCOUNT, color: '#22d3ee' },
     { id: 'USER_PASSWORD_RESET', icon: <Lock size={20} />, label: t.USER_PASSWORD_RESET || 'User Reset', color: '#f43f5e' },
     { id: 'USER_RENEW', icon: <RefreshCw size={20} />, label: t.USER_RENEW || 'User Renew', color: '#f97316' },
   ]) : [];
 
   const partnerAccountItems = user ? filterItems([
-    { id: 'MANAGER_PROFILE', icon: <UserPlus size={20} />, label: 'Manager Profile', color: '#8b5cf6' },
+    { id: 'MANAGER_PROFILE', icon: <UserPlus size={20} />, label: language === 'bn' ? 'ম্যানেজার প্রোফাইল' : 'Manager Profile', color: '#8b5cf6' },
   ]) : [];
 
   const hasPurchasePermission = isAdmin || (Array.isArray(user?.permissions) && user.permissions.includes('PURCHASE'));
@@ -363,7 +362,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
     { id: 'DOWNLOAD', icon: <Download size={26} />, label: t.DOWNLOAD || 'Download', show: !!user, color: '#6366f1' },
     { id: 'TRIP_MANAGEMENT', icon: <Truck size={26} />, label: t.TRIP_MANAGEMENT, show: isAdmin || tripManagementItems.length > 0, isAccordion: true, subItems: tripManagementItems, isOpen: isTripManagementOpen, toggle: () => setIsTripManagementOpen(!isTripManagementOpen), color: '#facc15' },
     { id: 'VEHICLES', icon: <Car size={26} />, label: language === 'bn' ? 'যানবাহন ব্যবস্থাপনা' : 'Vehicle Management', show: !isAdmin, isAccordion: true, subItems: vehicleItems, isOpen: isVehicleOpen, toggle: () => setIsVehicleOpen(!isVehicleOpen), color: '#3b82f6' },
-    { id: 'PARTNER_ACCOUNT', icon: <UserPlus size={26} />, label: 'Partner Account', show: isAdmin || partnerAccountItems.length > 0, isAccordion: true, subItems: partnerAccountItems, isOpen: isPartnerAccountOpen, toggle: () => setIsPartnerAccountOpen(!isPartnerAccountOpen), color: '#8b5cf6' },
+    { id: 'PARTNER_ACCOUNT', icon: <UserPlus size={26} />, label: language === 'bn' ? 'পারচেজ ম্যানেজার' : 'Purchase Manager', show: isAdmin || partnerAccountItems.length > 0, isAccordion: true, subItems: partnerAccountItems, isOpen: isPartnerAccountOpen, toggle: () => setIsPartnerAccountOpen(!isPartnerAccountOpen), color: '#8b5cf6' },
     { id: 'MESS_MANAGEMENT', icon: <ShoppingCart size={26} />, label: language === 'bn' ? 'মেস ম্যানেজমেন্ট' : 'Mess Management', show: hasPurchasePermission, isAccordion: true, subItems: messManagementItems, isOpen: isMessManagementOpen, toggle: () => setIsMessManagementOpen(!isMessManagementOpen), color: '#facc15' },
     { id: 'PRAYER_TIMES', icon: <Clock size={26} />, label: t.PRAYER_TIMES, show: true, color: '#06b6d4' },
     { id: 'SUPPORT', icon: <LifeBuoy size={26} />, label: t.SUPPORT, show: true, color: '#f472b6' },
