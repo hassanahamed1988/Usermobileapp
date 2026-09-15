@@ -16,7 +16,7 @@ import FormWindow from '@/components/FormWindow';
 
 const NewTrip: React.FC = () => {
   const { 
-    language, addTrip, setView, addPayment, user,
+    language, addTrip, setView, setActiveSection, addPayment, user,
     locations, countries, companies, containerTypes, loadingTypes, extraDieselReasons, emptyReturnYards,
     currentFile, monthlyFiles, setCurrentFile, addMonthlyFile, trips,
     currencies, selectedCurrency, showFeedback,
@@ -423,19 +423,20 @@ const NewTrip: React.FC = () => {
       }
 
       if (!ok) {
-        let errorMsg = 'Failed to scan note';
-        if (typeof responseText === 'string' && responseText.toLowerCase().includes('<!doctype html>')) {
-           errorMsg = 'সার্ভার কানেকশন ব্লকড! অনুগ্রহ করে সেটিংস (Settings) থেকে সঠিক "API Base URL" সেট করুন।';
-        } else {
-          try {
-            const errData = typeof responseText === 'string' ? JSON.parse(responseText) : responseText;
-            errorMsg = errData.error || errorMsg;
-          } catch {
-            console.error('Server returned non-JSON error. Raw response text:', responseText);
-            errorMsg = `Server response (${status}): ${typeof responseText === 'string' ? responseText.substring(0, 150) : 'Error'}...`;
+        let errorMsg = '';
+        try {
+          const errData = typeof responseText === 'string' ? JSON.parse(responseText) : responseText;
+          if (errData && errData.error) {
+            errorMsg = typeof errData.error === 'string' ? errData.error : JSON.stringify(errData.error, null, 2);
+          } else if (errData && errData.message) {
+            errorMsg = errData.message;
+          } else {
+            errorMsg = typeof errData === 'object' ? JSON.stringify(errData, null, 2) : String(errData);
           }
+        } catch {
+          errorMsg = typeof responseText === 'string' ? responseText : `Server HTTP Status: ${status}`;
         }
-        throw new Error(errorMsg);
+        throw new Error(errorMsg || `Server returned HTTP ${status}`);
       }
 
       let data;
@@ -488,32 +489,9 @@ const NewTrip: React.FC = () => {
       setScannedImagePreview(null);
       setShowScanPromptModal(false); 
 
-      // Attempt to clean up the error message if it's JSON from Gemini
-      let cleanMessage = err.message;
-      if (cleanMessage.includes('503') || cleanMessage.includes('high demand') || cleanMessage.includes('UNAVAILABLE')) {
-        cleanMessage = isBangla 
-          ? 'এই মুহূর্তে সার্ভারে অনেক চাপ রয়েছে। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।' 
-          : 'The artificial intelligence system is currently experiencing high demand. Please try again later.';
-      } else if (cleanMessage.toLowerCase().includes('quota exceeded') || cleanMessage.includes('429') || cleanMessage.toLowerCase().includes('rate limit') || cleanMessage.toLowerCase().includes('free_tier_requests') || cleanMessage.toLowerCase().includes('generate_content_free_tier') || cleanMessage.toLowerCase().includes('prepayment credits')) {
-        cleanMessage = isBangla
-          ? 'এপিআই কোটা বা লিমিট শেষ হয়ে গেছে। স্ক্যানিং বর্তমানে বন্ধ আছে, অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন অথবা সাপোর্ট টিমের সাথে যোগাযোগ করুন।'
-          : 'Scanning service limit reached (API Quota Exceeded or Depleted Credits). Please try again later or contact support to upgrade the billing plan.';
-      } else if (cleanMessage.toLowerCase().includes('api key expired') || cleanMessage.toLowerCase().includes('api key not valid')) {
-        cleanMessage = isBangla
-          ? 'এপিআই কী মেয়দোত্তীর্ণ বা ভুল। দয়া করে সেটিংস থেকে নতুন এপিআই কী সেট করুন।'
-          : 'API Key expired or invalid. Please update the API key in the settings.';
-      } else {
-        try {
-          const parsed = JSON.parse(err.message);
-          if (parsed.error && parsed.error.message) {
-            cleanMessage = parsed.error.message;
-          }
-        } catch { /* Use basic error */ }
-        
-        cleanMessage = isBangla ? `স্ক্যান ব্যর্থ হয়েছে: ${cleanMessage}` : `Scan failed: ${cleanMessage}`;
-      }
-
-      setScanErrorMsg(cleanMessage);
+      // Show original server feedback directly without custom messages
+      const serverFeedback = err?.message || (typeof err === 'object' ? JSON.stringify(err, null, 2) : String(err));
+      setScanErrorMsg(serverFeedback);
     } finally {
       setIsScanning(false);
       e.target.value = '';
@@ -1030,39 +1008,53 @@ const NewTrip: React.FC = () => {
         );
       })()}
 
-      {/* Error Popup Modal */}
+      {/* Server Feedback Modal */}
       {scanErrorMsg && createPortal(
         <>
           <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[10005] flex items-center justify-center p-4 overflow-y-auto pointer-events-auto">
-            <div
-              
-              
-              
-              
-              className="relative w-full max-w-sm bg-white dark:bg-zinc-950 rounded-3xl border border-rose-500/20 shadow-2xl flex flex-col overflow-hidden"
-            >
-              <div className="p-6 flex flex-col items-center text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center text-rose-500 mb-2">
-                  <AlertTriangle size={32} />
+            <div className="relative w-full max-w-md bg-white dark:bg-zinc-950 rounded-3xl border border-rose-500/30 shadow-2xl flex flex-col overflow-hidden text-left">
+              <div className="p-5 flex flex-col space-y-4">
+                <div className="flex items-center gap-3 border-b border-gray-100 dark:border-zinc-800 pb-3">
+                  <div className="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center text-rose-500 shrink-0">
+                    <AlertTriangle size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
+                      {isBangla ? 'সার্ভার ফিডব্যাক' : 'Server Feedback'}
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {isBangla ? 'সার্ভার থেকে প্রাপ্ত সরাসরি রেসপন্স মেসেজ:' : 'Raw response directly from the server:'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-black text-gray-900 dark:text-gray-100 mb-2">
-                    {isBangla ? 'দুঃখিত, সমস্যা হয়েছে!' : 'Oops, something went wrong!'}
-                  </h3>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 leading-relaxed">
+
+                <div className="w-full">
+                  <pre className="text-xs font-mono bg-gray-900 dark:bg-black text-rose-300 p-4 rounded-2xl border border-zinc-800 overflow-x-auto max-h-64 whitespace-pre-wrap break-all select-all">
                     {scanErrorMsg}
-                  </p>
+                  </pre>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setScanErrorMsg(null);
-                    setShowScanPromptModal(true);
-                  }}
-                  className="mt-4 w-full px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-sm font-bold text-gray-800 dark:text-gray-200 rounded-xl transition-all active:scale-95 cursor-pointer"
-                >
-                  {isBangla ? 'বন্ধ করুন' : 'Close'}
-                </button>
+
+                <div className="flex gap-2 w-full pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(scanErrorMsg);
+                      showFeedback(isBangla ? 'সার্ভার রেসপন্স কপি করা হয়েছে' : 'Copied server response to clipboard');
+                    }}
+                    className="flex-1 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-xs font-bold text-gray-700 dark:text-gray-200 rounded-xl transition-all active:scale-95 cursor-pointer"
+                  >
+                    {isBangla ? 'কপি করুন' : 'Copy'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setScanErrorMsg(null);
+                    }}
+                    className="flex-1 py-2.5 px-4 bg-zinc-900 hover:bg-black dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 text-xs font-bold rounded-xl transition-all active:scale-95 cursor-pointer"
+                  >
+                    {isBangla ? 'বন্ধ করুন' : 'Close'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

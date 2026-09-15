@@ -6,7 +6,7 @@ import { useStore } from '../store';
 import fleetproLogo from '../assets/logo.png';
 import { TRANSLATIONS, THEMES, PRESET_BACKGROUNDS, LIGHT_THEME_PRESETS } from '../constants';
 import MultiColorCreator from '@/components/MultiColorCreator';
-import { Moon, Sun, Diamond, Globe, Check, ChevronDown, Palette, LogOut, Settings as SettingsIcon, ZoomIn, ZoomOut, Image as ImageIcon, CreditCard, Lock, Shield, Smartphone, Copy, ChevronLeft, ChevronRight, User as UserIcon, X, Plus, Download, Upload, Database, LayoutGrid, RefreshCw, ArrowLeft, Fingerprint, Scan, Sparkles } from 'lucide-react';
+import { Moon, Sun, Diamond, Globe, Check, ChevronDown, Palette, LogOut, Settings as SettingsIcon, ZoomIn, ZoomOut, Image as ImageIcon, CreditCard, Lock, Shield, Smartphone, Copy, ChevronLeft, ChevronRight, User as UserIcon, X, Plus, Download, Upload, Database, LayoutGrid, RefreshCw, ArrowLeft, Fingerprint, Scan, Sparkles, Eye, EyeOff, Key } from 'lucide-react';
 
 import { Theme, Language } from '../types';
 import InputField from '../components/InputField';
@@ -178,6 +178,55 @@ const Settings: React.FC = () => {
   const [twoFASecret, setTwoFASecret] = useState('');
   const [twoFAUrl, setTwoFAUrl] = useState('');
   const [isFontSelectOpen, setIsFontSelectOpen] = useState(false);
+
+  // Gemini API Key Config states
+  const [geminiApiKey, setGeminiApiKey] = useState('');
+  const [isGeminiKeyLoading, setIsGeminiKeyLoading] = useState(false);
+  const [isGeminiKeySaving, setIsGeminiKeySaving] = useState(false);
+  const [showGeminiKey, setShowGeminiKey] = useState(false);
+
+  useEffect(() => {
+    if (activeSection === 'GEMINI_CONFIG') {
+      const loadGeminiKey = async () => {
+        setIsGeminiKeyLoading(true);
+        try {
+          const { getDoc, doc } = await import('firebase/firestore');
+          const { db } = await import('@/services/firebase');
+          const docRef = doc(db, 'config', 'gemini');
+          const snap = await getDoc(docRef);
+          if (snap.exists()) {
+            setGeminiApiKey(snap.data().apiKey || '');
+          }
+        } catch (err: any) {
+          console.error('Failed to load Gemini API key:', err);
+          showFeedback(language === 'bn' ? 'কী লোড করতে ব্যর্থ হয়েছে' : 'Failed to load Gemini API key', 'error');
+        } finally {
+          setIsGeminiKeyLoading(false);
+        }
+      };
+      loadGeminiKey();
+    }
+  }, [activeSection]);
+
+  const handleSaveGeminiKey = async () => {
+    if (!geminiApiKey.trim()) {
+      showFeedback(language === 'bn' ? 'দয়া করে একটি সঠিক এপিআই কী প্রদান করুন' : 'Please provide a valid API key', 'error');
+      return;
+    }
+    setIsGeminiKeySaving(true);
+    try {
+      const { doc, setDoc } = await import('firebase/firestore');
+      const { db } = await import('@/services/firebase');
+      const docRef = doc(db, 'config', 'gemini');
+      await setDoc(docRef, { apiKey: geminiApiKey.trim() }, { merge: true });
+      showFeedback(language === 'bn' ? 'জেমিনি এপিআই কী সফলভাবে সংরক্ষিত হয়েছে!' : 'Gemini API Key successfully saved!', 'success');
+    } catch (err: any) {
+      console.error('Failed to save Gemini API key:', err);
+      showFeedback(language === 'bn' ? 'সংরক্ষণ করতে ব্যর্থ হয়েছে' : 'Failed to save Gemini API key', 'error');
+    } finally {
+      setIsGeminiKeySaving(false);
+    }
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -583,6 +632,18 @@ const Settings: React.FC = () => {
                 }} 
                 color="#0f766e"
               />
+              {user?.role === 'ADMIN' && (
+                <MenuItem 
+                  icon={<Sparkles />} 
+                  title={language === 'bn' ? 'জেমিনি এপিআই কী' : 'Gemini API Key'} 
+                  subtitle={language === 'bn' ? 'ডকুমেন্ট স্ক্যানার এপিআই কী কনফিগার করুন' : 'Configure OCR document scanner API key'}
+                  onClick={() => {
+                    setNavigationDirection('forward');
+                    setActiveSection('GEMINI_CONFIG');
+                  }} 
+                  color="#8b5cf6"
+                />
+              )}
             </div>
 
              <div className="mt-8">
@@ -1617,6 +1678,122 @@ const Settings: React.FC = () => {
               </div>
 
 
+            )}
+
+            {activeSection === 'GEMINI_CONFIG' && (
+              <div className="space-y-6 allow-animation text-left">
+                <div className="p-4 sm:p-5 bg-theme-card rounded-lg border-[var(--dynamic-card-border)] shadow-[var(--dynamic-card-shadow)] space-y-6">
+                  <div className="flex flex-col items-center text-center gap-2 mb-2">
+                    <div className="w-16 h-16 bg-[var(--primary)]/10 rounded-full flex items-center justify-center mb-2" style={{ color: primaryColor, backgroundColor: `${primaryColor}10` }}>
+                      <Sparkles size={32} />
+                    </div>
+                    <h2 className="text-lg font-black text-text-main uppercase">
+                      {language === 'bn' ? 'জেমিনি এপিআই কী' : 'Gemini API Key'}
+                    </h2>
+                    <p className="text-xs text-text-muted font-bold max-w-[320px]">
+                      {language === 'bn' ? 'ডকুমেন্ট ও রসিদ স্ক্যানিং সেবার জন্য আপনার জেমিনি এপিআই কী সেট করুন।' : 'Configure your Gemini API key for document and receipt scanning services.'}
+                    </p>
+                  </div>
+
+                  {isGeminiKeyLoading ? (
+                    <div className="flex flex-col items-center justify-center py-8 space-y-3">
+                      <RefreshCw size={24} className="animate-spin text-text-muted" style={{ color: primaryColor }} />
+                      <p className="text-xs text-text-muted font-bold">
+                        {language === 'bn' ? 'লোড হচ্ছে...' : 'Loading config...'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-5">
+                      <div className="space-y-2">
+                        <label className="block text-xs font-black uppercase text-text-muted">
+                          {language === 'bn' ? 'জেমিনি এপিআই কী' : 'Gemini API Key'}
+                        </label>
+                        <div className="relative flex items-center">
+                          <input
+                            type={showGeminiKey ? 'text' : 'password'}
+                            value={geminiApiKey}
+                            onChange={(e) => setGeminiApiKey(e.target.value)}
+                            placeholder="AIzaSy..."
+                            className="w-full h-12 pl-10 pr-24 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-semibold text-text-main focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
+                            style={{ paddingLeft: '40px' }}
+                          />
+                          <div className="absolute left-3 text-text-muted">
+                            <Key size={18} />
+                          </div>
+                          <div className="absolute right-2 flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setShowGeminiKey(!showGeminiKey)}
+                              className="p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg text-text-muted transition-colors"
+                            >
+                              {showGeminiKey ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (geminiApiKey) {
+                                  navigator.clipboard.writeText(geminiApiKey);
+                                  showFeedback(language === 'bn' ? 'কপি করা হয়েছে!' : 'Copied to clipboard!', 'success');
+                                }
+                              }}
+                              disabled={!geminiApiKey}
+                              className="p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg text-text-muted transition-colors disabled:opacity-50"
+                            >
+                              <Copy size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-3.5 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl border border-blue-100/30 text-xs text-blue-700 dark:text-blue-300 font-bold leading-relaxed">
+                        <p className="flex items-start gap-2">
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+                          <span>
+                            {language === 'bn' ? (
+                              <>
+                                রসিদ স্ক্যানিং এবং ওসিআর সচল করতে জেমিনি এপিআই কী প্রয়োজন। আপনি সম্পূর্ণ ফ্রিতে গুগল এআই স্টুডিও থেকে কী তৈরি করতে পারেন।
+                              </>
+                            ) : (
+                              <>
+                                Receipts and bills OCR scanning requires a valid Gemini API key. You can get a free API Key from Google AI Studio.
+                              </>
+                            )}
+                          </span>
+                        </p>
+                        <div className="mt-2.5 text-center">
+                          <a
+                            href="https://aistudio.google.com/"
+                            target="_blank"
+                            referrerPolicy="no-referrer"
+                            className="inline-block px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-black transition-all text-[11px] uppercase tracking-wider"
+                          >
+                            {language === 'bn' ? 'ফ্রি কী তৈরি করুন' : 'Get Free API Key'}
+                          </a>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={handleSaveGeminiKey}
+                        disabled={isGeminiKeySaving || !geminiApiKey.trim()}
+                        className="w-full h-12 flex items-center justify-center gap-2 font-black text-sm uppercase tracking-wider text-white rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                        style={{ backgroundColor: primaryColor }}
+                      >
+                        {isGeminiKeySaving ? (
+                          <>
+                            <RefreshCw size={16} className="animate-spin" />
+                            <span>{language === 'bn' ? 'সংরখন করা হচ্ছে...' : 'Saving key...'}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Check size={18} />
+                            <span>{language === 'bn' ? 'সংরক্ষণ করুন' : 'Save API Key'}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         )}

@@ -12,23 +12,55 @@ const adminDb = getFirestore(admin.apps[0], "fleetpromanager");
 
 let cachedApiKey = null;
 
-async function getGeminiApiKey() {
-  if (process.env.GEMINI_API_KEY) {
-    return process.env.GEMINI_API_KEY;
-  }
-  if (cachedApiKey) {
-    return cachedApiKey;
+async function getGeminiApiKey(requestedKey) {
+  if (requestedKey && String(requestedKey).trim()) {
+    return String(requestedKey).trim();
   }
   try {
     const docSnap = await adminDb.collection("config").doc("gemini").get();
     if (docSnap.exists) {
-      cachedApiKey = docSnap.data().apiKey;
-      return cachedApiKey;
+      const dbKey = docSnap.data().apiKey;
+      if (dbKey && dbKey.trim()) {
+        cachedApiKey = dbKey.trim();
+        return cachedApiKey;
+      }
     }
   } catch (error) {
     console.error("Error reading GEMINI_API_KEY from Firestore:", error);
   }
+  if (cachedApiKey) {
+    return cachedApiKey;
+  }
+  if (process.env.GEMINI_API_KEY) {
+    return process.env.GEMINI_API_KEY;
+  }
   return null;
+}
+
+// Helper to run content generation with model fallbacks to prevent 503 errors
+async function generateWithFallback(ai, contents, config) {
+  const candidateModels = [
+    "gemini-3.5-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+    "gemini-3.8-flash"
+  ];
+
+  let lastError = null;
+  for (const model of candidateModels) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents,
+        config,
+      });
+      return response;
+    } catch (err) {
+      lastError = err;
+      console.warn(`Model ${model} failed with ${err?.status || err?.message}, trying fallback...`);
+    }
+  }
+  throw lastError;
 }
 
 const app = express();
@@ -39,14 +71,14 @@ app.use(express.urlencoded({ limit: "20mb", extended: true }));
 
 app.post(["/api/ocr", "/ocr"], async (req, res) => {
   try {
-    const { image } = req.body;
+    const { image, apiKey: clientApiKey } = req.body;
     if (!image) {
       res.status(400).json({ error: "Image data is required" });
       return;
     }
 
-    // Attempt to use system env first or fall back to Firestore config
-    const apiKey = await getGeminiApiKey();
+    // Attempt to use requested key, Firestore config, or system env
+    const apiKey = await getGeminiApiKey(clientApiKey);
     if (!apiKey) {
       res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
       return;
@@ -93,10 +125,10 @@ Follow these extraction maps strictly:
 
 CRITICAL: If any field is physically blank, empty, unwritten, or missing in the document, you MUST set that field to "" (empty string). Do NOT invent, assume, simulate, or guess metadata. Be absolute and accurate. Only fill fields where written or printed content exists.`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: [imagePart, { text: prompt }],
-      config: {
+    const response = await generateWithFallback(
+      ai,
+      [imagePart, { text: prompt }],
+      {
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -119,7 +151,7 @@ CRITICAL: If any field is physically blank, empty, unwritten, or missing in the 
           ]
         }
       }
-    });
+    );
 
     const resultText = response.text || "{}";
     const parsedData = JSON.parse(resultText.trim());
@@ -130,15 +162,15 @@ CRITICAL: If any field is physically blank, empty, unwritten, or missing in the 
   }
 });
 
-app.post(["/api/gemini/chat", "/gemini/chat"], async (req, res) => {
+app.post(["/api/purchase-ocr", "/purchase-ocr"], async (req, res) => {
   try {
-    const { message, systemInstruction } = req.body;
-    if (!message) {
-      res.status(400).json({ error: "Message is required" });
+    const { image, apiKey: clientApiKey } = req.body;
+    if (!image) {
+      res.status(400).json({ error: "Image data is required" });
       return;
     }
 
-    const apiKey = await getGeminiApiKey();
+    const apiKey = await getGeminiApiKey(clientApiKey);
     if (!apiKey) {
       res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
       return;
@@ -148,11 +180,89 @@ app.post(["/api/gemini/chat", "/gemini/chat"], async (req, res) => {
       apiKey: apiKey,
     });
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: message,
-      config: systemInstruction ? { systemInstruction } : undefined,
+    let cleanBase64 = image;
+    let mimeType = "image/jpeg";
+    if (image.startsWith("data:")) {
+      const match = image.match(/^data:([^;]+);base64,(.*)$/);
+      if (match) {
+        mimeType = match[1];
+        cleanBase64 = match[2];
+      }
+    }
+
+    const imagePart = {
+      inlineData: {
+        mimeType: mimeType,
+        data: cleanBase64,
+      }
+    };
+
+    const prompt = `Extract structured data from this Purchase Receipt.
+Extract the hypermarket/supermarket name.
+Extract the list of items purchased. For each item, extract its name, price, quantity (number), and unit (KG, Gram, Piece, etc. Convert to standard words if possible).
+If price or quantity is missing, estimate it from the total or return what is available.`;
+
+    const response = await generateWithFallback(
+      ai,
+      [imagePart, { text: prompt }],
+      {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            hypermarketName: { type: Type.STRING, description: "Extracted Supermarket / Hypermarket Name. Empty string if not found." },
+            items: {
+              type: Type.ARRAY,
+              description: "List of extracted purchase items.",
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  name: { type: Type.STRING, description: "Item name" },
+                  price: { type: Type.NUMBER, description: "Item price per unit or total price if unit price not clear. Number only." },
+                  quantity: { type: Type.NUMBER, description: "Quantity of the item. Number only." },
+                  unit: { type: Type.STRING, description: "Unit of the quantity (e.g., 'KG', 'Gram', 'Piece', 'Litre')." }
+                },
+                required: ["name", "price", "quantity", "unit"]
+              }
+            }
+          },
+          required: ["hypermarketName", "items"]
+        }
+      }
+    );
+
+    const resultText = response.text || "{}";
+    const parsedData = JSON.parse(resultText.trim());
+    res.json(parsedData);
+  } catch (error) {
+    console.error("Purchase OCR API Error on Server:", error);
+    res.status(500).json({ error: error.message || "Internal Server Error" });
+  }
+});
+
+app.post(["/api/gemini/chat", "/gemini/chat"], async (req, res) => {
+  try {
+    const { message, systemInstruction, apiKey: clientApiKey } = req.body;
+    if (!message) {
+      res.status(400).json({ error: "Message is required" });
+      return;
+    }
+
+    const apiKey = await getGeminiApiKey(clientApiKey);
+    if (!apiKey) {
+      res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
+      return;
+    }
+
+    const ai = new GoogleGenAI({
+      apiKey: apiKey,
     });
+
+    const response = await generateWithFallback(
+      ai,
+      message,
+      systemInstruction ? { systemInstruction } : undefined
+    );
 
     res.json({ text: response.text });
   } catch (error) {

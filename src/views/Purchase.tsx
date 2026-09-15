@@ -1067,9 +1067,9 @@ const fileName = `Invoice_${purchase.id}.pdf`;
         setReceiptImage(base64Image);
 
         const response = await fetch('/api/purchase-ocr' ,{
-          method: 'POST'
-          ,headers: { 'Content-Type': 'application/json' }
-          ,body: JSON.stringify({ image: base64Image })
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: base64Image })
         });
 
         if (!response.ok) {
@@ -1114,19 +1114,7 @@ const fileName = `Invoice_${purchase.id}.pdf`;
       reader.readAsDataURL(file);
     } catch (err: any) {
       console.error(err);
-      let errorMsg = err.message || 'Failed to scan receipt';
-      const cleanMessage = errorMsg.toLowerCase();
-      
-      if (cleanMessage.includes('quota exceeded') || cleanMessage.includes('429') || cleanMessage.includes('rate limit') || cleanMessage.includes('prepayment credits')) {
-        errorMsg = language === 'bn' 
-          ? 'এপিআই কোটা বা লিমিট শেষ হয়ে গেছে। স্ক্যানিং বর্তমানে বন্ধ আছে, অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন অথবা সাপোর্ট টিমের সাথে যোগাযোগ করুন।' 
-          : 'Scanning service limit reached (API Quota Exceeded or Depleted Credits). Please try again later or contact support to upgrade the billing plan.';
-      } else if (cleanMessage.includes('api key expired') || cleanMessage.includes('api key not valid')) {
-        errorMsg = language === 'bn' 
-          ? 'এপিআই কী মেয়দোত্তীর্ণ বা ভুল। দয়া করে সেটিংস থেকে নতুন এপিআই কী সেট করুন।' 
-          : 'API Key expired or invalid. Please update the API key in the settings.';
-      }
-
+      const errorMsg = err?.message || 'Failed to scan receipt';
       showFeedback(errorMsg, 'error');
       setIsScanning(false);
     }

@@ -249,28 +249,140 @@ async function startServer() {
     }
   });
 
+  let cachedGeminiKey: { key: string; timestamp: number } | null = null;
+
+  app.get("/api/test-gemini-key", async (req, res) => {
+    try {
+      const resolvedKey = await getGeminiApiKey();
+      const maskedResolved = resolvedKey 
+        ? `${resolvedKey.substring(0, 6)}...${resolvedKey.substring(resolvedKey.length - 4)} (len: ${resolvedKey.length})` 
+        : "None";
+      
+      const envKey = process.env.GEMINI_API_KEY;
+      const maskedEnv = envKey 
+        ? `${envKey.substring(0, 6)}...${envKey.substring(envKey.length - 4)} (len: ${envKey.length})` 
+        : "None";
+
+      let dbKey = "None";
+      let dbError = "None";
+      try {
+        const dbId = (firebaseConfig as any).firestoreDatabaseId || '(default)';
+        const url = `https://firestore.googleapis.com/v1/projects/${(firebaseConfig as any).projectId}/databases/${dbId}/documents/config/gemini`;
+        const fetchRes = await fetch(url);
+        if (fetchRes.ok) {
+          const data = await fetchRes.json();
+          const firestoreKey = data?.fields?.apiKey?.stringValue;
+          if (firestoreKey) {
+            dbKey = `${firestoreKey.substring(0, 6)}...${firestoreKey.substring(firestoreKey.length - 4)} (len: ${firestoreKey.length})`;
+          } else {
+            dbKey = "Empty or missing apiKey field";
+          }
+        } else {
+          dbError = `REST request failed with status ${fetchRes.status}: ${await fetchRes.text()}`;
+        }
+      } catch (err: any) {
+        dbError = err.message || String(err);
+      }
+
+      let testCallSuccess = false;
+      let testCallError = "None";
+      if (resolvedKey) {
+        try {
+          const ai = new GoogleGenAI({ apiKey: resolvedKey });
+          const response = await ai.models.generateContent({
+            model: "gemini-3.5-flash-lite",
+            contents: "Hello"
+          });
+          testCallSuccess = true;
+        } catch (err: any) {
+          testCallError = err.message || String(err);
+        }
+      }
+
+      res.json({
+        maskedResolved,
+        maskedEnv,
+        dbKey,
+        dbError,
+        testCallSuccess,
+        testCallError,
+        cachedKey: cachedGeminiKey ? { timestamp: cachedGeminiKey.timestamp, age: Date.now() - cachedGeminiKey.timestamp } : null
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || String(err) });
+    }
+  });
+
+  async function getGeminiApiKey(): Promise<string | null> {
+    if (cachedGeminiKey && Date.now() - cachedGeminiKey.timestamp < 20000) {
+      return cachedGeminiKey.key;
+    }
+
+    try {
+      const dbId = (firebaseConfig as any).firestoreDatabaseId || '(default)';
+      const url = `https://firestore.googleapis.com/v1/projects/${(firebaseConfig as any).projectId}/databases/${dbId}/documents/config/gemini`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        const firestoreKey = data?.fields?.apiKey?.stringValue;
+        if (firestoreKey && firestoreKey.trim()) {
+          cachedGeminiKey = { key: firestoreKey.trim(), timestamp: Date.now() };
+          return firestoreKey.trim();
+        }
+      }
+    } catch (err) {
+      console.warn('Could not read custom Gemini API key from Firestore config/gemini:', err);
+    }
+
+    if (process.env.GEMINI_API_KEY) {
+      return process.env.GEMINI_API_KEY;
+    }
+    return null;
+  }
+
+  // Helper to run content generation with model fallbacks to prevent 503 errors
+  async function generateWithFallback(ai: any, contents: any[], config: any) {
+    const candidateModels = [
+      "gemini-3.5-flash-lite",
+      "gemini-3.6-flash",
+      "gemini-3.5-flash",
+      "gemini-3.8-flash"
+    ];
+
+    let lastError: any = null;
+    for (const model of candidateModels) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents,
+          config,
+        });
+        return response;
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`Model ${model} failed with ${err?.status || err?.message}, trying fallback...`);
+      }
+    }
+    throw lastError;
+  }
+
   // API Route for OCR Document Scanner
   app.post("/api/ocr", async (req, res) => {
     try {
-      const { image } = req.body;
+      const { image, apiKey: clientApiKey } = req.body;
       if (!image) {
         res.status(400).json({ error: "Image data is required" });
         return;
       }
 
-      const apiKey = process.env.GEMINI_API_KEY;
+      const apiKey = (clientApiKey && String(clientApiKey).trim()) || await getGeminiApiKey();
       if (!apiKey) {
-        res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
+        res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server. Please configure a valid API key in Settings." });
         return;
       }
 
       const ai = new GoogleGenAI({
-        apiKey: apiKey,
-        httpOptions: {
-          headers: {
-            'User-Agent': 'aistudio-build',
-          }
-        }
+        apiKey: apiKey
       });
 
       let cleanBase64 = image;
@@ -310,10 +422,10 @@ Follow these extraction maps strictly:
 
 CRITICAL: If any field is physically blank, empty, unwritten, or missing in the document, you MUST set that field to "" (empty string). Do NOT invent, assume, simulate, or guess metadata. Be absolute and accurate. Only fill fields where written or printed content exists.`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: [imagePart, { text: prompt }],
-        config: {
+      const response = await generateWithFallback(
+        ai,
+        [imagePart, { text: prompt }],
+        {
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
@@ -336,39 +448,41 @@ CRITICAL: If any field is physically blank, empty, unwritten, or missing in the 
             ]
           }
         }
-      });
+      );
 
       const resultText = response.text || "{}";
       const parsedData = JSON.parse(resultText.trim());
       res.json(parsedData);
     } catch (error: any) {
       console.error("OCR API Error on Server:", error);
-      res.status(500).json({ error: error.message || "Internal Server Error" });
+      let errorMsg = error?.message || "Internal Server Error";
+      try {
+        const parsed = JSON.parse(error.message);
+        if (parsed?.error?.message) {
+          errorMsg = parsed.error.message;
+        }
+      } catch {}
+      res.status(500).json({ error: errorMsg, rawError: error?.message });
     }
   });
 
   // API Route for Purchase Receipt OCR Scanner
   app.post("/api/purchase-ocr", async (req, res) => {
     try {
-      const { image } = req.body;
+      const { image, apiKey: clientApiKey } = req.body;
       if (!image) {
         res.status(400).json({ error: "Image data is required" });
         return;
       }
 
-      const apiKey = process.env.GEMINI_API_KEY;
+      const apiKey = (clientApiKey && String(clientApiKey).trim()) || await getGeminiApiKey();
       if (!apiKey) {
-        res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
+        res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server. Please configure a valid API key in Settings." });
         return;
       }
 
       const ai = new GoogleGenAI({
-        apiKey: apiKey,
-        httpOptions: {
-          headers: {
-            'User-Agent': 'aistudio-build',
-          }
-        }
+        apiKey: apiKey
       });
 
       let cleanBase64 = image;
@@ -393,10 +507,10 @@ Extract the hypermarket/supermarket name.
 Extract the list of items purchased. For each item, extract its name, price, quantity (number), and unit (KG, Gram, Piece, etc. Convert to standard words if possible).
 If price or quantity is missing, estimate it from the total or return what is available.`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: [imagePart, { text: prompt }],
-        config: {
+      const response = await generateWithFallback(
+        ai,
+        [imagePart, { text: prompt }],
+        {
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
@@ -420,51 +534,60 @@ If price or quantity is missing, estimate it from the total or return what is av
             required: ["hypermarketName", "items"]
           }
         }
-      });
+      );
 
       const resultText = response.text || "{}";
       const parsedData = JSON.parse(resultText.trim());
       res.json(parsedData);
     } catch (error: any) {
       console.error("Purchase OCR API Error on Server:", error);
-      res.status(500).json({ error: error.message || "Internal Server Error" });
+      let errorMsg = error?.message || "Internal Server Error";
+      try {
+        const parsed = JSON.parse(error.message);
+        if (parsed?.error?.message) {
+          errorMsg = parsed.error.message;
+        }
+      } catch {}
+      res.status(500).json({ error: errorMsg, rawError: error?.message });
     }
   });
 
   // API Route for Gemini Chat
   app.post("/api/gemini/chat", async (req, res) => {
     try {
-      const { message, systemInstruction } = req.body;
+      const { message, systemInstruction, apiKey: clientApiKey } = req.body;
       if (!message) {
         res.status(400).json({ error: "Message is required" });
         return;
       }
 
-      const apiKey = process.env.GEMINI_API_KEY;
+      const apiKey = (clientApiKey && String(clientApiKey).trim()) || await getGeminiApiKey();
       if (!apiKey) {
-        res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
+        res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server. Please configure a valid API key in Settings." });
         return;
       }
 
       const ai = new GoogleGenAI({
-        apiKey: apiKey,
-        httpOptions: {
-          headers: {
-            'User-Agent': 'aistudio-build',
-          }
-        }
+        apiKey: apiKey
       });
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: message,
-        config: systemInstruction ? { systemInstruction } : undefined,
-      });
+      const response = await generateWithFallback(
+        ai,
+        message,
+        systemInstruction ? { systemInstruction } : undefined
+      );
 
       res.json({ text: response.text });
     } catch (error: any) {
       console.error("Gemini API Error on Server:", error);
-      res.status(500).json({ error: error.message || "Internal Server Error" });
+      let errorMsg = error?.message || "Internal Server Error";
+      try {
+        const parsed = JSON.parse(error.message);
+        if (parsed?.error?.message) {
+          errorMsg = parsed.error.message;
+        }
+      } catch {}
+      res.status(500).json({ error: errorMsg, rawError: error?.message });
     }
   });
 

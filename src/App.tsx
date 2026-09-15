@@ -82,6 +82,11 @@ const ViewContainer: React.FC = () => {
       clearOverlays();
     }, [currentView]);
 
+    useEffect(() => {
+      // Clear any potential stale/broken Gemini API key from localStorage to ensure server-side key usage
+      localStorage.removeItem('GEMINI_API_KEY');
+    }, []);
+
     const isAnyPopupOpen = !!(
       isPaymentPopupOpen || 
       isEntryFormOpen || 
@@ -130,7 +135,11 @@ const ViewContainer: React.FC = () => {
         else if (currentView === 'VEHICLE_LIST') finalTitle = language === 'bn' ? 'যানবাহন তালিকা' : 'Vehicle List';
         else if (currentView === 'VEHICLE_SERVICES') finalTitle = language === 'bn' ? 'যানবাহন সার্ভিস' : 'Vehicle Services';
         else if (activeSection) {
-          finalTitle = activeSection;
+          if (activeSection === 'GEMINI_CONFIG') {
+            finalTitle = language === 'bn' ? 'জেমিনি এপিআই কী' : 'Gemini API Key';
+          } else {
+            finalTitle = activeSection;
+          }
         } else if (activeDetailView) {
           if (activeDetailView === 'NEW') finalTitle = t.NEW_PROFILE;
           else finalTitle = language === 'bn' ? 'প্রোফাইল বিবরণ' : 'Profile Detail';

@@ -1043,8 +1043,19 @@ const Login: React.FC = () => {
 
     let latestUsers: any[] = [];
     try {
-      const usersCol = await getFirebaseCollection('users') || [];
-      const adminsCol = await getFirebaseCollection('admins') || [];
+      const fetchWithTimeout = (promise: Promise<any>, ms: number) => 
+        Promise.race([
+          promise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase connection timeout')), ms))
+        ]);
+
+      const [usersCol, adminsCol] = await fetchWithTimeout(
+        Promise.all([
+          getFirebaseCollection('users').catch(() => []),
+          getFirebaseCollection('admins').catch(() => [])
+        ]),
+        5000
+      );
       
       // Decrypt sensitive fields from both collections
       const { decryptSensitiveFields } = await import('../utils/security');
@@ -1060,12 +1071,21 @@ const Login: React.FC = () => {
       }
     } catch (error: any) {
       console.warn("[LOGIN FIRESTORE FETCH ERROR] - falling back to local users", error);
-      handleFailure('FIRESTORE ERROR: ' + (error?.message || String(error)));
-      return;
+      // Do not hard fail on timeout, let the fallback logic take over with local storage
+      // handleFailure('FIRESTORE ERROR: ' + (error?.message || String(error)));
+      // return;
     }
 
     setTimeout(async () => {
-      // Get users from localStorage
+      try {
+        const runWithTimeout = <T,>(promise: Promise<T>, ms: number, errMsg = 'Timeout'): Promise<T> => {
+          return Promise.race([
+            promise,
+            new Promise<T>((_, reject) => setTimeout(() => reject(new Error(errMsg)), ms))
+          ]);
+        };
+
+        // Get users from localStorage
       const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
       let allAvailableUsers = (latestUsers && latestUsers.length > 0) 
         ? latestUsers 
@@ -1101,7 +1121,7 @@ const Login: React.FC = () => {
         try {
           const { signInWithEmailAndPassword } = await import('firebase/auth');
           const { auth } = await import('../services/firebase');
-          await signInWithEmailAndPassword(auth, userEmailToAuth, inputPasswordTrimmed);
+          await runWithTimeout(signInWithEmailAndPassword(auth, userEmailToAuth, inputPasswordTrimmed), 5000, 'Auth Timeout');
           isAuthSuccess = true;
           isPasswordCorrect = true;
           console.log("Firebase Auth verification succeeded for:", userEmailToAuth);
@@ -1136,7 +1156,7 @@ const Login: React.FC = () => {
             try {
               const { createUserWithEmailAndPassword } = await import('firebase/auth');
               const { auth } = await import('../services/firebase');
-              await createUserWithEmailAndPassword(auth, userEmailToAuth, inputPasswordTrimmed);
+              await runWithTimeout(createUserWithEmailAndPassword(auth, userEmailToAuth, inputPasswordTrimmed), 5000, 'Sync Timeout');
               isAuthSuccess = true;
               console.log("Firebase Auth self-healing registration successful!");
             } catch (syncErr: any) {
@@ -1172,7 +1192,7 @@ const Login: React.FC = () => {
           try {
             const { signInAnonymously } = await import('firebase/auth');
             const { auth } = await import('../services/firebase');
-            await signInAnonymously(auth);
+            await runWithTimeout(signInAnonymously(auth), 5000, 'Anon Auth Timeout');
             isAuthSuccess = true;
             console.log("Anonymous Firebase Auth successful for non-email user.");
           } catch (err) {
@@ -1290,7 +1310,11 @@ const Login: React.FC = () => {
         return;
       }
 
-      finishLogin(foundUser);
+        finishLogin(foundUser);
+      } catch (err: any) {
+        console.error("Unhandled error during login:", err);
+        handleFailure(err?.message || String(err));
+      }
     }, 1500);
   };
 

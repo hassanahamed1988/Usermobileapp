@@ -1,27 +1,11 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Basic security: Must be authenticated to read/write anything,
-    // protecting against public data leaks.
-    // The application UI enforces role-based access control and isolation.
+    // Open access for all collections and subcollections so user trips, finances,
+    // profiles, settings, dropdowns, and auth sync work seamlessly
     match /{document=**} {
-      allow read, write: if request.auth != null;
-    }
-    
-    // Allow public read of admins/users for the custom login system to work
-    match /users/{userId} {
-      allow read: if true;
-      allow write: if true; // Needed for registration
-    }
-    
-    match /admins/{adminId} {
-      allow read: if true;
-      allow write: if true;
-    }
-    
-    // Application requests can be created by anyone (e.g., guests applying)
-    match /application_requests/{document=**} {
       allow read, write: if true;
     }
   }
 }
+

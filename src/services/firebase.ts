@@ -1,24 +1,13 @@
 import { applyMaskingBeforeSave, decryptSensitiveFields } from "../utils/security";
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, collection, collectionGroup, doc, setDoc, deleteDoc, getDocs, writeBatch, onSnapshot, query, QueryConstraint, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import { getFirestore, collection, collectionGroup, doc, setDoc, deleteDoc, getDocs, writeBatch, onSnapshot, query, QueryConstraint, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
-export const db = initializeFirestore(app, { 
-  experimentalForceLongPolling: true,
-  experimentalAutoDetectLongPolling: false,
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  })
-}, firebaseConfig.firestoreDatabaseId); /* CRITICAL: The app will break without this line */
-console.log('Firebase DB initialized with database ID:', (db as any)._databaseId);
 
-import { getDocFromServer } from 'firebase/firestore';
-
-
-
-export const auth = getAuth();
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId); /* CRITICAL: The app will break without this line */
+export const auth = getAuth(app);
 
 export enum OperationType {
   CREATE = 'create',
