@@ -58,21 +58,33 @@ export async function compressImage(
 /**
  * Compresses receipt image data URLs to ensure they strictly stay within Firestore's 1MB limit
  * (typically around 60KB - 180KB) while maintaining document legibility.
+ * Supports skipping background auto-crop/enhance if the image has already been manually edited.
  */
-export async function compressReceiptImage(dataUrl: string): Promise<string> {
+export async function compressReceiptImage(
+  dataUrl: string,
+  skipAutoCropAndEnhance: boolean = false
+): Promise<string> {
   try {
-    // Apply auto-cropping & scanner-style contrast enhance first!
-    let result = await processAndEnhanceReceipt(dataUrl);
+    let result = dataUrl;
+    if (!skipAutoCropAndEnhance) {
+      // Apply auto-cropping & scanner-style contrast enhance first!
+      result = await processAndEnhanceReceipt(dataUrl);
+    }
     
-    // Guarantee size is well under 250KB for rapid, error-free Firestore saves
-    if (result.length > 300000) {
-      result = await compressImage(result, 600, 900, 0.45);
+    // Determine compression parameters to optimize legibility and size
+    const maxW = skipAutoCropAndEnhance ? 900 : 600;
+    const maxH = skipAutoCropAndEnhance ? 1300 : 900;
+    const quality = skipAutoCropAndEnhance ? 0.7 : 0.45;
+
+    // Guarantee size is well under 250KB for rapid, error-free saves
+    if (result.length > 250000 || skipAutoCropAndEnhance) {
+      result = await compressImage(result, maxW, maxH, quality);
     }
     return result;
   } catch (error) {
     console.error('compressReceiptImage error:', error);
     try {
-      return await compressImage(dataUrl, 500, 750, 0.4);
+      return await compressImage(dataUrl, 600, 900, 0.5);
     } catch {
       return dataUrl;
     }
@@ -246,4 +258,107 @@ export async function processAndEnhanceReceipt(dataUrl: string): Promise<string>
     };
     img.src = dataUrl;
   });
+}
+
+/**
+ * Automatically computes bounding box ratios (0 to 1) of a receipt in an image.
+ */
+export function detectReceiptFractionalBounds(
+  img: HTMLImageElement | HTMLCanvasElement
+): { x: number; y: number; w: number; h: number } {
+  try {
+    const canvas = document.createElement('canvas');
+    const width = 300;
+    const height = Math.round((img.height * 300) / img.width);
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return { x: 0.05, y: 0.05, w: 0.9, h: 0.9 };
+    }
+    ctx.drawImage(img, 0, 0, width, height);
+    const imgData = ctx.getImageData(0, 0, width, height);
+    const data = imgData.data;
+
+    const rowLuminance = new Float32Array(height);
+    for (let y = 0; y < height; y++) {
+      let sum = 0;
+      const offset = y * width * 4;
+      for (let x = 0; x < width; x++) {
+        const idx = offset + x * 4;
+        sum += (0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]);
+      }
+      rowLuminance[y] = sum / width;
+    }
+
+    const colLuminance = new Float32Array(width);
+    for (let x = 0; x < width; x++) {
+      let sum = 0;
+      for (let y = 0; y < height; y++) {
+        const idx = (y * width + x) * 4;
+        sum += (0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]);
+      }
+      colLuminance[x] = sum / height;
+    }
+
+    let minL = 255;
+    let maxL = 0;
+    for (let i = 0; i < rowLuminance.length; i++) {
+      if (rowLuminance[i] < minL) minL = rowLuminance[i];
+      if (rowLuminance[i] > maxL) maxL = rowLuminance[i];
+    }
+    const range = maxL - minL;
+    const threshold = minL + range * 0.45;
+
+    let top = 0;
+    let bottom = height - 1;
+    let left = 0;
+    let right = width - 1;
+
+    for (let y = 0; y < height * 0.4; y++) {
+      if (rowLuminance[y] > threshold) {
+        top = y;
+        break;
+      }
+    }
+    for (let y = height - 1; y > height * 0.6; y--) {
+      if (rowLuminance[y] > threshold) {
+        bottom = y;
+        break;
+      }
+    }
+    for (let x = 0; x < width * 0.4; x++) {
+      if (colLuminance[x] > threshold) {
+        left = x;
+        break;
+      }
+    }
+    for (let x = width - 1; x > width * 0.6; x--) {
+      if (colLuminance[x] > threshold) {
+        right = x;
+        break;
+      }
+    }
+
+    const w = right - left;
+    const h = bottom - top;
+
+    if (w > width * 0.35 && h > height * 0.35 && w < width * 0.99 && h < height * 0.99) {
+      const paddingX = 0.05; // 5% horizontal padding
+      const paddingY = 0.04; // 4% vertical padding
+      
+      const fx = Math.max(0, (left / width) - paddingX);
+      const fy = Math.max(0, (top / height) - paddingY);
+      const rightFrac = Math.min(1, (right / width) + paddingX);
+      const bottomFrac = Math.min(1, (bottom / height) + paddingY);
+      
+      const fw = rightFrac - fx;
+      const fh = bottomFrac - fy;
+      return { x: fx, y: fy, w: fw, h: fh };
+    }
+  } catch (err) {
+    console.warn('Fractional detection failed:', err);
+  }
+
+  return { x: 0.05, y: 0.05, w: 0.9, h: 0.9 };
 }

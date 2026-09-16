@@ -505,12 +505,14 @@ CRITICAL: If any field is physically blank, empty, unwritten, or missing in the 
       const prompt = `Extract structured data from this Purchase Receipt.
 1. Extract the hypermarket/supermarket name.
 2. Extract the purchase Date (formatted as YYYY-MM-DD, e.g. 2026-09-15) and purchase Time (formatted as HH:mm, e.g. 14:35) written on the receipt. If either is not found, return an empty string.
-3. Extract the list of items purchased. For each item, you MUST calculate the normalized price per 1 standard unit (e.g. 1 KG, 1 Litre, or 1 Piece) based on the quantity and total amount listed on the receipt:
+3. Extract the list of items purchased. Scan the entire list of items from top to bottom. You MUST extract EVERY SINGLE product item listed on the receipt. Make sure to capture all of them from the first item down to the very last product item before the totals. Do not skip or miss any items, especially the final/last item in the transaction list!
+4. For each item, you MUST calculate the normalized price per 1 standard unit (e.g. 1 KG, 1 Litre, or 1 Piece) based on the quantity and total amount listed on the receipt:
    - If the item's unit is Gram, calculate the price for 1 KG (1000 Grams): pricePerUnit = (totalAmount / quantity) * 1000. E.g., 500 Gram of Rice costing 12 QAR has a pricePerUnit of 24 QAR per KG.
    - If the item's unit is KG/Kilogram, calculate: pricePerUnit = totalAmount / quantity.
    - If the item's unit is ML, calculate the price for 1 Litre (1000 ML): pricePerUnit = (totalAmount / quantity) * 1000.
    - If the item's unit is Litre, calculate: pricePerUnit = totalAmount / quantity.
-   - For other units like Piece, Pcs, Pack, Box, or Bottle, calculate the price for 1 single Piece: pricePerUnit = totalAmount / quantity. E.g. a pack of 3 costing 9 QAR has a pricePerUnit of 3 QAR.`;
+   - For other units like Piece, Pcs, Pack, Box, or Bottle, calculate the price for 1 single Piece: pricePerUnit = totalAmount / quantity. E.g. a pack of 3 costing 9 QAR has a pricePerUnit of 3 QAR.
+Do not include the summary total rows (like 'TOTAL', 'CASH', 'VAT', 'ROUNDING', 'CHANGE') as items.`;
 
       const response = await generateWithFallback(
         ai,

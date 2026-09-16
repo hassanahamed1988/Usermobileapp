@@ -17,6 +17,8 @@ import autoTable from "jspdf-autotable";
 import { Filesystem ,Directory } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
 import { FileOpener } from "@capacitor-community/file-opener";
+import ReceiptCropperModal from '@/components/ReceiptCropperModal';
+import ReceiptZoomViewer from '@/components/ReceiptZoomViewer';
 
 // Assuming we add Partner type to types later defining it here for now if needed.
 // Or we just save it to Firebase under 'partners' collection.
@@ -316,6 +318,8 @@ export default function Purchase() {
   const cameraInputRef = React.useRef<HTMLInputElement>(null);
   const galleryInputRef = React.useRef<HTMLInputElement>(null);
   const [receiptImage ,setReceiptImage] = useState<string | null>(() => localStorage.getItem('temp_scanned_receipt') || null);
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [cropperOriginalImage, setCropperOriginalImage] = useState<string>('');
   const [activeTab ,setActiveTab] = useState<'history' | 'pending'>('history');
   
   const [isPendingDetailsModalOpen ,setIsPendingDetailsModalOpen] = useState(false);
@@ -992,7 +996,7 @@ const fileName = `Invoice_${purchase.id}.pdf`;
     let finalReceipt = receiptImage || localStorage.getItem('temp_scanned_receipt') || null;
     if (finalReceipt) {
       try {
-        finalReceipt = await compressReceiptImage(finalReceipt);
+        finalReceipt = await compressReceiptImage(finalReceipt, true);
       } catch (compressErr) {
         console.warn('Receipt compression during submit fallback:', compressErr);
       }
@@ -1088,100 +1092,105 @@ const fileName = `Invoice_${purchase.id}.pdf`;
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsScanning(true);
-    showFeedback('Scanning receipt...' ,'info');
-
     try {
       const reader = new FileReader();
-      reader.onloadend = async () => {
-        try {
-          const rawBase64 = reader.result as string;
-          let base64Image = rawBase64;
-          try {
-            // Compress immediately so it stays comfortably within Firestore & localStorage limits (< 150KB)
-            base64Image = await compressReceiptImage(rawBase64);
-          } catch (compressErr) {
-            console.warn('Initial receipt compression error:', compressErr);
-          }
-          setReceiptImage(base64Image);
-          try {
-            localStorage.setItem('temp_scanned_receipt', base64Image);
-          } catch (storageErr) {
-            console.warn('LocalStorage save warning:', storageErr);
-          }
-
-          const response = await fetch('/api/purchase-ocr' ,{
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image: base64Image })
-          });
-
-          if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error || 'OCR failed');
-          }
-          const data = await response.json();
-
-          if (data.hypermarketName) {
-            const name = data.hypermarketName.trim();
-            setHypermarketName(name);
-
-            // Save the extracted hypermarket name automatically and prevent duplicates using unique normalized document ID
-            const shopId = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-            if (shopId) {
-              saveFirebaseDoc('hypermarkets' ,shopId ,{ id: shopId ,name: name });
-            }
-          }
-
-          if (data.date) {
-            setPurchaseDate(data.date);
-          }
-          if (data.time) {
-            setPurchaseTime(data.time);
-          }
-          
-          if (data.items && data.items.length > 0) {
-            const newItems = data.items.map((item: any ,idx: number) => {
-              // Use pricePerUnit (calculated on server) or fall back to price
-              const price = parseFloat(item.pricePerUnit) || parseFloat(item.price) || 0;
-              const qty = parseFloat(item.quantity) || 1;
-              const unit = item.unit || 'Piece';
-              // Use totalAmount (actual cost paid) or fall back to calculation
-              const total = parseFloat(item.totalAmount) || (price * qty);
-
-              if (item.name) {
-                const existingItem = globalItems.find(g => g.name.toLowerCase() === item.name.toLowerCase());
-                if (!existingItem) {
-                  const newItemId = `ITEM-${Date.now()}-${idx}`;
-                  saveFirebaseDoc('items' ,newItemId ,{ id: newItemId ,name: item.name });
-                }
-              }
-
-              return {
-                id: Date.now().toString() + idx
-                ,name: item.name || ''
-                ,price: price.toFixed(2)
-                ,quantity: qty.toString()
-                ,unit: unit
-                ,total: Number(total.toFixed(2))
-              };
-            });
-            setPurchaseItems(prev => [...prev ,...newItems]);
-          }
-          showFeedback('Receipt scanned successfully!' ,'success');
-        } catch (err: any) {
-          console.error(err);
-          const errorMsg = err?.message || 'Failed to scan receipt';
-          showFeedback(errorMsg, 'error');
-        } finally {
-          setIsScanning(false);
-        }
+      reader.onloadend = () => {
+        const rawBase64 = reader.result as string;
+        setCropperOriginalImage(rawBase64);
+        setIsCropperOpen(true);
+        // Clear input value so same file can be scanned again if needed
+        e.target.value = '';
       };
       reader.readAsDataURL(file);
     } catch (err: any) {
       console.error(err);
-      const errorMsg = err?.message || 'Failed to scan receipt';
+      showFeedback('Failed to read image file', 'error');
+    }
+  };
+
+  const handleCropComplete = async (croppedBase64: string) => {
+    setIsCropperOpen(false);
+    setIsScanning(true);
+    showFeedback(language === 'bn' ? 'রসিদ স্ক্যান করা হচ্ছে...' : 'Scanning receipt...', 'info');
+
+    try {
+      // Set the receipt image state. We will compress it to keep it small in Firestore/localStorage
+      let compressedBase64 = croppedBase64;
+      try {
+        compressedBase64 = await compressReceiptImage(croppedBase64, true);
+      } catch (compressErr) {
+        console.warn('Receipt compression failed:', compressErr);
+      }
+      setReceiptImage(compressedBase64);
+      try {
+        localStorage.setItem('temp_scanned_receipt', compressedBase64);
+      } catch (storageErr) {
+        console.warn('LocalStorage save warning:', storageErr);
+      }
+
+      // Call purchase OCR with the cropped image
+      const response = await fetch('/api/purchase-ocr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: compressedBase64 })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'OCR failed');
+      }
+      const data = await response.json();
+
+      if (data.hypermarketName) {
+        const name = data.hypermarketName.trim();
+        setHypermarketName(name);
+
+        // Save the extracted hypermarket name automatically and prevent duplicates using unique normalized document ID
+        const shopId = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        if (shopId) {
+          saveFirebaseDoc('hypermarkets', shopId, { id: shopId, name: name });
+        }
+      }
+
+      if (data.date) {
+        setPurchaseDate(data.date);
+      }
+      if (data.time) {
+        setPurchaseTime(data.time);
+      }
+      
+      if (data.items && data.items.length > 0) {
+        const newItems = data.items.map((item: any, idx: number) => {
+          const price = parseFloat(item.pricePerUnit) || parseFloat(item.price) || 0;
+          const qty = parseFloat(item.quantity) || 1;
+          const unit = item.unit || 'Piece';
+          const total = parseFloat(item.totalAmount) || (price * qty);
+
+          if (item.name) {
+            const existingItem = globalItems.find(g => g.name.toLowerCase() === item.name.toLowerCase());
+            if (!existingItem) {
+              const newItemId = `ITEM-${Date.now()}-${idx}`;
+              saveFirebaseDoc('items', newItemId, { id: newItemId, name: item.name });
+            }
+          }
+
+          return {
+            id: Date.now().toString() + idx,
+            name: item.name || '',
+            price: price.toFixed(2),
+            quantity: qty.toString(),
+            unit: unit,
+            total: Number(total.toFixed(2))
+          };
+        });
+        setPurchaseItems(prev => [...prev, ...newItems]);
+      }
+      showFeedback(language === 'bn' ? 'রসিদ সফলভাবে স্ক্যান করা হয়েছে!' : 'Receipt scanned successfully!', 'success');
+    } catch (err: any) {
+      console.error(err);
+      const errorMsg = err?.message || (language === 'bn' ? 'রসিদ স্ক্যান করতে ব্যর্থ হয়েছে' : 'Failed to scan receipt');
       showFeedback(errorMsg, 'error');
+    } finally {
       setIsScanning(false);
     }
   };
@@ -2554,6 +2563,14 @@ const fileName = `Invoice_${purchase.id}.pdf`;
               </div>
             </div>
           )}
+
+          <ReceiptCropperModal
+            isOpen={isCropperOpen}
+            imageSrc={cropperOriginalImage}
+            language={language}
+            onClose={() => setIsCropperOpen(false)}
+            onCropComplete={handleCropComplete}
+          />
         </>
         ,document.body
       )}
@@ -2916,14 +2933,6 @@ const fileName = `Invoice_${purchase.id}.pdf`;
         <>
           {isReceiptViewerOpen && receiptViewerUrl && (
             <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center p-4 sm:p-6 bg-black/95 backdrop-blur-xl animate-in fade-in duration-200">
-              <button 
-                onClick={() => setIsReceiptViewerOpen(false)}
-                className="absolute top-4 right-4 z-[10000] w-12 h-12 rounded-full bg-white/10 text-white hover:bg-white/20 flex items-center justify-center transition-all shadow-lg active:scale-95"
-                title={language === 'bn' ? 'বন্ধ করুন' : 'Close'}
-              >
-                <X size={24} />
-              </button>
-              
               <div className="w-full max-w-xl flex flex-col max-h-[85vh] overflow-hidden rounded-2xl bg-[#1C1C1E] border border-white/10 shadow-2xl animate-in zoom-in-95 duration-300">
                 <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900/50">
                   <h3 className="text-sm font-black text-zinc-100 flex items-center gap-2">
@@ -2935,12 +2944,10 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                   </span>
                 </div>
                 
-                <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-black/40">
-                  <img 
-                    src={receiptViewerUrl} 
-                    alt="Receipt Proof" 
-                    className="max-w-full max-h-[65vh] object-contain rounded-lg border border-white/5 shadow-lg select-none"
-                    referrerPolicy="no-referrer"
+                <div className="flex-1 overflow-hidden p-4 flex flex-col bg-black/40 h-[65vh]">
+                  <ReceiptZoomViewer 
+                    imageSrc={receiptViewerUrl} 
+                    language={language}
                   />
                 </div>
                 
