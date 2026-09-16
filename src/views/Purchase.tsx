@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { useStore ,GLOBAL_TRANSITION ,GLOBAL_VARIANTS } from '@/store';
 import { TRANSLATIONS } from '@/constants';
-import { Plus ,Users ,ShoppingCart ,User as UserIcon ,Phone ,Calendar ,Globe ,MapPin ,X ,Check ,Eye ,Trash2 ,Edit ,Power ,Scan ,Camera ,Download ,Banknote ,CreditCard ,ArrowLeft ,ChevronDown ,CheckCircle2 ,Clock ,Store ,Package ,FileText } from 'lucide-react';
+import { Plus ,Users ,ShoppingCart ,User as UserIcon ,Phone ,Calendar ,Globe ,MapPin ,X ,Check ,Eye ,Trash2 ,Edit ,Power ,Scan ,Camera ,Download ,Banknote ,CreditCard ,ArrowLeft ,ChevronDown ,CheckCircle2 ,Clock ,Store ,Package ,FileText, Image } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import InputField, { InputFieldThemeContext } from '@/components/InputField';
 import GlobalFullscreenSelect from '@/components/GlobalFullscreenSelect';
@@ -2503,66 +2503,100 @@ const fileName = `Invoice_${purchase.id}.pdf`;
 
       {createPortal(
         <>
-          {isActionSheetOpen && (
-            <div className="fixed inset-0 z-[9000] flex flex-col justify-end p-4 pb-[calc(76px+env(safe-area-inset-bottom,16px))]">
-              <div 
-                
-                
-                
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsActionSheetOpen(false);
-                }}
-                className="absolute inset-0 bg-black/40 backdrop-blur-xs cursor-pointer"
-              />
-              <div 
-                
-                
-                
-                
-                className="relative w-full z-10 flex flex-col gap-2 max-w-sm mx-auto"
-              >
-                <div className="bg-white/90 dark:bg-[#1C1C1E]/90 backdrop-blur-xl rounded-[14px] overflow-hidden flex flex-col">
-                  <div className="p-3 border-b border-black/10 dark:border-white/10 text-center">
-                    <p className="text-[13px] font-semibold text-gray-500 dark:text-gray-400">Upload Receipt</p>
-                  </div>
-                  <button 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      cameraInputRef.current?.click();
-                      setIsActionSheetOpen(false);
-                    }}
-                    className="w-full py-4 px-6 flex items-center justify-center gap-2 text-[#007AFF] dark:text-[#0A84FF] font-normal active:bg-black/5 dark:active:bg-white/5 transition-colors border-b border-black/10 dark:border-white/10"
-                  >
-                    <span className="text-[20px]">Take Photo</span>
-                  </button>
-                  <button 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      galleryInputRef.current?.click();
-                      setIsActionSheetOpen(false);
-                    }}
-                    className="w-full py-4 px-6 flex items-center justify-center gap-2 text-[#007AFF] dark:text-[#0A84FF] font-normal active:bg-black/5 dark:active:bg-white/5 transition-colors"
-                  >
-                    <span className="text-[20px]">Choose from Gallery</span>
-                  </button>
-                </div>
-                
-                <button 
+          <AnimatePresence>
+            {isActionSheetOpen && (
+              <div className="fixed inset-0 z-[9000] flex flex-col justify-end">
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18 }}
                   onClick={(e) => {
-                    e.preventDefault();
                     e.stopPropagation();
                     setIsActionSheetOpen(false);
                   }}
-                  className="w-full mt-0 py-4 bg-white/90 dark:bg-[#1C1C1E]/90 backdrop-blur-xl rounded-[14px] font-semibold text-[#007AFF] dark:text-[#0A84FF] active:bg-black/5 dark:active:bg-white/5 transition-colors text-[20px]"
+                  className="absolute inset-0 bg-black/60 backdrop-blur-xs cursor-pointer"
+                />
+                <motion.div 
+                  initial={{ y: '100%', opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: '100%', opacity: 0 }}
+                  transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.28 }}
+                  className="relative w-full z-10 bg-white dark:bg-[#1C1C1E] rounded-t-[32px] rounded-b-none p-6 pb-[calc(44px+env(safe-area-inset-bottom,28px))] shadow-2xl max-w-md mx-auto flex flex-col border-t border-x border-black/5 dark:border-white/5"
                 >
-                  Cancel
-                </button>
+                  {/* Top Drag Indicator Line */}
+                  <div className="w-12 h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full mx-auto mb-5" />
+
+                  {/* Header Title & Subtitle */}
+                  <div className="text-center">
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                      {language === 'bn' ? 'ডকুমেন্ট স্ক্যান করুন' : 'Scan Document'}
+                    </h3>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                      {language === 'bn' ? 'আপনার স্ক্যান অপশনটি বেছে নিন' : 'Choose your scan source option'}
+                    </p>
+                  </div>
+
+                  {/* Grid of Options */}
+                  <div className="grid grid-cols-2 gap-3.5 my-6">
+                    {/* Camera Button */}
+                    <div 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        cameraInputRef.current?.click();
+                        setIsActionSheetOpen(false);
+                      }}
+                      className="flex flex-col items-center justify-center p-4 rounded-2xl bg-emerald-500/5 dark:bg-emerald-500/10 border-2 border-emerald-400/80 dark:border-emerald-500/50 hover:bg-emerald-500/10 transition-all active:scale-95 cursor-pointer text-center group"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 flex items-center justify-center mb-2.5 shadow-sm group-hover:scale-105 transition-transform">
+                        <Camera size={22} />
+                      </div>
+                      <span className="text-sm font-bold text-zinc-800 dark:text-zinc-100">
+                        {language === 'bn' ? 'ক্যামেরা' : 'Camera'}
+                      </span>
+                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 leading-none">
+                        {language === 'bn' ? 'একটি ছবি তুলুন' : 'Take a photo'}
+                      </span>
+                    </div>
+
+                    {/* Gallery Button */}
+                    <div 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        galleryInputRef.current?.click();
+                        setIsActionSheetOpen(false);
+                      }}
+                      className="flex flex-col items-center justify-center p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-all active:scale-95 cursor-pointer text-center group"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-zinc-500/10 text-zinc-500 dark:text-zinc-400 flex items-center justify-center mb-2.5 shadow-sm group-hover:scale-105 transition-transform">
+                        <Image size={22} />
+                      </div>
+                      <span className="text-sm font-bold text-zinc-800 dark:text-zinc-100">
+                        {language === 'bn' ? 'গ্যালারি' : 'Gallery'}
+                      </span>
+                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 leading-none">
+                        {language === 'bn' ? 'ফাইল নির্বাচন করুন' : 'Select a file'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Cancel Button */}
+                  <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsActionSheetOpen(false);
+                    }}
+                    className="w-full py-3.5 bg-zinc-100 dark:bg-zinc-800/80 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-2xl font-bold text-zinc-800 dark:text-zinc-200 active:scale-98 transition-all text-sm tracking-wide"
+                  >
+                    {language === 'bn' ? 'বাতিল' : 'Cancel'}
+                  </button>
+                </motion.div>
               </div>
-            </div>
-          )}
+            )}
+          </AnimatePresence>
 
           <ReceiptCropperModal
             isOpen={isCropperOpen}

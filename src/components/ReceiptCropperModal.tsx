@@ -270,7 +270,7 @@ export default function ReceiptCropperModal({
     const targetImgData = tCtx.createImageData(finalW, finalH);
     const dstData = targetImgData.data;
 
-    // Perform inverse perspective mapping with Nearest-Neighbor interpolation
+    // Perform inverse perspective mapping with high-quality Bilinear Interpolation
     for (let v = 0; v < finalH; v++) {
       const vPercent = v / finalH;
       for (let u = 0; u < finalW; u++) {
@@ -280,16 +280,31 @@ export default function ReceiptCropperModal({
         const srcX = (a * uPercent + b * vPercent + c) / denom;
         const srcY = (d * uPercent + e * vPercent + f) / denom;
 
-        const clampedX = Math.max(0, Math.min(rotSourceW - 1, Math.round(srcX)));
-        const clampedY = Math.max(0, Math.min(rotSourceH - 1, Math.round(srcY)));
+        // Secure boundary clamps for Bilinear Interpolation neighboring pixels
+        const x_f = Math.max(0, Math.min(rotSourceW - 1, Math.floor(srcX)));
+        const y_f = Math.max(0, Math.min(rotSourceH - 1, Math.floor(srcY)));
+        const x_c = Math.max(0, Math.min(rotSourceW - 1, x_f + 1));
+        const y_c = Math.max(0, Math.min(rotSourceH - 1, y_f + 1));
 
-        const srcIdx = (clampedY * rotSourceW + clampedX) * 4;
+        const tx = Math.max(0, Math.min(1, srcX - x_f));
+        const ty = Math.max(0, Math.min(1, srcY - y_f));
+
+        const idx_tl = (y_f * rotSourceW + x_f) * 4;
+        const idx_tr = (y_f * rotSourceW + x_c) * 4;
+        const idx_bl = (y_c * rotSourceW + x_f) * 4;
+        const idx_br = (y_c * rotSourceW + x_c) * 4;
+
         const dstIdx = (v * finalW + u) * 4;
 
-        dstData[dstIdx] = srcData[srcIdx];         // R
-        dstData[dstIdx + 1] = srcData[srcIdx + 1]; // G
-        dstData[dstIdx + 2] = srcData[srcIdx + 2]; // B
-        dstData[dstIdx + 3] = srcData[srcIdx + 3]; // A
+        const w_tl = (1 - tx) * (1 - ty);
+        const w_tr = tx * (1 - ty);
+        const w_bl = (1 - tx) * ty;
+        const w_br = tx * ty;
+
+        dstData[dstIdx]     = w_tl * srcData[idx_tl]     + w_tr * srcData[idx_tr]     + w_bl * srcData[idx_bl]     + w_br * srcData[idx_br];     // R
+        dstData[dstIdx + 1] = w_tl * srcData[idx_tl + 1] + w_tr * srcData[idx_tr + 1] + w_bl * srcData[idx_bl + 1] + w_br * srcData[idx_br + 1]; // G
+        dstData[dstIdx + 2] = w_tl * srcData[idx_tl + 2] + w_tr * srcData[idx_tr + 2] + w_bl * srcData[idx_bl + 2] + w_br * srcData[idx_br + 2]; // B
+        dstData[dstIdx + 3] = w_tl * srcData[idx_tl + 3] + w_tr * srcData[idx_tr + 3] + w_bl * srcData[idx_bl + 3] + w_br * srcData[idx_br + 3]; // A
       }
     }
 
@@ -300,63 +315,88 @@ export default function ReceiptCropperModal({
       try {
         const imgData = tCtx.getImageData(0, 0, finalW, finalH);
         const data = imgData.data;
-        let minL = 255;
-        let maxL = 0;
 
-        for (let i = 0; i < data.length; i += 4) {
-          const l = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-          if (l < minL) minL = l;
-          if (l > maxL) maxL = l;
+        // 1. Generate local illumination background map using a fast downscale-blur technique
+        // Using 48x48 resolution to capture macro shadows perfectly while keeping local text contrast intact
+        const bgCanvas = document.createElement('canvas');
+        bgCanvas.width = 48;
+        bgCanvas.height = 48;
+        const bgCtx = bgCanvas.getContext('2d');
+        if (bgCtx) {
+          bgCtx.drawImage(targetCanvas, 0, 0, 48, 48);
         }
 
-        const range = maxL - minL;
-        const whitePoint = maxL - range * 0.25; // Brightest 25% becomes pure white
-        const blackPoint = minL + range * 0.20; // Darkest 20% becomes pure black
-        const stretchRange = whitePoint - blackPoint;
+        // 2. Upscale back to original size with bilinear interpolation
+        const blurCanvas = document.createElement('canvas');
+        blurCanvas.width = finalW;
+        blurCanvas.height = finalH;
+        const blurCtx = blurCanvas.getContext('2d');
+        if (blurCtx) {
+          blurCtx.drawImage(bgCanvas, 0, 0, finalW, finalH);
+        }
 
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          const l = 0.299 * r + 0.587 * g + 0.114 * b;
+        const blurImgData = blurCtx ? blurCtx.getImageData(0, 0, finalW, finalH) : null;
+        const blurData = blurImgData ? blurImgData.data : null;
 
-          if (selectedFilter === 'bw') {
-            // Pure B&W Threshold Binarization
-            if (l >= whitePoint) {
-              data[i] = 255; data[i + 1] = 255; data[i + 2] = 255;
-            } else if (l <= blackPoint) {
-              data[i] = 12; data[i + 1] = 12; data[i + 2] = 12;
-            } else {
-              const pct = (l - blackPoint) / (stretchRange || 1);
-              const binarized = pct > 0.45 ? 255 : 12;
-              data[i] = binarized; data[i + 1] = binarized; data[i + 2] = binarized;
-            }
-          } else if (selectedFilter === 'magic') {
-            // Magic Color: Whiten background, preserve colors and sharpen text
-            if (l >= whitePoint) {
-              data[i] = 255; data[i + 1] = 255; data[i + 2] = 255;
-            } else {
-              const factor = 1.4;
-              const nr = Math.max(0, Math.min(255, (r - 128) * factor + 128));
-              const ng = Math.max(0, Math.min(255, (g - 128) * factor + 128));
-              const nb = Math.max(0, Math.min(255, (b - 128) * factor + 128));
-              
-              if (l > whitePoint - range * 0.15) {
-                data[i] = 255; data[i + 1] = 255; data[i + 2] = 255;
+        // 3. Normalize pixels by background division
+        if (blurData) {
+          for (let i = 0; i < data.length; i += 4) {
+            const r_o = data[i];
+            const g_o = data[i + 1];
+            const b_o = data[i + 2];
+
+            const r_b = Math.max(1, blurData[i]);
+            const g_b = Math.max(1, blurData[i + 1]);
+            const b_b = Math.max(1, blurData[i + 2]);
+
+            // Normalized ratio color (0 to 255) to eliminate shadows
+            const r_norm = Math.max(0, Math.min(255, (r_o / r_b) * 255));
+            const g_norm = Math.max(0, Math.min(255, (g_o / g_b) * 255));
+            const b_norm = Math.max(0, Math.min(255, (b_o / b_b) * 255));
+
+            const l_norm = 0.299 * r_norm + 0.587 * g_norm + 0.114 * b_norm;
+            const ratio = l_norm / 255;
+
+            if (selectedFilter === 'bw') {
+              // High Contrast B&W (CamScanner Style) with safe ratio boundaries
+              if (ratio > 0.965) {
+                data[i] = 255;
+                data[i + 1] = 255;
+                data[i + 2] = 255;
               } else {
-                data[i] = nr; data[i + 1] = ng; data[i + 2] = nb;
+                // High legibility contrast curve to prevent faint text from fading away
+                const factor = Math.max(0.04, Math.pow(ratio, 4.2));
+                const val = Math.round(8 + factor * 247);
+                data[i] = val;
+                data[i + 1] = val;
+                data[i + 2] = val;
               }
-            }
-          } else if (selectedFilter === 'grayscale') {
-            // Grayscale clean scan
-            if (l >= whitePoint) {
-              data[i] = 255; data[i + 1] = 255; data[i + 2] = 255;
-            } else if (l <= blackPoint) {
-              data[i] = 12; data[i + 1] = 12; data[i + 2] = 12;
-            } else {
-              const pct = (l - blackPoint) / (stretchRange || 1);
-              const val = Math.max(12, Math.min(255, pct * 243 + 12));
-              data[i] = val; data[i + 1] = val; data[i + 2] = val;
+            } else if (selectedFilter === 'magic') {
+              // Magic Color: Removes yellow/gray background shadows completely, preserving all colors & texts sharp and vibrant
+              if (ratio > 0.965) {
+                data[i] = 255;
+                data[i + 1] = 255;
+                data[i + 2] = 255;
+              } else {
+                // Keep original color but normalize the background and amplify colored inks
+                const factor = Math.max(0.12, Math.pow(ratio, 3.2));
+                data[i] = Math.max(10, Math.min(255, r_norm * factor));
+                data[i + 1] = Math.max(10, Math.min(255, g_norm * factor));
+                data[i + 2] = Math.max(10, Math.min(255, b_norm * factor));
+              }
+            } else if (selectedFilter === 'grayscale') {
+              // CamScanner Grayscale Style
+              if (ratio > 0.965) {
+                data[i] = 255;
+                data[i + 1] = 255;
+                data[i + 2] = 255;
+              } else {
+                const factor = Math.max(0.08, Math.pow(ratio, 3.5));
+                const val = Math.round(12 + factor * 243);
+                data[i] = val;
+                data[i + 1] = val;
+                data[i + 2] = val;
+              }
             }
           }
         }
