@@ -10,6 +10,7 @@ import GlobalFullscreenSelect from '@/components/GlobalFullscreenSelect';
 import { COUNTRIES } from '@/data/locations';
 import { User } from '@/types';
 import { saveFirebaseDoc ,subscribeFirebaseCollection ,deleteFirebaseDoc ,subscribeFirebaseCollectionGroup ,subscribeFirebaseDoc } from '@/services/firebase';
+import { compressReceiptImage } from '@/utils/imageUtils';
 import { downloadPdf } from '../utils/fileUtils';
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -258,6 +259,10 @@ export default function Purchase() {
     setPurchaseItems([]);
     setReceiptImage(null);
     setPurchaseDate(new Date().toISOString().split('T')[0]);
+    setPurchaseTime(() => {
+      const d = new Date();
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    });
     setView('NEW_PURCHASE');
   };
 
@@ -299,13 +304,18 @@ export default function Purchase() {
   const [downloadYear ,setDownloadYear] = useState<number>(new Date().getFullYear());
   const [hypermarketName ,setHypermarketName] = useState('');
   const [purchaseDate ,setPurchaseDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [purchaseTime ,setPurchaseTime] = useState(() => {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  });
   const [purchaseItems ,setPurchaseItems] = useState<{ id: string, name: string, price: string, quantity: string, unit: string, total: number }[]>([]);
   const [globalItems ,setGlobalItems] = useState<any[]>([]);
+  const [hypermarkets, setHypermarkets] = useState<any[]>([]);
   const [isScanning ,setIsScanning] = useState(false);
   const [isActionSheetOpen ,setIsActionSheetOpen] = useState(false);
   const cameraInputRef = React.useRef<HTMLInputElement>(null);
   const galleryInputRef = React.useRef<HTMLInputElement>(null);
-  const [receiptImage ,setReceiptImage] = useState<string | null>(null);
+  const [receiptImage ,setReceiptImage] = useState<string | null>(() => localStorage.getItem('temp_scanned_receipt') || null);
   const [activeTab ,setActiveTab] = useState<'history' | 'pending'>('history');
   
   const [isPendingDetailsModalOpen ,setIsPendingDetailsModalOpen] = useState(false);
@@ -314,6 +324,8 @@ export default function Purchase() {
 
   const [isPaymentDetailsOpen ,setIsPaymentDetailsOpen] = useState(false);
   const [selectedPayment ,setSelectedPayment] = useState<any>(null);
+  const [isReceiptViewerOpen ,setIsReceiptViewerOpen] = useState(false);
+  const [receiptViewerUrl ,setReceiptViewerUrl] = useState<string | null>(null);
   const livePayment = selectedPayment ? (messPayments.find((p: any) => p.id === selectedPayment.id) || selectedPayment) : null;
 
   const [isPartnerProfileModalOpen ,setIsPartnerProfileModalOpen] = useState(false);
@@ -599,12 +611,14 @@ export default function Purchase() {
     const unsubscribeItems = subscribeFirebaseCollection('items', (data) => setGlobalItems(data));
     const unsubscribeUsers = subscribeFirebaseCollection('users', (data) => setGlobalUsers(data));
     const unsubscribeMessPayments = subscribeFirebaseCollectionGroup('MessPayment', (data) => setMessPayments(data));
+    const unsubscribeHypermarkets = subscribeFirebaseCollection('hypermarkets', (data) => setHypermarkets(data));
     return () => {
       unsubscribePartners();
       unsubscribePurchases();
       unsubscribeItems();
       unsubscribeUsers();
       unsubscribeMessPayments();
+      unsubscribeHypermarkets();
     };
   }, []);
 
@@ -975,22 +989,34 @@ const fileName = `Invoice_${purchase.id}.pdf`;
 
     const totalAmount = purchaseItems.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
 
+    let finalReceipt = receiptImage || localStorage.getItem('temp_scanned_receipt') || null;
+    if (finalReceipt) {
+      try {
+        finalReceipt = await compressReceiptImage(finalReceipt);
+      } catch (compressErr) {
+        console.warn('Receipt compression during submit fallback:', compressErr);
+      }
+    }
+
     const purchaseId = editingPurchaseId || `PURCHASE-${Date.now()}`;
     const purchaseData = {
       id: purchaseId
       ,userId: editingPurchaseId ? (selectedPendingPurchase?.userId || user?.userId || user?.id) : (user?.userId || user?.id)
       ,hypermarketName
       ,date: purchaseDate
-      ,time: editingPurchaseId ? selectedPendingPurchase?.time : currentTime
+      ,time: editingPurchaseId ? (selectedPendingPurchase?.time || purchaseTime) : purchaseTime
       ,items: purchaseItems
       ,amount: totalAmount
       ,status: (user?.role === 'ADMIN' || user?.role === 'MANAGER') ? 'approved' : (editingPurchaseId ? (selectedPendingPurchase?.status || 'pending') : 'pending')
       ,createdAt: editingPurchaseId ? selectedPendingPurchase?.createdAt : Date.now()
-      ,...(receiptImage ? { receipt: receiptImage } : {})
+      ,receipt: finalReceipt
     };
 
     try {
       await saveFirebaseDoc(getPurchaseSubPath(purchaseData.userId) ,purchaseData.id ,purchaseData);
+      
+      // Clear local storage copy of scanned receipt upon successful submission
+      localStorage.removeItem('temp_scanned_receipt');
       
       // Notify admins if submitted by a normal user and it's not an edit
       if (user?.role !== 'ADMIN' && user?.role !== 'MANAGER' && !editingPurchaseId) {
@@ -1014,6 +1040,11 @@ const fileName = `Invoice_${purchase.id}.pdf`;
       setHypermarketName('');
       setPurchaseItems([]);
       setReceiptImage(null);
+      setPurchaseDate(new Date().toISOString().split('T')[0]);
+      setPurchaseTime(() => {
+        const d = new Date();
+        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      });
     } catch (e) {
       showFeedback('Failed to submit purchase' ,'error');
     }
@@ -1063,53 +1094,88 @@ const fileName = `Invoice_${purchase.id}.pdf`;
     try {
       const reader = new FileReader();
       reader.onloadend = async () => {
-        const base64Image = reader.result as string;
-        setReceiptImage(base64Image);
+        try {
+          const rawBase64 = reader.result as string;
+          let base64Image = rawBase64;
+          try {
+            // Compress immediately so it stays comfortably within Firestore & localStorage limits (< 150KB)
+            base64Image = await compressReceiptImage(rawBase64);
+          } catch (compressErr) {
+            console.warn('Initial receipt compression error:', compressErr);
+          }
+          setReceiptImage(base64Image);
+          try {
+            localStorage.setItem('temp_scanned_receipt', base64Image);
+          } catch (storageErr) {
+            console.warn('LocalStorage save warning:', storageErr);
+          }
 
-        const response = await fetch('/api/purchase-ocr' ,{
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: base64Image })
-        });
-
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.error || 'OCR failed');
-        }
-        const data = await response.json();
-
-        if (data.hypermarketName) setHypermarketName(data.hypermarketName);
-        
-        if (data.items && data.items.length > 0) {
-          const newItems = data.items.map((item: any ,idx: number) => {
-            const price = parseFloat(item.price) || 0;
-            const qty = parseFloat(item.quantity) || 1;
-            const unit = item.unit || 'Piece';
-            let total = 0;
-            if (unit.toLowerCase() === 'gram') total = (price * qty) / 1000;
-            else total = price * qty;
-
-            if (item.name) {
-              const existingItem = globalItems.find(g => g.name.toLowerCase() === item.name.toLowerCase());
-              if (!existingItem) {
-                const newItemId = `ITEM-${Date.now()}-${idx}`;
-                saveFirebaseDoc('items' ,newItemId ,{ id: newItemId ,name: item.name });
-              }
-            }
-
-            return {
-              id: Date.now().toString() + idx
-              ,name: item.name || ''
-              ,price: price.toString()
-              ,quantity: qty.toString()
-              ,unit: unit
-              ,total: Number(total.toFixed(2))
-            };
+          const response = await fetch('/api/purchase-ocr' ,{
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64Image })
           });
-          setPurchaseItems(prev => [...prev ,...newItems]);
+
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || 'OCR failed');
+          }
+          const data = await response.json();
+
+          if (data.hypermarketName) {
+            const name = data.hypermarketName.trim();
+            setHypermarketName(name);
+
+            // Save the extracted hypermarket name automatically and prevent duplicates using unique normalized document ID
+            const shopId = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            if (shopId) {
+              saveFirebaseDoc('hypermarkets' ,shopId ,{ id: shopId ,name: name });
+            }
+          }
+
+          if (data.date) {
+            setPurchaseDate(data.date);
+          }
+          if (data.time) {
+            setPurchaseTime(data.time);
+          }
+          
+          if (data.items && data.items.length > 0) {
+            const newItems = data.items.map((item: any ,idx: number) => {
+              // Use pricePerUnit (calculated on server) or fall back to price
+              const price = parseFloat(item.pricePerUnit) || parseFloat(item.price) || 0;
+              const qty = parseFloat(item.quantity) || 1;
+              const unit = item.unit || 'Piece';
+              // Use totalAmount (actual cost paid) or fall back to calculation
+              const total = parseFloat(item.totalAmount) || (price * qty);
+
+              if (item.name) {
+                const existingItem = globalItems.find(g => g.name.toLowerCase() === item.name.toLowerCase());
+                if (!existingItem) {
+                  const newItemId = `ITEM-${Date.now()}-${idx}`;
+                  saveFirebaseDoc('items' ,newItemId ,{ id: newItemId ,name: item.name });
+                }
+              }
+
+              return {
+                id: Date.now().toString() + idx
+                ,name: item.name || ''
+                ,price: price.toFixed(2)
+                ,quantity: qty.toString()
+                ,unit: unit
+                ,total: Number(total.toFixed(2))
+              };
+            });
+            setPurchaseItems(prev => [...prev ,...newItems]);
+          }
+          showFeedback('Receipt scanned successfully!' ,'success');
+        } catch (err: any) {
+          console.error(err);
+          const errorMsg = err?.message || 'Failed to scan receipt';
+          showFeedback(errorMsg, 'error');
+        } finally {
+          setIsScanning(false);
         }
-        showFeedback('Receipt scanned successfully!' ,'success');
-        setIsScanning(false);
       };
       reader.readAsDataURL(file);
     } catch (err: any) {
@@ -2624,13 +2690,30 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                     <p className="text-xs text-indigo-100 mt-1">Status: <span className="text-white uppercase tracking-widest font-bold">{livePurchase?.status === 'approved' ? 'APPROVED' : (livePurchase?.status === 'rejected' ? 'REJECTED' : 'PENDING APPROVAL')}</span></p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {livePurchase && (isAdmin || (isManager && livePurchase?.userId && myAssignedPartnerUserIds.includes(String(livePurchase?.userId))) || ((user?.id === livePurchase?.userId || user?.userId === livePurchase?.userId) && livePurchase?.status !== 'approved')) && (
+                    {livePurchase && (
+                      isAdmin || 
+                      (isManager && livePurchase?.userId && myAssignedPartnerUserIds.includes(String(livePurchase?.userId))) ||
+                      ((user?.id === livePurchase?.userId || user?.userId === livePurchase?.userId) && livePurchase?.status === 'pending')
+                    ) && (
                       <button 
                         onClick={() => {
-                          if (window.confirm(language === 'bn' ? 'আপনি কি নিশ্চিত যে আপনি এই পারচেস রেকর্ডটি ডিলিট করতে চান?' : 'Are you sure you want to delete this purchase record?')) {
-                            deleteFirebaseDoc(getPurchaseSubPath(livePurchase?.userId), livePurchase?.id);
-                            setIsPendingDetailsModalOpen(false);
-                          }
+                          confirmAction(
+                            language === 'bn' ? 'আপনি কি নিশ্চিত যে আপনি এই পারচেস রেকর্ডটি ডিলিট করতে চান?' : 'Are you sure you want to delete this purchase record?',
+                            async () => {
+                              try {
+                                if (livePurchase?._path) {
+                                  await deleteFirebaseDoc(livePurchase._path);
+                                } else {
+                                  await deleteFirebaseDoc(getPurchaseSubPath(livePurchase?.userId), livePurchase?.id);
+                                }
+                                showFeedback(language === 'bn' ? 'পারচেস রেকর্ডটি সফলভাবে ডিলিট করা হয়েছে' : 'Purchase record deleted successfully', 'success');
+                                setIsPendingDetailsModalOpen(false);
+                              } catch (err) {
+                                console.error(err);
+                                showFeedback('Failed to delete purchase record', 'error');
+                              }
+                            }
+                          );
                         }}
                         className="w-10 h-10 rounded-full bg-red-500/20 text-red-100 hover:bg-red-500/40 flex items-center justify-center transition-colors"
                         title={language === 'bn' ? 'ডিলিট করুন' : 'Delete Purchase'}
@@ -2713,20 +2796,47 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                   
                   {/* Receipt (if any) */}
                   {livePurchase?.receipt && (
-                    <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: (isNightMode || appThemeMode === 'dark') ? '#ffffff' : '#000000' }}>Attached Receipt</h4>
-                      <img src={livePurchase.receipt} alt="Receipt" className="w-full rounded-xl border border-border-main/50" />
+                    <div className="pt-3 border-t border-border-main/50">
+                      <button
+                        onClick={() => {
+                          setReceiptViewerUrl(livePurchase.receipt);
+                          setIsReceiptViewerOpen(true);
+                          setIsPendingDetailsModalOpen(false); // Instantly hide details modal
+                        }}
+                        className="w-full py-3 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2 shadow-md shadow-purple-500/20 animate-pulse"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        {language === 'bn' ? 'রসিদ দেখুন (View Receipt)' : 'View Receipt'}
+                      </button>
                     </div>
                   )}
                 </div>
 
                 {livePurchase?.status !== 'approved' && (
                   <div className="p-4 border-t border-border-main/50 bg-background-main/50 grid grid-cols-2 gap-3 shrink-0">
-                    {(user?.role === 'ADMIN' || (user?.role === 'MANAGER' && livePurchase?.userId && myAssignedPartnerUserIds.includes(String(livePurchase?.userId))) || ((user?.id === livePurchase?.userId || user?.userId === livePurchase?.userId) && livePurchase?.status !== 'approved')) && (
+                    {(user?.role === 'ADMIN' || 
+                      (user?.role === 'MANAGER' && livePurchase?.userId && myAssignedPartnerUserIds.includes(String(livePurchase?.userId))) ||
+                      ((user?.id === livePurchase?.userId || user?.userId === livePurchase?.userId) && livePurchase?.status === 'pending')
+                    ) && (
                       <button 
                         onClick={() => {
-                          deleteFirebaseDoc(getPurchaseSubPath(livePurchase?.userId) ,livePurchase?.id);
-                          setIsPendingDetailsModalOpen(false);
+                          confirmAction(
+                            language === 'bn' ? 'আপনি কি নিশ্চিত যে আপনি এই পারচেস রেকর্ডটি ডিলিট করতে চান?' : 'Are you sure you want to delete this purchase record?',
+                            async () => {
+                              try {
+                                if (livePurchase?._path) {
+                                  await deleteFirebaseDoc(livePurchase._path);
+                                } else {
+                                  await deleteFirebaseDoc(getPurchaseSubPath(livePurchase?.userId), livePurchase?.id);
+                                }
+                                showFeedback(language === 'bn' ? 'পারচেস রেকর্ডটি সফলভাবে ডিলিট করা হয়েছে' : 'Purchase record deleted successfully', 'success');
+                                setIsPendingDetailsModalOpen(false);
+                              } catch (err) {
+                                console.error(err);
+                                showFeedback('Failed to delete purchase record', 'error');
+                              }
+                            }
+                          );
                         }}
                         className="py-3 bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 rounded-xl font-bold text-sm hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2"
                       >
@@ -2747,13 +2857,17 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                       </button>
                     )}
 
-                    {(user?.role === 'ADMIN' || (user?.role === 'MANAGER' && livePurchase?.userId && myAssignedPartnerUserIds.includes(String(livePurchase?.userId))) || ((user?.id === livePurchase?.userId || user?.userId === livePurchase?.userId) && livePurchase?.status !== 'approved')) && (
+                    {(user?.role === 'ADMIN' || (user?.role === 'MANAGER' && livePurchase?.userId && myAssignedPartnerUserIds.includes(String(livePurchase?.userId)))) && (
                       <button 
                         onClick={() => {
                           setEditingPurchaseId(livePurchase?.id);
                           setHypermarketName(livePurchase?.hypermarketName || '');
                           setPurchaseItems(livePurchase?.items || []);
                           setPurchaseDate(livePurchase?.date || new Date().toISOString().split('T')[0]);
+                          setPurchaseTime(livePurchase?.time || (() => {
+                            const d = new Date();
+                            return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                          })());
                           setReceiptImage(livePurchase?.receipt || null);
                           setIsPendingDetailsModalOpen(false);
                           setView('NEW_PURCHASE');
@@ -2769,6 +2883,7 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                         onClick={() => {
                           setSelectedPendingPurchase((prev: any) => ({ ...prev ,status: 'approved' }));
                           saveFirebaseDoc(getPurchaseSubPath(livePurchase?.userId) ,livePurchase?.id ,{ ...livePurchase ,status: 'approved' });
+                          setIsPendingDetailsModalOpen(false); // Instantly close modal on approval
                           
                           // Notify the user who submitted the purchase
                           if (livePurchase?.userId) {
@@ -2790,6 +2905,53 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                     )}
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+        </>
+        ,document.body
+      )}
+
+      {createPortal(
+        <>
+          {isReceiptViewerOpen && receiptViewerUrl && (
+            <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center p-4 sm:p-6 bg-black/95 backdrop-blur-xl animate-in fade-in duration-200">
+              <button 
+                onClick={() => setIsReceiptViewerOpen(false)}
+                className="absolute top-4 right-4 z-[10000] w-12 h-12 rounded-full bg-white/10 text-white hover:bg-white/20 flex items-center justify-center transition-all shadow-lg active:scale-95"
+                title={language === 'bn' ? 'বন্ধ করুন' : 'Close'}
+              >
+                <X size={24} />
+              </button>
+              
+              <div className="w-full max-w-xl flex flex-col max-h-[85vh] overflow-hidden rounded-2xl bg-[#1C1C1E] border border-white/10 shadow-2xl animate-in zoom-in-95 duration-300">
+                <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900/50">
+                  <h3 className="text-sm font-black text-zinc-100 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    {language === 'bn' ? 'ক্রয়কৃত রসিদের প্রমাণ' : 'Purchase Receipt Proof'}
+                  </h3>
+                  <span className="text-xs bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-0.5 rounded-full font-bold">
+                    QAR {livePurchase?.amount || '0.00'}
+                  </span>
+                </div>
+                
+                <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-black/40">
+                  <img 
+                    src={receiptViewerUrl} 
+                    alt="Receipt Proof" 
+                    className="max-w-full max-h-[65vh] object-contain rounded-lg border border-white/5 shadow-lg select-none"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+                
+                <div className="p-4 border-t border-white/10 bg-zinc-900/50 flex justify-end">
+                  <button
+                    onClick={() => setIsReceiptViewerOpen(false)}
+                    className="px-5 py-2.5 bg-white/10 hover:bg-white/15 text-white rounded-xl text-xs font-bold transition-all active:scale-95"
+                  >
+                    {language === 'bn' ? 'বন্ধ করুন (Close)' : 'Close'}
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -3058,30 +3220,59 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                   {isScanning ? 'Scanning Receipt...' : 'Scan Receipt'}
                 </p>
                 {receiptImage && !isScanning && (
-                  <div className="mt-3 w-40 h-24 rounded-xl overflow-hidden border shadow-inner" style={{ borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)' }}>
-                    <img src={receiptImage} alt="Receipt" className="w-full h-full object-cover" />
+                  <div className="mt-3 flex flex-col items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReceiptViewerUrl(receiptImage);
+                        setIsReceiptViewerOpen(true);
+                      }}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/25 transition-all active:scale-95 shadow-sm"
+                    >
+                      <Eye size={15} />
+                      <span>{language === 'bn' ? 'রসিদ দেখুন (View Receipt)' : 'View Receipt'}</span>
+                    </button>
+                    <span className="text-[10px] text-zinc-400 font-medium">
+                      {language === 'bn' ? 'রসিদ ডিভাইসে সংরক্ষিত আছে' : 'Receipt saved on device'}
+                    </span>
                   </div>
                 )}
               </div>
 
               {/* Hypermarket Name Section */}
-              <SimpleInput
-                label="Hypermarket Name"
-                value={hypermarketName}
-                onChange={(e: any) => setHypermarketName(e.target.value)}
-                icon={<ShoppingCart size={16} />}
-                isDarkMode={isDarkMode}
-              />
+              <InputFieldThemeContext.Provider value={isDarkMode ? 'dark' : 'light'}>
+                <InputField
+                  label="Hypermarket Name"
+                  name="hypermarketName"
+                  value={hypermarketName}
+                  onChange={(e: any) => setHypermarketName(e.target.value)}
+                  icon={<Store size={16} />}
+                  suggestions={hypermarkets.map(h => h.name)}
+                  required
+                />
 
-              {/* Purchase Date Section */}
-              <SimpleInput
-                label="Purchase Date"
-                type="date"
-                value={purchaseDate}
-                onChange={(e: any) => setPurchaseDate(e.target.value)}
-                icon={<Calendar size={16} />}
-                isDarkMode={isDarkMode}
-              />
+                {/* Purchase Date Section */}
+                <InputField
+                  label="Purchase Date"
+                  name="purchaseDate"
+                  type="date"
+                  value={purchaseDate}
+                  onChange={(e: any) => setPurchaseDate(e.target.value)}
+                  icon={<Calendar size={16} />}
+                  required
+                />
+
+                {/* Purchase Time Section */}
+                <InputField
+                  label="Purchase Time"
+                  name="purchaseTime"
+                  type="time"
+                  value={purchaseTime}
+                  onChange={(e: any) => setPurchaseTime(e.target.value)}
+                  icon={<Clock size={16} />}
+                  required
+                />
+              </InputFieldThemeContext.Provider>
             </div>
 
             <div className="pt-4 border-t" style={{ borderColor: isDarkMode ? 'rgba(255 255 255 0.1)' : 'rgba(0 0 0 0.1)' }}>

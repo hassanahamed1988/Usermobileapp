@@ -503,9 +503,14 @@ CRITICAL: If any field is physically blank, empty, unwritten, or missing in the 
       };
 
       const prompt = `Extract structured data from this Purchase Receipt.
-Extract the hypermarket/supermarket name.
-Extract the list of items purchased. For each item, extract its name, price, quantity (number), and unit (KG, Gram, Piece, etc. Convert to standard words if possible).
-If price or quantity is missing, estimate it from the total or return what is available.`;
+1. Extract the hypermarket/supermarket name.
+2. Extract the purchase Date (formatted as YYYY-MM-DD, e.g. 2026-09-15) and purchase Time (formatted as HH:mm, e.g. 14:35) written on the receipt. If either is not found, return an empty string.
+3. Extract the list of items purchased. For each item, you MUST calculate the normalized price per 1 standard unit (e.g. 1 KG, 1 Litre, or 1 Piece) based on the quantity and total amount listed on the receipt:
+   - If the item's unit is Gram, calculate the price for 1 KG (1000 Grams): pricePerUnit = (totalAmount / quantity) * 1000. E.g., 500 Gram of Rice costing 12 QAR has a pricePerUnit of 24 QAR per KG.
+   - If the item's unit is KG/Kilogram, calculate: pricePerUnit = totalAmount / quantity.
+   - If the item's unit is ML, calculate the price for 1 Litre (1000 ML): pricePerUnit = (totalAmount / quantity) * 1000.
+   - If the item's unit is Litre, calculate: pricePerUnit = totalAmount / quantity.
+   - For other units like Piece, Pcs, Pack, Box, or Bottle, calculate the price for 1 single Piece: pricePerUnit = totalAmount / quantity. E.g. a pack of 3 costing 9 QAR has a pricePerUnit of 3 QAR.`;
 
       const response = await generateWithFallback(
         ai,
@@ -516,6 +521,8 @@ If price or quantity is missing, estimate it from the total or return what is av
             type: Type.OBJECT,
             properties: {
               hypermarketName: { type: Type.STRING, description: "Extracted Supermarket / Hypermarket Name. Empty string if not found." },
+              date: { type: Type.STRING, description: "Extracted purchase date formatted as YYYY-MM-DD. Empty string if not found." },
+              time: { type: Type.STRING, description: "Extracted purchase time formatted as HH:mm. Empty string if not found." },
               items: {
                 type: Type.ARRAY,
                 description: "List of extracted purchase items.",
@@ -523,15 +530,16 @@ If price or quantity is missing, estimate it from the total or return what is av
                   type: Type.OBJECT,
                   properties: {
                     name: { type: Type.STRING, description: "Item name" },
-                    price: { type: Type.NUMBER, description: "Item price per unit or total price if unit price not clear. Number only." },
-                    quantity: { type: Type.NUMBER, description: "Quantity of the item. Number only." },
-                    unit: { type: Type.STRING, description: "Unit of the quantity (e.g., 'KG', 'Gram', 'Piece', 'Litre')." }
+                    quantity: { type: Type.NUMBER, description: "Quantity of the item (e.g., 500 for Grams, 1.5 for KG, 2 for Pieces). Number only." },
+                    unit: { type: Type.STRING, description: "Unit of the quantity (e.g., 'KG', 'Gram', 'Piece', 'Litre')." },
+                    totalAmount: { type: Type.NUMBER, description: "The total amount/cost paid for this item in the receipt. Number only." },
+                    pricePerUnit: { type: Type.NUMBER, description: "Calculated normalized price per 1 standard unit (1 KG, 1 Litre, or 1 Piece) based on totalAmount and quantity. Number only." }
                   },
-                  required: ["name", "price", "quantity", "unit"]
+                  required: ["name", "quantity", "unit", "totalAmount", "pricePerUnit"]
                 }
               }
             },
-            required: ["hypermarketName", "items"]
+            required: ["hypermarketName", "date", "time", "items"]
           }
         }
       );

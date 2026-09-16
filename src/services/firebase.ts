@@ -92,11 +92,15 @@ export async function saveFirebaseDoc(collectionName: string, docId: string, dat
 }
 
 // Delete a single document from a Firestore collection
-export async function deleteFirebaseDoc(collectionName: string, docId: string): Promise<void> {
+export async function deleteFirebaseDoc(collectionName: string, docId?: string): Promise<void> {
   try {
-    await deleteDoc(doc(db, collectionName, docId));
+    if (docId) {
+      await deleteDoc(doc(db, collectionName, docId));
+    } else {
+      await deleteDoc(doc(db, collectionName));
+    }
   } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, `${collectionName}/${docId}`);
+    handleFirestoreError(error, OperationType.DELETE, docId ? `${collectionName}/${docId}` : collectionName);
   }
 }
 
@@ -107,7 +111,7 @@ export function subscribeFirebaseCollection(collectionName: string, callback: (d
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const items: any[] = [];
       querySnapshot.forEach((doc) => {
-        items.push(decryptSensitiveFields({ ...doc.data(), id: doc.id }));
+        items.push(decryptSensitiveFields({ ...doc.data(), id: doc.id, _path: doc.ref.path }));
       });
       callback(items);
     }, (error) => {
@@ -128,7 +132,7 @@ export function subscribeFirebaseCollectionGroup(collectionName: string, callbac
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const items: any[] = [];
       querySnapshot.forEach((doc) => {
-        items.push(decryptSensitiveFields({ ...doc.data(), id: doc.id }));
+        items.push(decryptSensitiveFields({ ...doc.data(), id: doc.id, _path: doc.ref.path }));
       });
       callback(items);
     }, (error) => {
