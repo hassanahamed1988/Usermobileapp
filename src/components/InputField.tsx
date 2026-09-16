@@ -218,7 +218,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(({
 
     const [dynamicColor, setDynamicColor] = useState(isLightWhite ? '#000000' : '#ffffff');
     const [isDarkBg, setIsDarkBg] = useState(!isLightWhite);
-    const [dynamicBgColor, setDynamicBgColor] = useState(isLightWhite ? '#ffffff' : '#111827');
+    const [dynamicBgColor, setDynamicBgColor] = useState(isLightWhite ? 'var(--card-bg-solid, var(--card-bg, #ffffff))' : 'var(--card-bg-solid, var(--card-bg, #111827))');
     const localContainerRef = useRef<HTMLDivElement>(null);
 
     const effectiveIsLight = isLoginView 
@@ -285,7 +285,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(({
 
         // 3. Fall back to theme defaults if still transparent
         if (bg === 'rgba(0,0,0,0)' || bg === 'transparent' || !bg) {
-          bg = isDarkMode ? '#111827' : '#ffffff';
+          bg = isDarkMode ? 'var(--card-bg-solid, var(--card-bg, #111827))' : 'var(--card-bg-solid, var(--card-bg, #ffffff))';
         }
 
         const getLuminance = (colorStr: string): number => {

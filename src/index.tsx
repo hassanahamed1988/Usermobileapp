@@ -1667,6 +1667,30 @@ root.render(
         background-color: #121212 !important;
         border-radius: 0 !important;
       }
+      
+      /* General autofill overrides for all input fields to prevent flashing yellow/black backgrounds */
+      .light .input-field-container input:-webkit-autofill,
+      .light .input-field-container input:-webkit-autofill:hover,
+      .light .input-field-container input:-webkit-autofill:focus,
+      .light .input-field-container input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 30px var(--card-bg-solid, #ffffff) inset !important;
+        -webkit-text-fill-color: #000000 !important;
+        background-color: var(--card-bg-solid, #ffffff) !important;
+        border-radius: 0 !important;
+      }
+      .dark .input-field-container input:-webkit-autofill,
+      .dark .input-field-container input:-webkit-autofill:hover,
+      .dark .input-field-container input:-webkit-autofill:focus,
+      .dark .input-field-container input:-webkit-autofill:active,
+      .dark-mode .input-field-container input:-webkit-autofill,
+      .dark-mode .input-field-container input:-webkit-autofill:hover,
+      .dark-mode .input-field-container input:-webkit-autofill:focus,
+      .dark-mode .input-field-container input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 30px var(--card-bg-solid, #121212) inset !important;
+        -webkit-text-fill-color: #ffffff !important;
+        background-color: var(--card-bg-solid, #121212) !important;
+        border-radius: 0 !important;
+      }
 
       .input-field-container[data-login="true"][data-theme-mode="light"]:not(.search-field-container) label {
         color: #4b5563 !important;
