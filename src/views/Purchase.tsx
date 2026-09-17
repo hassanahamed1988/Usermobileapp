@@ -2547,17 +2547,28 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                         cameraInputRef.current?.click();
                         setIsActionSheetOpen(false);
                       }}
-                      className="flex flex-col items-center justify-center p-4 rounded-2xl bg-emerald-500/5 dark:bg-emerald-500/10 border-2 border-emerald-400/80 dark:border-emerald-500/50 hover:bg-emerald-500/10 transition-all active:scale-95 cursor-pointer text-center group"
+                      className="relative flex flex-col items-center justify-center p-[2.5px] rounded-2xl overflow-hidden cursor-pointer active:scale-95 hover:scale-[1.02] transition-all text-center group shadow-md"
                     >
-                      <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 flex items-center justify-center mb-2.5 shadow-sm group-hover:scale-105 transition-transform">
-                        <Camera size={22} />
+                      {/* Rotating Border */}
+                      <div 
+                        className="absolute inset-[-150%] animate-[spin_3s_linear_infinite]"
+                        style={{
+                          background: 'conic-gradient(from 0deg, #10b981 0%, #06b6d4 18%, #3b82f6 36%, #8b5cf6 54%, #ec4899 72%, #f59e0b 90%, #10b981 100%)'
+                        }}
+                      />
+                      {/* Inner Card wrapper */}
+                      <div className="w-full h-full flex flex-col items-center justify-center p-4 rounded-[13.5px] bg-zinc-50 dark:bg-zinc-900 relative z-10 transition-colors group-hover:bg-zinc-100 dark:group-hover:bg-zinc-800/80">
+                        {/* Clean Camera Icon with soft colored bg */}
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center mb-2.5 bg-teal-50 dark:bg-teal-950/40 border border-teal-100 dark:border-teal-900/30">
+                          <Camera size={22} className="text-teal-500 dark:text-teal-400" />
+                        </div>
+                        <span className="text-sm font-bold text-zinc-800 dark:text-zinc-100">
+                          {language === 'bn' ? 'ক্যামেরা' : 'Camera'}
+                        </span>
+                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1 leading-none">
+                          {language === 'bn' ? 'একটি ছবি তুলুন' : 'Take a photo'}
+                        </span>
                       </div>
-                      <span className="text-sm font-bold text-zinc-800 dark:text-zinc-100">
-                        {language === 'bn' ? 'ক্যামেরা' : 'Camera'}
-                      </span>
-                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 leading-none">
-                        {language === 'bn' ? 'একটি ছবি তুলুন' : 'Take a photo'}
-                      </span>
                     </div>
 
                     {/* Gallery Button */}
@@ -2568,28 +2579,39 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                         galleryInputRef.current?.click();
                         setIsActionSheetOpen(false);
                       }}
-                      className="flex flex-col items-center justify-center p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-all active:scale-95 cursor-pointer text-center group"
+                      className="relative flex flex-col items-center justify-center p-[2.5px] rounded-2xl overflow-hidden cursor-pointer active:scale-95 hover:scale-[1.02] transition-all text-center group shadow-md"
                     >
-                      <div className="w-12 h-12 rounded-full bg-zinc-500/10 text-zinc-500 dark:text-zinc-400 flex items-center justify-center mb-2.5 shadow-sm group-hover:scale-105 transition-transform">
-                        <Image size={22} />
+                      {/* Rotating Border */}
+                      <div 
+                        className="absolute inset-[-150%] animate-[spin_3s_linear_infinite]"
+                        style={{
+                          background: 'conic-gradient(from 0deg, #10b981 0%, #06b6d4 18%, #3b82f6 36%, #8b5cf6 54%, #ec4899 72%, #f59e0b 90%, #10b981 100%)'
+                        }}
+                      />
+                      {/* Inner Card wrapper */}
+                      <div className="w-full h-full flex flex-col items-center justify-center p-4 rounded-[13.5px] bg-zinc-50 dark:bg-zinc-900 relative z-10 transition-colors group-hover:bg-zinc-100 dark:group-hover:bg-zinc-800/80">
+                        {/* Clean Gallery Icon with soft colored bg */}
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center mb-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/30">
+                          <Image size={22} className="text-blue-500 dark:text-blue-400" />
+                        </div>
+                        <span className="text-sm font-bold text-zinc-800 dark:text-zinc-100">
+                          {language === 'bn' ? 'গ্যালারি' : 'Gallery'}
+                        </span>
+                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1 leading-none">
+                          {language === 'bn' ? 'ফাইল নির্বাচন করুন' : 'Select a file'}
+                        </span>
                       </div>
-                      <span className="text-sm font-bold text-zinc-800 dark:text-zinc-100">
-                        {language === 'bn' ? 'গ্যালারি' : 'Gallery'}
-                      </span>
-                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 leading-none">
-                        {language === 'bn' ? 'ফাইল নির্বাচন করুন' : 'Select a file'}
-                      </span>
                     </div>
                   </div>
 
-                  {/* Cancel Button */}
+                  {/* Cancel Button - Darker background for high contrast */}
                   <button 
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       setIsActionSheetOpen(false);
                     }}
-                    className="w-full py-3.5 bg-zinc-100 dark:bg-zinc-800/80 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-2xl font-bold text-zinc-800 dark:text-zinc-200 active:scale-98 transition-all text-sm tracking-wide"
+                    className="w-full py-3.5 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 rounded-2xl font-bold text-zinc-900 dark:text-zinc-100 active:scale-98 transition-all text-sm tracking-wide"
                   >
                     {language === 'bn' ? 'বাতিল' : 'Cancel'}
                   </button>
@@ -3207,13 +3229,11 @@ const fileName = `Invoice_${purchase.id}.pdf`;
           <div className="py-6 space-y-6 purchase-form-container">
             {/* Single Premium Card containing Camera/Scanner, Hypermarket Name, and Purchase Date */}
             <div 
-              className="bg-card-bg p-5 rounded-2xl border space-y-5 shadow-sm"
-              style={{ 
-                borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)'
-              }}
+              className="bg-card-bg border-[var(--dynamic-card-border)] shadow-[var(--dynamic-card-shadow)] p-5 rounded-2xl space-y-5"
+              style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
             >
               {/* Premium Camera/Scanner Section (First Line inside Card) */}
-              <div className="flex flex-col items-center py-4 bg-black/5 dark:bg-white/5 rounded-xl border border-dashed" style={{ borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' }}>
+              <div className="flex flex-col items-center py-4 bg-black/5 dark:bg-white/5 rounded-xl border border-dashed border-border-main/30">
                 <input 
                   type="file" 
                   accept="image/*" 
@@ -3225,7 +3245,7 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                 />
                 <input 
                   type="file" 
-                  accept="image/*"
+                  accept="image/*" 
                   onChange={handleScanReceipt}
                   ref={galleryInputRef}
                   className="hidden"
@@ -3237,25 +3257,15 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                     e.stopPropagation();
                     if (!isScanning) setIsActionSheetOpen(true);
                   }}
-                  className="relative overflow-hidden rounded-full p-0.5 bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-500 shadow-xl cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300 group"
+                  className="relative flex items-center justify-center w-16 h-16 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-900/30 cursor-pointer hover:scale-105 hover:bg-teal-100 dark:hover:bg-teal-950/60 active:scale-95 transition-all duration-300 shadow-sm group"
                 >
-                  <div 
-                    className={`w-16 h-16 rounded-full flex flex-col items-center justify-center relative z-10 transition-colors ${
-                      isScanning ? 'animate-pulse' : ''
-                    }`}
-                    style={{ 
-                      backgroundColor: isDarkMode ? '#121212' : '#ffffff' 
-                    }}
-                  >
-                    <div className="absolute inset-0 rounded-full bg-current opacity-0 group-hover:opacity-5 transition-opacity" style={{ color: 'var(--primary)' }}></div>
-                    
-                    {isScanning ? (
-                      <Scan size={24} className="animate-spin text-teal-500" />
-                    ) : (
-                      <Camera size={24} className="text-teal-500 group-hover:text-cyan-500 transition-colors" />
-                    )}
-                  </div>
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-500 blur-md opacity-40 group-hover:opacity-75 transition-opacity duration-300 -z-10"></div>
+                  <div className="absolute inset-0 rounded-xl bg-current opacity-0 group-hover:opacity-5 transition-opacity" style={{ color: 'var(--primary)' }}></div>
+                  
+                  {isScanning ? (
+                    <Scan size={26} className="animate-spin text-teal-500" />
+                  ) : (
+                    <Camera size={26} className="text-teal-500 dark:text-teal-400 group-hover:scale-105 transition-transform" />
+                  )}
                 </div>
                 <p className="text-[11px] font-black uppercase mt-2 tracking-wider" style={{ color: isDarkMode ? '#e4e4e7' : '#27272a' }}>
                   {isScanning ? 'Scanning Receipt...' : 'Scan Receipt'}
@@ -3324,10 +3334,8 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                 {purchaseItems.map((item, index) => (
                   <div 
                     key={item.id} 
-                    className="bg-card-bg p-4 border rounded-xl space-y-3 relative"
-                    style={{ 
-                      borderColor: isDarkMode ? 'rgba(255 255 255 0.2)' : 'rgba(0 0 0 0.2)'
-                    }}
+                    className="bg-card-bg border-[var(--dynamic-card-border)] shadow-[var(--dynamic-card-shadow)] p-4 rounded-xl space-y-3 relative"
+                    style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
                   >
                     <div className="flex justify-between items-center pb-2 border-b border-dashed" style={{ borderColor: isDarkMode ? 'rgba(255 255 255 0.1)' : 'rgba(0 0 0 0.1)' }}>
                       <span className="text-xs font-black uppercase tracking-wider" style={{ color: isDarkMode ? '#FFFFFF' : '#000000' }}>
@@ -3408,9 +3416,10 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                 ))}
                 
                 {purchaseItems.length === 0 && (
-                  <div className="bg-card-bg text-center p-6 border border-dashed rounded-xl text-xs text-text-main" style={{ 
-                    borderColor: isDarkMode ? 'rgba(255 255 255 0.2)' : 'rgba(0 0 0 0.2)'
-                  }}>
+                  <div 
+                    className="bg-card-bg border-[var(--dynamic-card-border)] shadow-[var(--dynamic-card-shadow)] text-center p-6 border-dashed rounded-xl text-xs text-text-main"
+                    style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
+                  >
                     No items added yet. Scan a receipt or add manually.
                   </div>
                 )}
@@ -3430,9 +3439,10 @@ const fileName = `Invoice_${purchase.id}.pdf`;
             </div>
             
             {purchaseItems.length > 0 && (
-              <div className="bg-card-bg p-4 rounded-xl flex items-center justify-between border" style={{
-                borderColor: isDarkMode ? 'rgba(255 255 255 0.2)' : 'rgba(0 0 0 0.2)'
-              }}>
+              <div 
+                className="bg-card-bg border-[var(--dynamic-card-border)] shadow-[var(--dynamic-card-shadow)] p-4 rounded-xl flex items-center justify-between"
+                style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
+              >
                 <span className="font-bold text-text-main">Total Amount</span>
                 <span className="font-black text-lg text-text-main">
                   QAR {purchaseItems.reduce((sum, item) => sum + (Number(item.total) || 0), 0).toFixed(2)}

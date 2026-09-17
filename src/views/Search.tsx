@@ -300,12 +300,12 @@ const Search: React.FC = () => {
       <div  className="mb-[8px]">
         <style>{`
           #global-search-input {
-            color: var(--search-text-color, #ffffff) !important;
-            -webkit-text-fill-color: var(--search-text-color, #ffffff) !important;
+            color: var(--search-text-color, var(--text-main, #000000)) !important;
+            -webkit-text-fill-color: var(--search-text-color, var(--text-main, #000000)) !important;
           }
           #global-search-input::placeholder {
-            color: var(--search-label-color, rgba(255,255,255,0.7)) !important;
-            -webkit-text-fill-color: var(--search-label-color, rgba(255,255,255,0.7)) !important;
+            color: var(--search-label-color, var(--text-muted, rgba(0,0,0,0.55))) !important;
+            -webkit-text-fill-color: var(--search-label-color, var(--text-muted, rgba(0,0,0,0.55))) !important;
           }
         `}</style>
         <div 
@@ -319,9 +319,9 @@ const Search: React.FC = () => {
             inputMode={(activeTab === 'USER' && (userSearchType === 'MOBILE' || userSearchType === 'ID' || userSearchType === 'ID_NUMBER')) || (activeTab === 'TRIP' && tripSearchType === 'BAYAN') ? 'numeric' : undefined}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            icon={<SearchIcon size={22} className="text-white/70" />}
+            icon={<SearchIcon size={22} />}
             className="h-14 text-lg bg-theme-card"
-            inputClassName="!text-white !placeholder-white/70 font-bold"
+            inputClassName="font-bold"
             readOnly={isSearchDisabled}
           />
         </div>

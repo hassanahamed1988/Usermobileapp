@@ -559,7 +559,7 @@ const PendingBreakdownPage = ({ data, total, onClose, currency, isDark, wallpape
               className="flex-1 overflow-y-auto pt-global px-global space-y-4 pb-[calc(160px+env(safe-area-inset-bottom))]"
             >
               {/* Pending Balance Top Summary Card */}
-              <div className="relative overflow-hidden rounded-[10px] p-6 text-white shadow-xl bg-gradient-to-br from-orange-500 via-orange-600 to-amber-700 border border-white/10">
+              <div className="relative overflow-hidden rounded-[10px] p-6 text-white bg-gradient-to-br from-orange-500 via-orange-600 to-amber-700 border border-white/10" style={{ boxShadow: 'var(--dynamic-card-shadow)' }}>
                 {/* Watermark: Clock icon */}
                 <div className="absolute right-[-24px] bottom-[-24px] opacity-15 pointer-events-none scale-110">
                   <Clock size={140} strokeWidth={1} className="text-white" />
@@ -759,7 +759,7 @@ const PendingBreakdownPage = ({ data, total, onClose, currency, isDark, wallpape
                       const cardDetails = getCategoryCardDetails(selectedCategory || '');
                       const CardIcon = cardDetails.icon;
                       return (
-                        <div className={`rounded-[10px] p-6 text-white shadow-lg relative overflow-hidden mb-4 ${cardDetails.gradient}`}>
+                        <div className={`rounded-[10px] p-6 text-white relative overflow-hidden mb-4 ${cardDetails.gradient}`} style={{ boxShadow: 'var(--dynamic-card-shadow)' }}>
                           <div className="absolute right-0 bottom-0 opacity-15 pointer-events-none translate-x-4 translate-y-4">
                             <CardIcon size={120} />
                           </div>
@@ -896,7 +896,8 @@ const PendingBreakdownPage = ({ data, total, onClose, currency, isDark, wallpape
                     return (
                         <div 
                           key={item.id || index}
-                          className="group bg-white dark:bg-[#1e293b] hover:bg-slate-50/50 dark:hover:bg-slate-800/50 border border-slate-100 dark:border-white/5 rounded-[8px] p-4 flex items-center justify-between shadow-[0_1px_3px_rgba(0,0,0,0.02)] hover:shadow-md hover:-translate-y-[1px] transition-all duration-200 ease-out w-full cursor-pointer relative overflow-hidden pointer-events-auto"
+                          className="group bg-card-bg border border-[var(--dynamic-card-border)] rounded-[8px] p-4 flex items-center justify-between hover:shadow-md hover:-translate-y-[1px] transition-all duration-200 ease-out w-full cursor-pointer relative overflow-hidden pointer-events-auto"
+                          style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
                           onClick={() => setSelectedItemForPopup(item)}
                         >
                           <div className="flex items-center gap-4 min-w-0 flex-1">
@@ -957,7 +958,8 @@ const PendingBreakdownPage = ({ data, total, onClose, currency, isDark, wallpape
             
             {/* Modal Box */}
             <div 
-              className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-[28px] overflow-hidden shadow-2xl border border-slate-100 dark:border-white/10 z-10 flex flex-col h-[520px] animate-scale-in"
+              className="relative w-full max-w-md bg-theme-card rounded-[28px] overflow-hidden border border-[var(--dynamic-card-border)] z-10 flex flex-col h-[520px] animate-scale-in"
+              style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
             >
               {/* Premium Header Banner */}
               <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-5 flex items-center justify-between">
@@ -1003,7 +1005,10 @@ const PendingBreakdownPage = ({ data, total, onClose, currency, isDark, wallpape
                 </div>
 
                 {/* Details list */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl p-4 space-y-3.5 shadow-sm">
+                <div 
+                  className="bg-card-bg border border-[var(--dynamic-card-border)] rounded-2xl p-4 space-y-3.5 shadow-sm"
+                  style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
+                >
                   {/* Source of Income */}
                   <div className="flex justify-between items-start py-0.5">
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0">
@@ -1067,7 +1072,10 @@ const PendingBreakdownPage = ({ data, total, onClose, currency, isDark, wallpape
                 </div>
 
                 {/* Timeline Section */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl p-4 shadow-sm">
+                <div 
+                  className="bg-card-bg border border-[var(--dynamic-card-border)] rounded-2xl p-4 shadow-sm"
+                  style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
+                >
                   <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-4 text-center">
                     {language === 'bn' ? 'লেনদেনের টাইমলাইন' : 'Transaction Timeline'}
                   </h4>
@@ -1611,7 +1619,7 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
                   const cardDetails = getCategoryCardDetails(selectedCategoryBreakdown || '');
                   const CardIcon = cardDetails.icon;
                   return (
-                    <div className={`rounded-[10px] p-6 text-white shadow-lg relative overflow-hidden mb-4 ${cardDetails.gradient}`}>
+                    <div className={`rounded-[10px] p-6 text-white relative overflow-hidden mb-4 ${cardDetails.gradient}`} style={{ boxShadow: 'var(--dynamic-card-shadow)' }}>
                       <div className="absolute right-0 bottom-0 opacity-15 pointer-events-none translate-x-4 translate-y-4">
                         <CardIcon size={120} />
                       </div>
@@ -1735,7 +1743,10 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
 
               if (displayPayments.length === 0) {
                 return (
-                  <div className="text-center py-10 bg-white dark:bg-[#111111] rounded-[10px] border border-black/5 dark:border-white/5">
+                  <div 
+                    className="text-center py-10 bg-card-bg rounded-[10px] border border-[var(--dynamic-card-border)]"
+                    style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
+                  >
                     <p className="text-sm font-bold text-text-muted">No records found for {selectedYear}</p>
                   </div>
                 );
@@ -1906,7 +1917,7 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
                 </div>
 
                 {/* Details list */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl p-4 space-y-3.5 shadow-sm">
+                <div className="bg-card-bg border border-[var(--dynamic-card-border)] rounded-2xl p-4 space-y-3.5 shadow-sm" style={{ boxShadow: 'var(--dynamic-card-shadow)' }}>
                   {/* Category */}
                   <div className="flex justify-between items-center py-0.5">
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
@@ -2234,11 +2245,11 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
                     isDarkMode ? 'text-white' : 'text-black'
                   }`}
                 >
-                  <option value="" className={isDarkMode ? 'bg-theme-card text-white/40' : 'bg-white text-neutral-500'}>
+                  <option value="" className={isDarkMode ? 'bg-theme-card text-white/40' : 'bg-card-bg text-neutral-500'}>
                     {t.SELECT_PURPOSE || 'Select Purpose'}
                   </option>
                   {advanceReasons && advanceReasons.map((reason, idx) => (
-                    <option key={idx} value={reason} className={isDarkMode ? 'bg-theme-card text-white' : 'bg-white text-black'}>
+                    <option key={idx} value={reason} className={isDarkMode ? 'bg-theme-card text-white' : 'bg-card-bg text-black'}>
                       {reason}
                     </option>
                   ))}
@@ -2504,7 +2515,7 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
         {/* Scrollable Container */}
         <div className="flex-1 overflow-y-auto pt-global px-global pb-[calc(160px+env(safe-area-inset-bottom))] space-y-4">
           {/* Net Balance Summary Card with Watermark */}
-          <div className="relative overflow-hidden rounded-[10px] p-6 text-white shadow-xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 border border-white/10">
+          <div className="relative overflow-hidden rounded-[10px] p-6 text-white bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 border border-white/10" style={{ boxShadow: 'var(--dynamic-card-shadow)' }}>
             {/* Watermark: Wallet icon */}
             <div className="absolute right-[-24px] bottom-[-24px] opacity-15 pointer-events-none scale-110">
               <Wallet size={140} strokeWidth={1} className="text-white" />
@@ -2577,7 +2588,10 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
           </div>
 
           {/* Income Section */}
-          <div className="bg-white dark:bg-[#111111] rounded-[10px] overflow-hidden shadow-sm border border-black/5 dark:border-white/5">
+          <div 
+            className="bg-card-bg rounded-[10px] overflow-hidden border-[var(--dynamic-card-border)]"
+            style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
+          >
             <div className="bg-emerald-500/10 px-4 py-3 border-b border-emerald-500/20">
               <h4 className="text-[10px] font-black text-text-main opacity-90 uppercase tracking-widest">Income Breakdown</h4>
             </div>
@@ -2620,7 +2634,10 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
           </div>
 
           {/* Deduction Section */}
-          <div className="bg-white dark:bg-[#111111] rounded-[10px] overflow-hidden shadow-sm border border-black/5 dark:border-white/5">
+          <div 
+            className="bg-card-bg rounded-[10px] overflow-hidden border-[var(--dynamic-card-border)]"
+            style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
+          >
             <div className="bg-rose-500/10 px-4 py-3 border-b border-rose-500/20">
               <h4 className="text-[10px] font-black text-text-main opacity-90 uppercase tracking-widest">Deduction Breakdown</h4>
             </div>
@@ -2681,7 +2698,8 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
               <div 
                 key={item.label} 
                 onClick={() => alert(`Showing monthly breakdown for ${item.label}`)}
-                className="bg-white dark:bg-[#111111] rounded-2xl p-5 shadow-sm flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors"
+                className="bg-card-bg border-[var(--dynamic-card-border)] rounded-2xl p-5 flex justify-between items-center cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
               >
                 <div className="flex items-center gap-4">
                   <div className={`w-10 h-10 rounded-2xl bg-${item.color}-500/10 flex items-center justify-center text-${item.color}-500`}>
@@ -2766,7 +2784,8 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
                   <div className="grid grid-cols-2 gap-3">
                     <button 
                       onClick={() => setActiveSection('INCOME')}
-                      className="group relative overflow-hidden flex flex-col items-start justify-between min-h-[96px] md:min-h-[112px] p-4 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 border border-emerald-400/20 text-left shadow-lg"
+                      className="group relative overflow-hidden flex flex-col items-start justify-between min-h-[96px] md:min-h-[112px] p-4 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 border border-emerald-400/20 text-left"
+                      style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
                     >
                       {/* Watermark Icon */}
                       <div className="absolute right-[-16px] bottom-[-16px] opacity-15 pointer-events-none scale-100">
@@ -2787,7 +2806,8 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
 
                     <button 
                       onClick={() => setActiveSection('DEDUCTION')}
-                      className="group relative overflow-hidden flex flex-col items-start justify-between min-h-[96px] md:min-h-[112px] p-4 rounded-xl bg-gradient-to-br from-rose-500 via-rose-600 to-red-700 border border-rose-400/20 text-left shadow-lg hover:brightness-105 active:scale-95 transition-all cursor-pointer"
+                      className="group relative overflow-hidden flex flex-col items-start justify-between min-h-[96px] md:min-h-[112px] p-4 rounded-xl bg-gradient-to-br from-rose-500 via-rose-600 to-red-700 border border-rose-400/20 text-left hover:brightness-105 active:scale-95 transition-all cursor-pointer"
+                      style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
                     >
                       {/* Watermark Icon */}
                       <div className="absolute right-[-16px] bottom-[-16px] opacity-15 pointer-events-none scale-100">
@@ -2969,7 +2989,7 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
                 </div>
 
                 {/* Details list */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-2xl p-4 space-y-3.5 shadow-sm">
+                <div className="bg-card-bg border border-[var(--dynamic-card-border)] rounded-2xl p-4 space-y-3.5 shadow-sm" style={{ boxShadow: 'var(--dynamic-card-shadow)' }}>
                   {/* Category */}
                   <div className="flex justify-between items-center py-0.5">
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
@@ -3151,7 +3171,8 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
             
             
             
-            className="relative w-full max-w-md bg-white dark:bg-[#111111] rounded-t-3xl p-6 shadow-2xl border-t border-black/5 dark:border-white/5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] max-h-[85vh] overflow-y-auto z-50"
+            className="relative w-full max-w-md bg-theme-card rounded-t-3xl p-6 border-t border-[var(--dynamic-card-border)] pb-[calc(1.5rem+env(safe-area-inset-bottom))] max-h-[85vh] overflow-y-auto z-50"
+            style={{ boxShadow: 'var(--dynamic-card-shadow)' }}
           >
             {/* Top notch */}
             <div className="w-12 h-1 bg-gray-300 dark:bg-zinc-700 rounded-full mx-auto mb-5" />

@@ -73,14 +73,22 @@ root.render(
       }
 
       /* Global Card Base Drop Shadow & Elevation - Main Cards */
+      /* Completely uniform & equal on all four sides: 0px horizontal, 0px vertical */
       .bg-theme-card, 
       .bg-card-bg, 
       .glass-card, 
       .reset-option-card {
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02) !important;
-        -webkit-box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02) !important;
-        border: 1px solid rgba(0, 0, 0, 0.04) !important;
+        box-shadow: var(--dynamic-card-shadow, 0 0 16px rgba(0, 0, 0, 0.12)) !important;
+        -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 16px rgba(0, 0, 0, 0.12)) !important;
+        border: var(--dynamic-card-border, 1px solid rgba(0, 0, 0, 0.04)) !important;
         isolation: isolate !important;
+      }
+
+      .bg-theme-card:hover, 
+      .bg-card-bg:hover, 
+      .glass-card:hover {
+        box-shadow: var(--dynamic-card-shadow-hover, var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.18))) !important;
+        -webkit-box-shadow: var(--dynamic-card-shadow-hover, var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.18))) !important;
       }
 
       .dark .bg-theme-card,
@@ -88,11 +96,24 @@ root.render(
       .dark .glass-card,
       .dark .reset-option-card,
       .dark-mode .bg-theme-card,
-      .dark-mode .bg-card-bg {
-        box-shadow: none !important;
-        -webkit-box-shadow: none !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      .dark-mode .bg-card-bg,
+      .dark-mode .glass-card,
+      .dark-mode .reset-option-card {
+        box-shadow: var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.85)) !important;
+        -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.85)) !important;
+        border: var(--dynamic-card-border, 1px solid rgba(255, 255, 255, 0.08)) !important;
         isolation: isolate !important;
+      }
+
+      .dark .bg-theme-card:hover,
+      .dark .bg-card-bg:hover,
+      .dark .glass-card:hover,
+      .dark-mode .bg-theme-card:hover,
+      .dark-mode .bg-card-bg:hover,
+      .dark-mode .glass-card:hover,
+      .dark-mode .reset-option-card:hover {
+        box-shadow: var(--dynamic-card-shadow-hover, var(--dynamic-card-shadow, 0 0 24px rgba(0, 0, 0, 1))) !important;
+        -webkit-box-shadow: var(--dynamic-card-shadow-hover, var(--dynamic-card-shadow, 0 0 24px rgba(0, 0, 0, 1))) !important;
       }
 
       /* 1. Sub Cards inside Main Card - Disable Box Borders and Border Shadows */
@@ -713,42 +734,51 @@ root.render(
         background-color: rgba(255, 255, 255, 0.92) !important;
         backdrop-filter: blur(16px) saturate(1.2) !important;
         -webkit-backdrop-filter: blur(16px) saturate(1.2) !important;
-        box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.12), 0 2px 5px -1px rgba(15, 23, 42, 0.06) !important;
-        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        box-shadow: var(--dynamic-card-shadow, 0 0 16px rgba(0, 0, 0, 0.12)) !important;
+        -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 16px rgba(0, 0, 0, 0.12)) !important;
+        border: var(--dynamic-card-border, 1px solid rgba(0, 0, 0, 0.04)) !important;
         --text-main: #111827 !important;
         --text-muted: #4b5563 !important;
         --text-inverse: var(--text-inverse, #ffffff) !important;
         /* Removed broad color override to allow Tailwind text colors to work */
       }
 
+      .light .bg-theme-card:hover,
+      .light .bg-card-bg:hover,
+      .light .glass-card:hover,
+      .light .reset-option-card:hover {
+        box-shadow: var(--dynamic-card-shadow-hover, var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.18))) !important;
+        -webkit-box-shadow: var(--dynamic-card-shadow-hover, var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.18))) !important;
+      }
+
       /* Light Mode Sub Cards & Selection Panels inside Main Cards - Clean without box border or shadow */
-      .light .bg-theme-card .bg-theme-card,
-      .light .bg-theme-card .bg-card-bg,
-      .light .bg-theme-card .bg-nested-card,
-      .light .bg-theme-card .bg-white,
-      .light .bg-theme-card .bg-slate-50,
-      .light .bg-theme-card .bg-slate-100,
-      .light .bg-theme-card .bg-zinc-50,
-      .light .bg-theme-card .bg-zinc-100,
-      .light .bg-theme-card .sub-card,
+      .light .bg-theme-card .bg-theme-card:not(.input-field-container):not(.search-field-container),
+      .light .bg-theme-card .bg-card-bg:not(.input-field-container):not(.search-field-container),
+      .light .bg-theme-card .bg-nested-card:not(.input-field-container):not(.search-field-container),
+      .light .bg-theme-card .bg-white:not(.input-field-container):not(.search-field-container),
+      .light .bg-theme-card .bg-slate-50:not(.input-field-container):not(.search-field-container),
+      .light .bg-theme-card .bg-slate-100:not(.input-field-container):not(.search-field-container),
+      .light .bg-theme-card .bg-zinc-50:not(.input-field-container):not(.search-field-container),
+      .light .bg-theme-card .bg-zinc-100:not(.input-field-container):not(.search-field-container),
+      .light .bg-theme-card .sub-card:not(.input-field-container):not(.search-field-container),
       .light .bg-theme-card .selection-card,
       .light .bg-theme-card .selection-panel,
       .light .bg-theme-card .selection-menu,
       .light .bg-theme-card .selection-opt,
-      .light .bg-card-bg .bg-theme-card,
-      .light .bg-card-bg .bg-card-bg,
-      .light .bg-card-bg .bg-nested-card,
-      .light .bg-card-bg .bg-white,
-      .light .bg-card-bg .bg-slate-50,
-      .light .bg-card-bg .bg-slate-100,
-      .light .bg-card-bg .bg-zinc-50,
-      .light .bg-card-bg .bg-zinc-100,
-      .light .bg-card-bg .sub-card,
+      .light .bg-card-bg .bg-theme-card:not(.input-field-container):not(.search-field-container),
+      .light .bg-card-bg .bg-card-bg:not(.input-field-container):not(.search-field-container),
+      .light .bg-card-bg .bg-nested-card:not(.input-field-container):not(.search-field-container),
+      .light .bg-card-bg .bg-white:not(.input-field-container):not(.search-field-container),
+      .light .bg-card-bg .bg-slate-50:not(.input-field-container):not(.search-field-container),
+      .light .bg-card-bg .bg-slate-100:not(.input-field-container):not(.search-field-container),
+      .light .bg-card-bg .bg-zinc-50:not(.input-field-container):not(.search-field-container),
+      .light .bg-card-bg .bg-zinc-100:not(.input-field-container):not(.search-field-container),
+      .light .bg-card-bg .sub-card:not(.input-field-container):not(.search-field-container),
       .light .bg-card-bg .selection-card,
       .light .bg-card-bg .selection-panel,
       .light .bg-card-bg .selection-menu,
       .light .bg-card-bg .selection-opt,
-      .light .bg-nested-card {
+      .light .bg-nested-card:not(.input-field-container):not(.search-field-container) {
         box-shadow: none !important;
         -webkit-box-shadow: none !important;
         border: none !important;
@@ -952,8 +982,8 @@ root.render(
       .light .global-select-modal input,
       .dark .global-select-modal input {
         background-color: transparent !important;
-        color: var(--search-text-color) !important;
-        -webkit-text-fill-color: var(--search-text-color) !important;
+        color: var(--search-text-color, var(--text-main, currentColor)) !important;
+        -webkit-text-fill-color: var(--search-text-color, var(--text-main, currentColor)) !important;
       }
 
       .search-field-input::placeholder,
@@ -965,9 +995,9 @@ root.render(
       input[name*="search" i]::placeholder,
       input[id*="search" i]::placeholder,
       input[placeholder*="search" i]::placeholder {
-        color: var(--search-label-color, var(--text-muted, #9ca3af)) !important;
-        -webkit-text-fill-color: var(--search-label-color, var(--text-muted, #9ca3af)) !important;
-        opacity: 0.55 !important;
+        color: var(--search-label-color, var(--text-muted, rgba(128, 128, 128, 0.7))) !important;
+        -webkit-text-fill-color: var(--search-label-color, var(--text-muted, rgba(128, 128, 128, 0.7))) !important;
+        opacity: 0.65 !important;
       }
 
       .search-field-container label,
@@ -978,7 +1008,7 @@ root.render(
       .input-field-container:has(input[name*="search" i]) .absolute,
       .input-field-container:has(input[id*="search" i]) .absolute,
       .input-field-container:has(input[placeholder*="search" i]) .absolute {
-        color: var(--search-label-color, var(--text-muted, #9ca3af)) !important;
+        color: var(--search-label-color, var(--text-muted, rgba(128, 128, 128, 0.7))) !important;
       }
 
       .search-field-container input:focus ~ label,
@@ -1000,11 +1030,11 @@ root.render(
         color: var(--search-label-color, currentColor) !important;
       }
 
-      .light .border-gray-100,
-      .light .border-gray-200,
-      .light .border-gray-300,
-      .light .border-slate-100,
-      .light .border-slate-200 {
+      .light .border-gray-100:not(.input-field-container):not(.search-field-container),
+      .light .border-gray-200:not(.input-field-container):not(.search-field-container),
+      .light .border-gray-300:not(.input-field-container):not(.search-field-container),
+      .light .border-slate-100:not(.input-field-container):not(.search-field-container),
+      .light .border-slate-200:not(.input-field-container):not(.search-field-container) {
         border: none !important;
       }
 
@@ -1030,18 +1060,18 @@ root.render(
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
       }
 
-      .dark .border-gray-100,
-      .dark .border-gray-200,
-      .dark .border-slate-100,
-      .dark .border-slate-200,
-      .dark-mode .border-gray-100,
-      .dark-mode .border-gray-200,
-      .dark-mode .border-slate-100,
-      .dark-mode .border-slate-200,
-      .dark-theme .border-gray-100,
-      .dark-theme .border-gray-200,
-      .dark-theme .border-slate-100,
-      .dark-theme .border-slate-200 {
+      .dark .border-gray-100:not(.input-field-container):not(.search-field-container),
+      .dark .border-gray-200:not(.input-field-container):not(.search-field-container),
+      .dark .border-slate-100:not(.input-field-container):not(.search-field-container),
+      .dark .border-slate-200:not(.input-field-container):not(.search-field-container),
+      .dark-mode .border-gray-100:not(.input-field-container):not(.search-field-container),
+      .dark-mode .border-gray-200:not(.input-field-container):not(.search-field-container),
+      .dark-mode .border-slate-100:not(.input-field-container):not(.search-field-container),
+      .dark-mode .border-slate-200:not(.input-field-container):not(.search-field-container),
+      .dark-theme .border-gray-100:not(.input-field-container):not(.search-field-container),
+      .dark-theme .border-gray-200:not(.input-field-container):not(.search-field-container),
+      .dark-theme .border-slate-100:not(.input-field-container):not(.search-field-container),
+      .dark-theme .border-slate-200:not(.input-field-container):not(.search-field-container) {
         border: none !important;
       }
 
@@ -1241,8 +1271,9 @@ root.render(
         background-color: rgba(20, 20, 24, 0.75) !important;
         backdrop-filter: blur(16px) saturate(1.2) !important;
         -webkit-backdrop-filter: blur(16px) saturate(1.2) !important;
-        box-shadow: 0 6px 16px -3px rgba(0, 0, 0, 0.6), 0 2px 6px -2px rgba(0, 0, 0, 0.4) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        box-shadow: var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.85)) !important;
+        -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.85)) !important;
+        border: var(--dynamic-card-border, 1px solid rgba(255, 255, 255, 0.08)) !important;
         transition: none !important;
       }
 
@@ -1287,15 +1318,16 @@ root.render(
         background-color: var(--card-bg-solid, var(--card-bg, #121212)) !important;
         backdrop-filter: blur(16px) saturate(1.2) !important;
         -webkit-backdrop-filter: blur(16px) saturate(1.2) !important;
-        box-shadow: 0 6px 16px -3px rgba(0, 0, 0, 0.6), 0 2px 6px -2px rgba(0, 0, 0, 0.4) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        box-shadow: var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.85)) !important;
+        -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.85)) !important;
+        border: var(--dynamic-card-border, 1px solid rgba(255, 255, 255, 0.08)) !important;
         transition: none !important;
       }
 
-      .dark .border-gray-700,
-      .dark .border-gray-800,
-      .dark .border-white\/10,
-      .dark .border-white\/20 {
+      .dark .border-gray-700:not(.input-field-container):not(.search-field-container),
+      .dark .border-gray-800:not(.input-field-container):not(.search-field-container),
+      .dark .border-white\/10:not(.input-field-container):not(.search-field-container),
+      .dark .border-white\/20:not(.input-field-container):not(.search-field-container) {
         border: none !important;
       }
       

@@ -290,8 +290,40 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(({
 
         const getLuminance = (colorStr: string): number => {
           let clean = (colorStr || '').trim().toLowerCase();
+          
+          // Resolve CSS variables if present
+          if (clean.includes('var(')) {
+            // Try to resolve the variable using computed style of the document root
+            const varMatch = clean.match(/--[a-zA-Z0-9_-]+/g);
+            if (varMatch) {
+              for (const varName of varMatch) {
+                const val = window.getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+                if (val && val !== 'transparent' && !val.includes('var(')) {
+                  clean = val.toLowerCase();
+                  break;
+                }
+              }
+            }
+            
+            // If still contains var, extract the final fallback hex/rgb value (e.g. #ffffff)
+            if (clean.includes('var(')) {
+              const hexFallback = clean.match(/#[0-9a-fA-F]{3,6}/);
+              if (hexFallback) {
+                clean = hexFallback[0];
+              } else {
+                const rgbFallback = clean.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/);
+                if (rgbFallback) {
+                  clean = rgbFallback[0];
+                } else {
+                  // Final fallback based on isDarkMode
+                  clean = isDarkMode ? '#111827' : '#ffffff';
+                }
+              }
+            }
+          }
+
           if (!clean || clean === 'transparent' || clean === 'rgba(0, 0, 0, 0)' || clean === 'rgba(0,0,0,0)') {
-            return 0; // default to dark background
+            return isDarkMode ? 0 : 1; // Match theme mode if completely transparent
           }
           if (clean === 'white' || clean === '#ffffff' || clean === '#fff') return 1;
           if (clean === 'black' || clean === '#000000' || clean === '#000') return 0;
@@ -327,7 +359,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(({
               return 0.2126 * rN + 0.7152 * gN + 0.0722 * bN;
             }
           }
-          return 0; // Default to dark background
+          return isDarkMode ? 0 : 1; // Fallback based on active theme
         };
 
         const luminance = getLuminance(bg);

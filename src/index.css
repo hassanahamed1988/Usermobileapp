@@ -190,21 +190,22 @@ form label {
 }
 
 /* Global Card Base Drop Shadow & Elevation - Main Cards */
+/* Completely uniform & equal on all four sides: 0px horizontal, 0px vertical */
 .bg-theme-card, 
 .bg-card-bg, 
 .glass-card, 
 .reset-option-card {
-  box-shadow: var(--dynamic-card-shadow, 0 4px 16px rgba(0, 0, 0, 0.02));
-  -webkit-box-shadow: var(--dynamic-card-shadow, 0 4px 16px rgba(0, 0, 0, 0.02));
+  box-shadow: var(--dynamic-card-shadow, 0 0 16px rgba(0, 0, 0, 0.12)) !important;
+  -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 16px rgba(0, 0, 0, 0.12)) !important;
   border: var(--dynamic-card-border, 1px solid rgba(0, 0, 0, 0.04)) !important;
   isolation: isolate !important;
-  /* No transition on border-color/box-shadow: these are set once from CSS
-     variables at mount time (see Layout.tsx --dynamic-card-border /
-     --dynamic-card-shadow). Animating them made every freshly-mounted card
-     "flash" its border/shadow into place on first paint of every screen —
-     not how a native Android app's static card chrome behaves. Interactive
-     hover/press feedback is handled separately (see hover:/active: utility
-     classes), so this stays static like a normal app UI. */
+}
+
+.bg-theme-card:hover, 
+.bg-card-bg:hover, 
+.glass-card:hover {
+  box-shadow: var(--dynamic-card-shadow-hover, var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.18))) !important;
+  -webkit-box-shadow: var(--dynamic-card-shadow-hover, var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.18))) !important;
 }
 
 .dark .bg-theme-card,
@@ -212,11 +213,24 @@ form label {
 .dark .glass-card,
 .dark .reset-option-card,
 .dark-mode .bg-theme-card,
-.dark-mode .bg-card-bg {
-  box-shadow: var(--dynamic-card-shadow, none);
-  -webkit-box-shadow: var(--dynamic-card-shadow, none);
+.dark-mode .bg-card-bg,
+.dark-mode .glass-card,
+.dark-mode .reset-option-card {
+  box-shadow: var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.85)) !important;
+  -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.85)) !important;
   border: var(--dynamic-card-border, 1px solid rgba(255, 255, 255, 0.08)) !important;
   isolation: isolate !important;
+}
+
+.dark .bg-theme-card:hover,
+.dark .bg-card-bg:hover,
+.dark .glass-card:hover,
+.dark-mode .bg-theme-card:hover,
+.dark-mode .bg-card-bg:hover,
+.dark-mode .glass-card:hover,
+.dark-mode .reset-option-card:hover {
+  box-shadow: var(--dynamic-card-shadow-hover, var(--dynamic-card-shadow, 0 0 24px rgba(0, 0, 0, 1))) !important;
+  -webkit-box-shadow: var(--dynamic-card-shadow-hover, var(--dynamic-card-shadow, 0 0 24px rgba(0, 0, 0, 1))) !important;
 }
 
 /* Smooth floating label transition */

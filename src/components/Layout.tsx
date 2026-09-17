@@ -433,12 +433,16 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
   const rgbPrimary = hexToRgbString(currentThemeObj.primary || '#10b981');
 
   const dynamicCardShadow = isDarkMode
-    ? `0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 4px 20px rgba(${rgbShadow}, 0.12)`
-    : `0 10px 30px -5px rgba(0, 0, 0, 0.03), 0 4px 15px -3px rgba(${rgbShadow}, 0.05)`;
+    ? `0 0 20px rgba(0, 0, 0, 0.85)`
+    : `0 0 16px rgba(0, 0, 0, 0.12)`;
+
+  const dynamicCardShadowHover = isDarkMode
+    ? `0 0 24px rgba(0, 0, 0, 1)`
+    : `0 0 20px rgba(0, 0, 0, 0.18)`;
 
   const dynamicCardBorder = isDarkMode
-    ? `1px solid rgba(${rgbPrimary}, 0.15)`
-    : `1px solid rgba(${rgbPrimary}, 0.06)`;
+    ? `1px solid transparent`
+    : `1px solid transparent`;
 
   return (
     <div 
@@ -457,6 +461,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
         '--nav-bg': effectiveNavBg || 'var(--nav-bg)',
         '--nav-text': navTextColor,
         '--dynamic-card-shadow': dynamicCardShadow,
+        '--dynamic-card-shadow-hover': dynamicCardShadowHover,
         '--dynamic-card-border': dynamicCardBorder,
       } as React.CSSProperties}
     >
