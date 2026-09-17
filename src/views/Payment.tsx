@@ -1953,8 +1953,40 @@ setShowUserRenewSelection(false);
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
+  const monthsList = useMemo(() => [
+    { value: 1, label: language === 'bn' ? 'জানুয়ারি' : 'January' },
+    { value: 2, label: language === 'bn' ? 'ফেব্রুয়ারি' : 'February' },
+    { value: 3, label: language === 'bn' ? 'মার্চ' : 'March' },
+    { value: 4, label: language === 'bn' ? 'এপ্রিল' : 'April' },
+    { value: 5, label: language === 'bn' ? 'মে' : 'May' },
+    { value: 6, label: language === 'bn' ? 'জুন' : 'June' },
+    { value: 7, label: language === 'bn' ? 'জুলাই' : 'July' },
+    { value: 8, label: language === 'bn' ? 'আগস্ট' : 'August' },
+    { value: 9, label: language === 'bn' ? 'সেপ্টেম্বর' : 'September' },
+    { value: 10, label: language === 'bn' ? 'অক্টোবর' : 'October' },
+    { value: 11, label: language === 'bn' ? 'নভেম্বর' : 'November' },
+    { value: 12, label: language === 'bn' ? 'ডিসেম্বর' : 'December' }
+  ], [language]);
+  const yearsList = useMemo(() => Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i), []);
+
   const [isYearSelectOpen, setIsYearSelectOpen] = useState(false);
   const [isMonthSelectOpen, setIsMonthSelectOpen] = useState(false);
+
+  // States for received list filters bottom sheets
+  const [isReceivedMonthSelectOpen, setIsReceivedMonthSelectOpen] = useState(false);
+  const [isReceivedYearSelectOpen, setIsReceivedYearSelectOpen] = useState(false);
+
+  // States for pending list filters bottom sheets
+  const [isPendingListMonthSelectOpen, setIsPendingListMonthSelectOpen] = useState(false);
+  const [isPendingListYearSelectOpen, setIsPendingListYearSelectOpen] = useState(false);
+
+  // States for pending details filters bottom sheets
+  const [isPendingMonthSelectOpen, setIsPendingMonthSelectOpen] = useState(false);
+  const [isPendingYearSelectOpen, setIsPendingYearSelectOpen] = useState(false);
+
+  // States for received subpage filters bottom sheets
+  const [isReceivedSubpageMonthSelectOpen, setIsReceivedSubpageMonthSelectOpen] = useState(false);
+  const [isReceivedSubpageYearSelectOpen, setIsReceivedSubpageYearSelectOpen] = useState(false);
 
   const totalGlobalPending = useMemo(() => {
     return payments
@@ -2628,35 +2660,33 @@ setShowUserRenewSelection(false);
                       {/* Filters Panel */}
                       <div className="space-y-2">
                         <div className="grid grid-cols-2 gap-2">
-                          {/* Month Select */}
-                          <div className="relative">
-                            <select
-                              value={pendingFilterMonth}
-                              onChange={(e) => setPendingFilterMonth(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                              className="w-full px-3 py-3.5 rounded-[10px] text-xs bg-card-bg border border-black/10 dark:border-white/10 text-text-main focus:outline-none appearance-none cursor-pointer pr-8 font-semibold"
-                            >
-                              <option value="ALL">{language === 'bn' ? 'সকল মাস' : 'All Months'}</option>
-                              {monthsList.map(m => (
-                                <option key={m.value} value={m.value}>{m.label}</option>
-                              ))}
-                            </select>
-                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                          </div>
+                          {/* Month Select Button-Card */}
+                          <button
+                            type="button"
+                            onClick={() => setIsPendingMonthSelectOpen(true)}
+                            className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[8px] px-3 py-3.5 text-xs font-bold flex items-center justify-between active:scale-95 transition-all"
+                          >
+                            <span>
+                              {pendingFilterMonth === 'ALL'
+                                ? (language === 'bn' ? 'সব মাস' : 'All Months')
+                                : monthsList.find(m => m.value === pendingFilterMonth)?.label || pendingFilterMonth}
+                            </span>
+                            <ChevronDown size={14} className="text-text-muted shrink-0" />
+                          </button>
 
-                          {/* Year Select */}
-                          <div className="relative">
-                            <select
-                              value={pendingFilterYear}
-                              onChange={(e) => setPendingFilterYear(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                              className="w-full px-3 py-3.5 rounded-[10px] text-xs bg-card-bg border border-black/10 dark:border-white/10 text-text-main focus:outline-none appearance-none cursor-pointer pr-8 font-semibold"
-                            >
-                              <option value="ALL">{language === 'bn' ? 'সকল বছর' : 'All Years'}</option>
-                              {yearsList.map(y => (
-                                <option key={y} value={y}>{y}</option>
-                              ))}
-                            </select>
-                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                          </div>
+                          {/* Year Select Button-Card */}
+                          <button
+                            type="button"
+                            onClick={() => setIsPendingYearSelectOpen(true)}
+                            className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[8px] px-3 py-3.5 text-xs font-bold flex items-center justify-between active:scale-95 transition-all"
+                          >
+                            <span>
+                              {pendingFilterYear === 'ALL'
+                                ? (language === 'bn' ? 'সব বছর' : 'All Years')
+                                : pendingFilterYear}
+                            </span>
+                            <ChevronDown size={14} className="text-text-muted shrink-0" />
+                          </button>
                         </div>
 
                         <div className="pt-2 pb-1 border-b border-black/5 dark:border-white/5 flex justify-start">
@@ -3711,6 +3741,38 @@ setShowUserRenewSelection(false);
                 </>,
                 document.body
               )}
+
+              <GlobalFullscreenSelect
+                isOpen={isPendingMonthSelectOpen}
+                onClose={() => setIsPendingMonthSelectOpen(false)}
+                onSelect={(val) => {
+                  setPendingFilterMonth(val === 'ALL' ? 'ALL' : parseInt(val));
+                  setIsPendingMonthSelectOpen(false);
+                }}
+                options={[
+                  { label: language === 'bn' ? 'সব মাস' : 'All Months', value: 'ALL' },
+                  ...monthsList.map(m => ({ label: m.label, value: String(m.value) }))
+                ]}
+                title={t.SELECT_MONTH || "Select Month"}
+                selectedValue={String(pendingFilterMonth)}
+                searchable={false}
+              />
+
+              <GlobalFullscreenSelect
+                isOpen={isPendingYearSelectOpen}
+                onClose={() => setIsPendingYearSelectOpen(false)}
+                onSelect={(val) => {
+                  setPendingFilterYear(val === 'ALL' ? 'ALL' : parseInt(val));
+                  setIsPendingYearSelectOpen(false);
+                }}
+                options={[
+                  { label: language === 'bn' ? 'সব বছর' : 'All Years', value: 'ALL' },
+                  ...yearsList.map(y => ({ label: String(y), value: String(y) }))
+                ]}
+                title={t.SELECT_YEAR || "Select Year"}
+                selectedValue={String(pendingFilterYear)}
+                searchable={false}
+              />
             </div>
           ),
         document.body
@@ -3914,37 +3976,33 @@ setShowReceivedBreakdown(false);
 
                         {/* Month & Year Selectors */}
                         <div className="grid grid-cols-2 gap-2">
-                          {/* Month Select */}
-                          <div className="relative">
-                            <select
-                              value={receivedSubpageFilterMonth}
-                              onChange={(e) => setReceivedSubpageFilterMonth(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                              className="w-full px-3 py-3.5 rounded-[10px] text-xs bg-card-bg border border-black/10 dark:border-white/10 text-text-main focus:outline-none appearance-none cursor-pointer pr-8 font-semibold shadow-sm"
-                              style={isDarkMode ? { backgroundColor: '#121212' } : undefined}
-                            >
-                              <option value="ALL" style={isDarkMode ? { backgroundColor: '#121212' } : undefined}>{language === 'bn' ? 'সকল মাস' : 'All Months'}</option>
-                              {monthsList.map(m => (
-                                <option key={m.value} value={m.value} style={isDarkMode ? { backgroundColor: '#121212' } : undefined}>{m.label}</option>
-                              ))}
-                            </select>
-                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                          </div>
+                          {/* Month Select Button-Card */}
+                          <button
+                            type="button"
+                            onClick={() => setIsReceivedSubpageMonthSelectOpen(true)}
+                            className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[8px] px-3 py-3.5 text-xs font-bold flex items-center justify-between active:scale-95 transition-all shadow-sm"
+                          >
+                            <span>
+                              {receivedSubpageFilterMonth === 'ALL'
+                                ? (language === 'bn' ? 'সকল মাস' : 'All Months')
+                                : monthsList.find(m => m.value === receivedSubpageFilterMonth)?.label || receivedSubpageFilterMonth}
+                            </span>
+                            <ChevronDown size={14} className="text-text-muted shrink-0" />
+                          </button>
 
-                          {/* Year Select */}
-                          <div className="relative">
-                            <select
-                              value={receivedSubpageFilterYear}
-                              onChange={(e) => setReceivedSubpageFilterYear(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                              className="w-full px-3 py-3.5 rounded-[10px] text-xs bg-card-bg border border-black/10 dark:border-white/10 text-text-main focus:outline-none appearance-none cursor-pointer pr-8 font-semibold shadow-sm"
-                              style={isDarkMode ? { backgroundColor: '#121212' } : undefined}
-                            >
-                              <option value="ALL" style={isDarkMode ? { backgroundColor: '#121212' } : undefined}>{language === 'bn' ? 'সকল বছর' : 'All Years'}</option>
-                              {yearsList.map(y => (
-                                <option key={y} value={y} style={isDarkMode ? { backgroundColor: '#121212' } : undefined}>{y}</option>
-                              ))}
-                            </select>
-                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                          </div>
+                          {/* Year Select Button-Card */}
+                          <button
+                            type="button"
+                            onClick={() => setIsReceivedSubpageYearSelectOpen(true)}
+                            className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[8px] px-3 py-3.5 text-xs font-bold flex items-center justify-between active:scale-95 transition-all shadow-sm"
+                          >
+                            <span>
+                              {receivedSubpageFilterYear === 'ALL'
+                                ? (language === 'bn' ? 'সকল বছর' : 'All Years')
+                                : receivedSubpageFilterYear}
+                            </span>
+                            <ChevronDown size={14} className="text-text-muted shrink-0" />
+                          </button>
                         </div>
 
                         {/* Payment History Header */}
@@ -4792,6 +4850,38 @@ setShowReceivedBreakdown(false);
               </>,
               document.body
             )}
+
+            <GlobalFullscreenSelect
+              isOpen={isReceivedSubpageMonthSelectOpen}
+              onClose={() => setIsReceivedSubpageMonthSelectOpen(false)}
+              onSelect={(val) => {
+                setReceivedSubpageFilterMonth(val === 'ALL' ? 'ALL' : parseInt(val));
+                setIsReceivedSubpageMonthSelectOpen(false);
+              }}
+              options={[
+                { label: language === 'bn' ? 'সকল মাস' : 'All Months', value: 'ALL' },
+                ...monthsList.map(m => ({ label: m.label, value: String(m.value) }))
+              ]}
+              title={t.SELECT_MONTH || "Select Month"}
+              selectedValue={String(receivedSubpageFilterMonth)}
+              searchable={false}
+            />
+
+            <GlobalFullscreenSelect
+              isOpen={isReceivedSubpageYearSelectOpen}
+              onClose={() => setIsReceivedSubpageYearSelectOpen(false)}
+              onSelect={(val) => {
+                setReceivedSubpageFilterYear(val === 'ALL' ? 'ALL' : parseInt(val));
+                setIsReceivedSubpageYearSelectOpen(false);
+              }}
+              options={[
+                { label: language === 'bn' ? 'সকল বছর' : 'All Years', value: 'ALL' },
+                ...yearsList.map(y => ({ label: String(y), value: String(y) }))
+              ]}
+              title={t.SELECT_YEAR || "Select Year"}
+              selectedValue={String(receivedSubpageFilterYear)}
+              searchable={false}
+            />
             </div>
           ),
         document.body
@@ -4968,35 +5058,33 @@ setShowReceivedBreakdown(false);
 
                         {/* Filters Panel */}
                         <div className="grid grid-cols-2 gap-3">
-                          {/* Month Select */}
-                          <div className="relative">
-                            <select
-                              value={receivedListFilterMonth}
-                              onChange={(e) => setReceivedListFilterMonth(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                              className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[10px] px-3 py-3.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500 appearance-none cursor-pointer pr-8"
-                            >
-                              <option value="ALL">{language === 'bn' ? 'সব মাস' : 'All Months'}</option>
-                              {monthsList.map(m => (
-                                <option key={m.value} value={m.value}>{m.label}</option>
-                              ))}
-                            </select>
-                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                          </div>
+                          {/* Month Select Button-Card */}
+                          <button
+                            type="button"
+                            onClick={() => setIsReceivedMonthSelectOpen(true)}
+                            className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[8px] px-3 py-3.5 text-xs font-bold flex items-center justify-between active:scale-95 transition-all"
+                          >
+                            <span>
+                              {receivedListFilterMonth === 'ALL'
+                                ? (language === 'bn' ? 'সব মাস' : 'All Months')
+                                : monthsList.find(m => m.value === receivedListFilterMonth)?.label || receivedListFilterMonth}
+                            </span>
+                            <ChevronDown size={14} className="text-text-muted shrink-0" />
+                          </button>
 
-                          {/* Year Select */}
-                          <div className="relative">
-                            <select
-                              value={receivedListFilterYear}
-                              onChange={(e) => setReceivedListFilterYear(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                              className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[10px] px-3 py-3.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500 appearance-none cursor-pointer pr-8"
-                            >
-                              <option value="ALL">{language === 'bn' ? 'সব বছর' : 'All Years'}</option>
-                              {yearsList.map(y => (
-                                <option key={y} value={y}>{y}</option>
-                              ))}
-                            </select>
-                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                          </div>
+                          {/* Year Select Button-Card */}
+                          <button
+                            type="button"
+                            onClick={() => setIsReceivedYearSelectOpen(true)}
+                            className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[8px] px-3 py-3.5 text-xs font-bold flex items-center justify-between active:scale-95 transition-all"
+                          >
+                            <span>
+                              {receivedListFilterYear === 'ALL'
+                                ? (language === 'bn' ? 'সব বছর' : 'All Years')
+                                : receivedListFilterYear}
+                            </span>
+                            <ChevronDown size={14} className="text-text-muted shrink-0" />
+                          </button>
                         </div>
 
                         {/* List entries */}
@@ -5050,6 +5138,37 @@ setShowReceivedBreakdown(false);
                           </div>
                         )}
                       </div>
+                      <GlobalFullscreenSelect
+                        isOpen={isReceivedMonthSelectOpen}
+                        onClose={() => setIsReceivedMonthSelectOpen(false)}
+                        onSelect={(val) => {
+                          setReceivedListFilterMonth(val === 'ALL' ? 'ALL' : parseInt(val));
+                          setIsReceivedMonthSelectOpen(false);
+                        }}
+                        options={[
+                          { label: language === 'bn' ? 'সব মাস' : 'All Months', value: 'ALL' },
+                          ...monthsList.map(m => ({ label: m.label, value: String(m.value) }))
+                        ]}
+                        title={t.SELECT_MONTH || "Select Month"}
+                        selectedValue={String(receivedListFilterMonth)}
+                        searchable={false}
+                      />
+
+                      <GlobalFullscreenSelect
+                        isOpen={isReceivedYearSelectOpen}
+                        onClose={() => setIsReceivedYearSelectOpen(false)}
+                        onSelect={(val) => {
+                          setReceivedListFilterYear(val === 'ALL' ? 'ALL' : parseInt(val));
+                          setIsReceivedYearSelectOpen(false);
+                        }}
+                        options={[
+                          { label: language === 'bn' ? 'সব বছর' : 'All Years', value: 'ALL' },
+                          ...yearsList.map(y => ({ label: String(y), value: String(y) }))
+                        ]}
+                        title={t.SELECT_YEAR || "Select Year"}
+                        selectedValue={String(receivedListFilterYear)}
+                        searchable={false}
+                      />
                     </>
                   );
                 })()}
@@ -5232,35 +5351,33 @@ setShowPendingBreakdown(false);
 
                         {/* Filters Panel */}
                         <div className="grid grid-cols-2 gap-3">
-                          {/* Month Select */}
-                          <div className="relative">
-                            <select
-                              value={pendingListFilterMonth}
-                              onChange={(e) => setPendingListFilterMonth(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                              className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[10px] px-3 py-3.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-orange-500 appearance-none cursor-pointer pr-8"
-                            >
-                              <option value="ALL">{language === 'bn' ? 'সব মাস' : 'All Months'}</option>
-                              {monthsList.map(m => (
-                                <option key={m.value} value={m.value}>{m.label}</option>
-                              ))}
-                            </select>
-                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                          </div>
+                          {/* Month Select Button-Card */}
+                          <button
+                            type="button"
+                            onClick={() => setIsPendingListMonthSelectOpen(true)}
+                            className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[8px] px-3 py-3.5 text-xs font-bold flex items-center justify-between active:scale-95 transition-all"
+                          >
+                            <span>
+                              {pendingListFilterMonth === 'ALL'
+                                ? (language === 'bn' ? 'সব মাস' : 'All Months')
+                                : monthsList.find(m => m.value === pendingListFilterMonth)?.label || pendingListFilterMonth}
+                            </span>
+                            <ChevronDown size={14} className="text-text-muted shrink-0" />
+                          </button>
 
-                          {/* Year Select */}
-                          <div className="relative">
-                            <select
-                              value={pendingListFilterYear}
-                              onChange={(e) => setPendingListFilterYear(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                              className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[10px] px-3 py-3.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-orange-500 appearance-none cursor-pointer pr-8"
-                            >
-                              <option value="ALL">{language === 'bn' ? 'সব বছর' : 'All Years'}</option>
-                              {yearsList.map(y => (
-                                <option key={y} value={y}>{y}</option>
-                              ))}
-                            </select>
-                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                          </div>
+                          {/* Year Select Button-Card */}
+                          <button
+                            type="button"
+                            onClick={() => setIsPendingListYearSelectOpen(true)}
+                            className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[8px] px-3 py-3.5 text-xs font-bold flex items-center justify-between active:scale-95 transition-all"
+                          >
+                            <span>
+                              {pendingListFilterYear === 'ALL'
+                                ? (language === 'bn' ? 'সব বছর' : 'All Years')
+                                : pendingListFilterYear}
+                            </span>
+                            <ChevronDown size={14} className="text-text-muted shrink-0" />
+                          </button>
                         </div>
 
                         {/* List entries */}
@@ -5314,6 +5431,37 @@ setShowPendingBreakdown(false);
                           </div>
                         )}
                       </div>
+                      <GlobalFullscreenSelect
+                        isOpen={isPendingListMonthSelectOpen}
+                        onClose={() => setIsPendingListMonthSelectOpen(false)}
+                        onSelect={(val) => {
+                          setPendingListFilterMonth(val === 'ALL' ? 'ALL' : parseInt(val));
+                          setIsPendingListMonthSelectOpen(false);
+                        }}
+                        options={[
+                          { label: language === 'bn' ? 'সব মাস' : 'All Months', value: 'ALL' },
+                          ...monthsList.map(m => ({ label: m.label, value: String(m.value) }))
+                        ]}
+                        title={t.SELECT_MONTH || "Select Month"}
+                        selectedValue={String(pendingListFilterMonth)}
+                        searchable={false}
+                      />
+
+                      <GlobalFullscreenSelect
+                        isOpen={isPendingListYearSelectOpen}
+                        onClose={() => setIsPendingListYearSelectOpen(false)}
+                        onSelect={(val) => {
+                          setPendingListFilterYear(val === 'ALL' ? 'ALL' : parseInt(val));
+                          setIsPendingListYearSelectOpen(false);
+                        }}
+                        options={[
+                          { label: language === 'bn' ? 'সব বছর' : 'All Years', value: 'ALL' },
+                          ...yearsList.map(y => ({ label: String(y), value: String(y) }))
+                        ]}
+                        title={t.SELECT_YEAR || "Select Year"}
+                        selectedValue={String(pendingListFilterYear)}
+                        searchable={false}
+                      />
                     </>
                   );
                 })()}
@@ -5342,7 +5490,7 @@ setShowPendingBreakdown(false);
               <button
                 type="button"
                 onClick={() => setIsMonthSelectOpen(true)}
-                className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 active:scale-95 shadow-lg"
+                className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-[8px] text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 active:scale-95 shadow-lg"
               >
                 <span>{selectedMonth === 'ALL' ? (language === 'bn' ? 'সব মাস' : 'All Month') : new Date(0, selectedMonth - 1).toLocaleString('default', { month: 'long' })}</span>
                 <ChevronDown size={10} className="text-white/70" />
@@ -5351,7 +5499,7 @@ setShowPendingBreakdown(false);
               <button
                 type="button"
                 onClick={() => setIsYearSelectOpen(true)}
-                className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 active:scale-95 shadow-lg"
+                className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-[8px] text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 active:scale-95 shadow-lg"
               >
                 <span>{selectedYear === 'ALL' ? (language === 'bn' ? 'সব বছর' : 'All Years') : selectedYear}</span>
                 <ChevronDown size={10} className="text-white/70" />

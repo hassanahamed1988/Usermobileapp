@@ -20,6 +20,13 @@ export function getApiUrl(path: string): string {
     origin === 'null' ||
     origin.includes('10.0.2.2');
 
+  // For web environments (AI Studio, Firebase Hosting, localhost),
+  // always use relative paths. This ensures we don't accidentally
+  // break the app by fetching from an outdated cached API_BASE_URL.
+  if (!isNativeApp) {
+    return path;
+  }
+
   // 1. Check if a custom API Base URL is saved in localStorage (from Settings)
   const savedBase = localStorage.getItem('API_BASE_URL');
   if (savedBase) {

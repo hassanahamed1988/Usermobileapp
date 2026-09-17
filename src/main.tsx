@@ -4,6 +4,68 @@ import App from './App.tsx';
 import './index.css';
 import { startTranslationObserver } from './utils/translationHelper';
 
+// Global Fetch Interceptor to attach Session ID and detect Expiration
+const originalFetch = window.fetch;
+(window as any)._originalFetch = originalFetch;
+
+window.fetch = async function(input, init) {
+  const url = typeof input === 'string' ? input : (input instanceof Request ? input.url : '');
+  
+  // Attach session headers to internal API requests
+  if (url.includes('/api/') && !url.includes('/api/auth/login-session')) {
+    const sessionId = localStorage.getItem('fleetpro_session_id');
+    if (sessionId) {
+      init = init || {};
+      init.headers = init.headers || {};
+      
+      if (init.headers instanceof Headers) {
+        if (!init.headers.has('Authorization')) {
+          init.headers.set('Authorization', `Bearer ${sessionId}`);
+        }
+        if (!init.headers.has('x-session-id')) {
+          init.headers.set('x-session-id', sessionId);
+        }
+      } else if (Array.isArray(init.headers)) {
+        const hasAuth = init.headers.some(([k]) => k.toLowerCase() === 'authorization');
+        if (!hasAuth) {
+          init.headers.push(['Authorization', `Bearer ${sessionId}`]);
+        }
+        const hasSess = init.headers.some(([k]) => k.toLowerCase() === 'x-session-id');
+        if (!hasSess) {
+          init.headers.push(['x-session-id', sessionId]);
+        }
+      } else {
+        const headersRecord = init.headers as Record<string, string>;
+        if (!headersRecord['Authorization'] && !headersRecord['authorization']) {
+          headersRecord['Authorization'] = `Bearer ${sessionId}`;
+        }
+        if (!headersRecord['x-session-id']) {
+          headersRecord['x-session-id'] = sessionId;
+        }
+      }
+    }
+  }
+
+  const response = await originalFetch(input, init);
+
+  // If a protected API route returns 401 Unauthorized because of session expiry, force logout!
+  if (response.status === 401 && url.includes('/api/') && !url.includes('/api/auth/check-session')) {
+    const clone = response.clone();
+    try {
+      const data = await clone.json();
+      if (data && (data.error === 'Session expired' || data.error === 'Session invalid or expired' || data.error === 'Authentication required')) {
+        console.warn("Global Fetch Interceptor: Session expired/invalid. Dispatched force-logout event.");
+        const event = new CustomEvent('force-logout', { detail: { reason: 'session_expired' } });
+        window.dispatchEvent(event);
+      }
+    } catch (e) {
+      // Not JSON or parse failed
+    }
+  }
+
+  return response;
+};
+
 // Global Language Override for Numbers, Dates, and Times Formatting
 const originalNumberToLocaleString = Number.prototype.toLocaleString;
 const originalDateToLocaleDateString = Date.prototype.toLocaleDateString;

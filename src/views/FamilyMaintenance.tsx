@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '@/store';
 import { TRANSLATIONS } from '@/constants';
 import InputField from '@/components/InputField';
@@ -11,6 +11,7 @@ import {
 import { auth, saveFirebaseDoc, subscribeFirebaseCollection, deleteFirebaseDoc } from '@/services/firebase';
 import { decryptSensitiveFields } from '@/utils/security';
 import { where } from 'firebase/firestore';
+import GlobalFullscreenSelect from '@/components/GlobalFullscreenSelect';
 
 interface Transaction {
   id: string;
@@ -211,8 +212,30 @@ const FamilyMaintenance: React.FC = () => {
 
   const [selectedMonth, setSelectedMonth] = useState<number | 'ALL'>('ALL');
   const [selectedYear, setSelectedYear] = useState<number | 'ALL'>('ALL');
+  const [isMonthSelectOpen, setIsMonthSelectOpen] = useState(false);
+  const [isYearSelectOpen, setIsYearSelectOpen] = useState(false);
 
-  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+  const years = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const dynamicYears = new Set<number>();
+    
+    // Always include current year and previous 5 years dynamically
+    for (let i = 0; i <= 5; i++) {
+      dynamicYears.add(currentYear - i);
+    }
+    
+    // Also include any years from recorded transactions if present
+    transactions.forEach(t => {
+      if (t.date) {
+        const y = new Date(t.date).getFullYear();
+        if (!isNaN(y) && y > 1970) {
+          dynamicYears.add(y);
+        }
+      }
+    });
+
+    return Array.from(dynamicYears).sort((a, b) => b - a);
+  }, [transactions]);
   const months = [
     { value: 1, label: language === 'bn' ? 'জানুয়ারি' : 'January' },
     { value: 2, label: language === 'bn' ? 'ফেব্রুয়ারি' : 'February' },
@@ -617,38 +640,32 @@ const FamilyMaintenance: React.FC = () => {
               </h2>
               <div className="flex items-center gap-2">
                 {/* Month Filter */}
-                <div className="relative">
-                  <select
-                    value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                    className="px-3 py-2 rounded-xl text-xs bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white focus:outline-none appearance-none cursor-pointer pr-8 font-bold"
-                  >
-                    <option value="ALL">{language === 'bn' ? 'সকল মাস (All Month)' : 'All Month'}</option>
-                    {months.map(m => (
-                      <option key={m.value} value={m.value}>{m.label}</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                    <ChevronDown size={14} />
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsMonthSelectOpen(true)}
+                  className="px-3 py-2 rounded-[8px] text-xs bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white font-bold flex items-center justify-between gap-2 shadow-2xs active:scale-95 transition-all cursor-pointer select-none"
+                >
+                  <span>
+                    {selectedMonth === 'ALL'
+                      ? (language === 'bn' ? 'সকল মাস' : 'All Months')
+                      : (months.find(m => m.value === selectedMonth)?.label || selectedMonth)}
+                  </span>
+                  <ChevronDown size={14} className="text-gray-400 shrink-0" />
+                </button>
 
                 {/* Year Filter */}
-                <div className="relative">
-                  <select
-                    value={selectedYear}
-                    onChange={(e) => setSelectedYear(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                    className="px-3 py-2 rounded-xl text-xs bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white focus:outline-none appearance-none cursor-pointer pr-8 font-bold"
-                  >
-                    <option value="ALL">{language === 'bn' ? 'সকল বছর (All Years)' : 'All Years'}</option>
-                    {years.map(y => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                    <ChevronDown size={14} />
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsYearSelectOpen(true)}
+                  className="px-3 py-2 rounded-[8px] text-xs bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white font-bold flex items-center justify-between gap-2 shadow-2xs active:scale-95 transition-all cursor-pointer select-none"
+                >
+                  <span>
+                    {selectedYear === 'ALL'
+                      ? (language === 'bn' ? 'সকল বছর' : 'All Years')
+                      : selectedYear}
+                  </span>
+                  <ChevronDown size={14} className="text-gray-400 shrink-0" />
+                </button>
               </div>
             </div>
 
@@ -1220,6 +1237,42 @@ const FamilyMaintenance: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Global Month Selection Modal */}
+      <GlobalFullscreenSelect
+        isOpen={isMonthSelectOpen}
+        onClose={() => setIsMonthSelectOpen(false)}
+        onSelect={(val) => {
+          setSelectedMonth(val === 'ALL' ? 'ALL' : Number(val));
+          setIsMonthSelectOpen(false);
+        }}
+        options={[
+          { label: language === 'bn' ? 'সকল মাস' : 'All Months', value: 'ALL' },
+          ...months.map(m => ({ label: m.label, value: String(m.value) }))
+        ]}
+        title={language === 'bn' ? 'মাস নির্বাচন করুন' : 'Select Month'}
+        selectedValue={String(selectedMonth)}
+        searchable={false}
+        allowAdd={false}
+      />
+
+      {/* Global Year Selection Modal */}
+      <GlobalFullscreenSelect
+        isOpen={isYearSelectOpen}
+        onClose={() => setIsYearSelectOpen(false)}
+        onSelect={(val) => {
+          setSelectedYear(val === 'ALL' ? 'ALL' : Number(val));
+          setIsYearSelectOpen(false);
+        }}
+        options={[
+          { label: language === 'bn' ? 'সকল বছর' : 'All Years', value: 'ALL' },
+          ...years.map(y => ({ label: String(y), value: String(y) }))
+        ]}
+        title={language === 'bn' ? 'বছর নির্বাচন করুন' : 'Select Year'}
+        selectedValue={String(selectedYear)}
+        searchable={false}
+        allowAdd={false}
+      />
     </div>
   );
 };

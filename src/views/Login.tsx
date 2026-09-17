@@ -11,6 +11,7 @@ import { Truck, User as UserIcon, Shield, Menu, ChevronLeft, Home, Clock, Calend
 
 import { TRANSLATIONS, THEMES } from '../constants';
 import { isExpired } from '../utils/dateUtils';
+import { getApiUrl } from '../utils/apiUrl';
 import InputField, { InputFieldThemeContext } from '@/components/InputField';
 import GlobalFullscreenSelect from '@/components/GlobalFullscreenSelect';
 import RegistrationForm from '@/components/RegistrationForm';
@@ -252,7 +253,7 @@ const Login: React.FC = () => {
     supportInfo: supportInfoFromStore, setSupportInfo, theme, setTheme, showFeedback,
     isDarkMode, setIsDarkMode, isEyeComfort, setIsEyeComfort,
     appThemeMode, setAppThemeMode, adminPin: storedAdminPin, confirmAction, users, setUsers, updateUser, addUser,
-    logo, setCustomBackAction
+    logo, setCustomBackAction, addNotification
   } = useStore();
 
   useEffect(() => {
@@ -456,9 +457,31 @@ const Login: React.FC = () => {
     }
   };
 
-  const finishLogin = (userToLogin: any) => {
+  const finishLogin = async (userToLogin: any) => {
     localStorage.setItem(`fleetpro_device_trusted_${userToLogin.id}`, 'true');
     setLoginTime(new Date());
+
+    try {
+      const fetchFn = (window as any)._originalFetch || window.fetch;
+      const response = await fetchFn(getApiUrl('/api/auth/login-session'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: userToLogin.id })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.sessionId) {
+          localStorage.setItem('fleetpro_session_id', data.sessionId);
+          localStorage.setItem('fleetpro_session_user_id', userToLogin.id);
+          console.log("[Session Manager] Successfully initialized server session:", data.sessionId);
+        }
+      } else {
+        console.error("[Session Manager] Failed to create server session. HTTP status:", response.status);
+      }
+    } catch (err) {
+      console.error("[Session Manager] Error during login session creation:", err);
+    }
+
     performLoginUser(userToLogin);
     showFeedback(t.LOGIN_SUCCESS || 'Login successful');
     setView('DASHBOARD');
@@ -999,6 +1022,63 @@ const Login: React.FC = () => {
     const finalUser = { ...userObj, loginHistory: [...history, newEntry] };
     updateUser(finalUser);
     setUser(finalUser);
+
+    // --- Push Notification & History Record Implementation ---
+    try {
+      const getDeviceFriendlyName = () => {
+        const ua = navigator.userAgent;
+        if (/android/i.test(ua)) return "Android Device";
+        if (/iPad|iPhone|iPod/.test(ua)) return "iOS Device";
+        if (/chrome|crios/i.test(ua)) return "Chrome Browser";
+        if (/safari/i.test(ua)) return "Safari Browser";
+        if (/firefox|fxios/i.test(ua)) return "Firefox Browser";
+        return "Web Browser";
+      };
+
+      const deviceName = getDeviceFriendlyName();
+      const isBn = language === 'bn';
+      const notifTitle = isBn ? "লগইন সফল হয়েছে!" : "Login Successful!";
+      const notifBody = `${isBn ? 'ইউজার আইডি' : 'User ID'}: ${userObj.id || userObj.userId || 'N/A'}\n` +
+                        `${isBn ? 'তারিখ ও সময়' : 'Date & Time'}: ${newEntry.date} ${newEntry.time}\n` +
+                        `${isBn ? 'ডিভাইস' : 'Device'}: ${deviceName}`;
+
+      // 1. Send immediate Browser Native Push Notification
+      if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+          new Notification(notifTitle, { body: notifBody, icon: '/logo.png' });
+        } else if (Notification.permission !== 'denied') {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              new Notification(notifTitle, { body: notifBody, icon: '/logo.png' });
+            }
+          });
+        }
+      }
+
+      // 2. Also record in notification history
+      if (addNotification) {
+        addNotification({
+          title: isBn ? "লগইন সফল" : "Login Successful",
+          message: `${isBn ? 'সফলভাবে সিস্টেমে লগইন করা হয়েছে।' : 'Successfully logged into the system.'}\n` +
+                   `${isBn ? 'ইউজার আইডি' : 'User ID'}: ${userObj.id || userObj.userId || 'N/A'}\n` +
+                   `${isBn ? 'তারিখ ও সময়' : 'Date & Time'}: ${newEntry.date} ${newEntry.time}\n` +
+                   `${isBn ? 'আইপি অ্যাড্রেস' : 'IP Address'}: ${ip}\n` +
+                   `${isBn ? 'এরিয়া নাম' : 'Area Name'}: ${location}, ${country}\n` +
+                   `${isBn ? 'ডিভাইস' : 'Device'}: ${deviceName}`,
+          type: 'LOGIN_INFO',
+          userId: userObj.id,
+          loginDetails: {
+            userId: userObj.id || userObj.userId || 'N/A',
+            dateTime: `${newEntry.date} ${newEntry.time}`,
+            ip: ip,
+            areaName: `${location}, ${country}`,
+            device: deviceName
+          }
+        });
+      }
+    } catch (err) {
+      console.error("[Login Notification] Error sending notification:", err);
+    }
   };
 
   const handleLogin = async (eOrUsername?: any, overridePassword?: string) => {

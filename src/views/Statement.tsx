@@ -24,6 +24,7 @@ import { Share } from "@capacitor/share";
 import { FileOpener } from "@capacitor-community/file-opener";
 import { Capacitor } from "@capacitor/core";
 import { PaymentManager } from "../services/PaymentManager";
+import GlobalDateTimePicker from "../components/GlobalDateTimePicker";
 
 const Statement: React.FC = () => {
   const { showFeedback,
@@ -77,6 +78,18 @@ const Statement: React.FC = () => {
   };
   const [toDate, setToDate] = useState<string>(() => {
     return new Date().toISOString().split("T")[0];
+  });
+
+  const [datePickerConfig, setDatePickerConfig] = useState<{
+    open: boolean;
+    type: 'from' | 'to';
+    value: string;
+    title: string;
+  }>({
+    open: false,
+    type: 'from',
+    value: '',
+    title: '',
   });
 
   const [isColumnSelectModalOpen, setIsColumnSelectModalOpen] = useState(false);
@@ -1871,13 +1884,17 @@ const Statement: React.FC = () => {
                         <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1">
                           {language === "bn" ? "শুরুর তারিখ" : "From Date"}
                         </label>
-                        <div className="relative">
-                          <input
-                            type="date"
-                            value={fromDate}
-                            onChange={(e) => setFromDate(e.target.value)}
-                            className="custom-statement-input w-full h-12 px-4 rounded-xl bg-[#D9D9D9] dark:bg-white/5 text-[#001F3F] dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/20 text-sm font-bold shadow-sm transition-all"
-                          />
+                        <div
+                          onClick={() => setDatePickerConfig({
+                            open: true,
+                            type: 'from',
+                            value: fromDate,
+                            title: language === "bn" ? "শুরুর তারিখ নির্বাচন করুন" : "Select Start Date"
+                          })}
+                          className="w-full h-12 px-4 rounded-[10px] bg-[#D9D9D9] dark:bg-white/5 text-[#001F3F] dark:text-white border border-transparent hover:border-green-500/30 text-sm font-bold shadow-sm transition-all flex items-center justify-between cursor-pointer select-none"
+                        >
+                          <span className="truncate">{fromDate || "--"}</span>
+                          <Calendar size={16} className="text-text-muted shrink-0 ml-2" />
                         </div>
                       </div>
 
@@ -1886,13 +1903,17 @@ const Statement: React.FC = () => {
                         <label className="text-[11px] font-black uppercase tracking-widest text-text-muted ml-1">
                           {language === "bn" ? "শেষের তারিখ" : "To Date"}
                         </label>
-                        <div className="relative">
-                          <input
-                            type="date"
-                            value={toDate}
-                            onChange={(e) => setToDate(e.target.value)}
-                            className="custom-statement-input w-full h-12 px-4 rounded-xl bg-[#D9D9D9] dark:bg-white/5 text-[#001F3F] dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/20 text-sm font-bold shadow-sm transition-all"
-                          />
+                        <div
+                          onClick={() => setDatePickerConfig({
+                            open: true,
+                            type: 'to',
+                            value: toDate,
+                            title: language === "bn" ? "শেষের তারিখ নির্বাচন করুন" : "Select End Date"
+                          })}
+                          className="w-full h-12 px-4 rounded-[10px] bg-[#D9D9D9] dark:bg-white/5 text-[#001F3F] dark:text-white border border-transparent hover:border-green-500/30 text-sm font-bold shadow-sm transition-all flex items-center justify-between cursor-pointer select-none"
+                        >
+                          <span className="truncate">{toDate || "--"}</span>
+                          <Calendar size={16} className="text-text-muted shrink-0 ml-2" />
                         </div>
                       </div>
                     </div>
@@ -2904,6 +2925,23 @@ const Statement: React.FC = () => {
           )}
         </>
       </div>
+
+      <GlobalDateTimePicker
+        isOpen={datePickerConfig.open}
+        onClose={() => setDatePickerConfig(prev => ({ ...prev, open: false }))}
+        value={datePickerConfig.value}
+        onSelect={(val) => {
+          if (datePickerConfig.type === 'from') {
+            setFromDate(val);
+          } else if (datePickerConfig.type === 'to') {
+            setToDate(val);
+          }
+          setDatePickerConfig(prev => ({ ...prev, open: false }));
+        }}
+        type="date"
+        title={datePickerConfig.title}
+        language={language}
+      />
     </div>
   );
 };

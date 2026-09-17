@@ -4,6 +4,15 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import firebaseConfig from './firebase-applet-config.json';
+import { initializeApp as initClientApp } from 'firebase/app';
+import { 
+  getFirestore as getClientFirestore, 
+  collection as clientCollection, 
+  collectionGroup as clientCollectionGroup, 
+  getDocs as clientGetDocs, 
+  updateDoc as clientUpdateDoc, 
+  writeBatch as clientWriteBatch 
+} from 'firebase/firestore';
 
 async function startServer() {
   const app = express();
@@ -33,6 +42,116 @@ async function startServer() {
   });
 
   // API Routes for Authentication Synchronization
+  interface Session {
+    userId: string;
+    createdAt: number;
+  }
+  const activeSessions = new Map<string, Session>();
+
+  // Background cleanup of expired sessions every 10 seconds to keep memory completely clean
+  setInterval(() => {
+    const now = Date.now();
+    for (const [sid, sess] of activeSessions.entries()) {
+      if (now - sess.createdAt > 180000) { // 3 minutes = 180,000 ms
+        activeSessions.delete(sid);
+        console.log(`[Session Manager] Session ${sid} expired on server-side.`);
+      }
+    }
+  }, 10000);
+
+  // Middleware to enforce session validation
+  const enforceSession = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const authHeader = req.headers.authorization;
+    const sessionId = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : (req.headers["x-session-id"] as string);
+    
+    if (!sessionId) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    const session = activeSessions.get(sessionId);
+    if (!session) {
+      res.status(401).json({ error: "Session invalid or expired" });
+      return;
+    }
+
+    if (Date.now() - session.createdAt > 180000) {
+      activeSessions.delete(sessionId);
+      res.status(401).json({ error: "Session expired" });
+      return;
+    }
+
+    next();
+  };
+
+  // Session API Endpoints
+  app.post("/api/auth/login-session", (req, res) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) {
+        res.status(400).json({ error: "userId is required" });
+        return;
+      }
+
+      // Generate secure unique session token
+      const sessionId = "sess_" + Date.now() + "_" + Math.random().toString(36).substring(2, 15);
+      const createdAt = Date.now();
+      
+      activeSessions.set(sessionId, {
+        userId,
+        createdAt
+      });
+
+      console.log(`[Session Manager] Created server-side session ${sessionId} for user ${userId}.`);
+      res.json({ success: true, sessionId, expiresAt: createdAt + 180000 });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/auth/logout-session", (req, res) => {
+    try {
+      const { sessionId } = req.body;
+      if (sessionId && activeSessions.has(sessionId)) {
+        activeSessions.delete(sessionId);
+        console.log(`[Session Manager] Explicit logout: Invalidated session ${sessionId}.`);
+      }
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/auth/check-session", (req, res) => {
+    try {
+      const { sessionId } = req.body;
+      if (!sessionId) {
+        res.status(401).json({ valid: false, error: "No session ID provided" });
+        return;
+      }
+
+      const session = activeSessions.get(sessionId);
+      if (!session) {
+        res.status(401).json({ valid: false, error: "Session invalid or expired" });
+        return;
+      }
+
+      const now = Date.now();
+      const age = now - session.createdAt;
+      if (age > 180000) {
+        activeSessions.delete(sessionId);
+        console.log(`[Session Manager] Session ${sessionId} expired during check.`);
+        res.status(401).json({ valid: false, error: "Session expired" });
+        return;
+      }
+
+      const remainingTime = 180000 - age;
+      res.json({ valid: true, userId: session.userId, remainingTime });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.post("/api/auth/create-user", async (req, res) => {
     try {
       const { email, password } = req.body;
@@ -68,7 +187,7 @@ async function startServer() {
     }
   });
 
-  app.post("/api/auth/update-password", async (req, res) => {
+  app.post("/api/auth/update-password", enforceSession, async (req, res) => {
     try {
       const { email, password } = req.body;
       if (!email || !password) {
@@ -367,7 +486,7 @@ async function startServer() {
   }
 
   // API Route for OCR Document Scanner
-  app.post("/api/ocr", async (req, res) => {
+  app.post("/api/ocr", enforceSession, async (req, res) => {
     try {
       const { image, apiKey: clientApiKey } = req.body;
       if (!image) {
@@ -467,7 +586,7 @@ CRITICAL: If any field is physically blank, empty, unwritten, or missing in the 
   });
 
   // API Route for Purchase Receipt OCR Scanner
-  app.post("/api/purchase-ocr", async (req, res) => {
+  app.post("/api/purchase-ocr", enforceSession, async (req, res) => {
     try {
       const { image, apiKey: clientApiKey } = req.body;
       if (!image) {
@@ -563,7 +682,7 @@ Do not include the summary total rows (like 'TOTAL', 'CASH', 'VAT', 'ROUNDING', 
   });
 
   // API Route for Gemini Chat
-  app.post("/api/gemini/chat", async (req, res) => {
+  app.post("/api/gemini/chat", enforceSession, async (req, res) => {
     try {
       const { message, systemInstruction, apiKey: clientApiKey } = req.body;
       if (!message) {
@@ -626,6 +745,107 @@ Do not include the summary total rows (like 'TOTAL', 'CASH', 'VAT', 'ROUNDING', 
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
+
+  // --- 15-Day History Automatic Cleanup Service (Backend Server-Side via Client SDK) ---
+  const clientApp = initClientApp(firebaseConfig);
+  const dbClient = getClientFirestore(clientApp, firebaseConfig.firestoreDatabaseId);
+
+  const runHistoryCleanup = async () => {
+    console.log("[History Cleanup] Initiating background database cleanup...");
+    try {
+      const fifteenDaysMs = 15 * 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      const cutoffTime = now - fifteenDaysMs;
+
+      console.log(`[History Cleanup] Sweeping data older than: ${new Date(cutoffTime).toLocaleString()}`);
+
+      // 1. Clean up Login History from User Documents (users and admins collections)
+      const userCollections = ["users", "admins"];
+      let usersPatched = 0;
+
+      for (const colName of userCollections) {
+        try {
+          const snapshot = await clientGetDocs(clientCollection(dbClient, colName));
+          console.log(`[History Cleanup] Scanned ${snapshot.size} documents in '${colName}' collection...`);
+          
+          for (const docSnap of snapshot.docs) {
+            const data = docSnap.data();
+            if (data && Array.isArray(data.loginHistory)) {
+              const originalLength = data.loginHistory.length;
+              const filteredHistory = data.loginHistory.filter((entry: any) => {
+                if (entry && entry.timestamp) {
+                  return entry.timestamp >= cutoffTime;
+                }
+                return true; // Keep entries without timestamp to be safe
+              });
+
+              if (filteredHistory.length !== originalLength) {
+                await clientUpdateDoc(docSnap.ref, { loginHistory: filteredHistory });
+                usersPatched++;
+              }
+            }
+          }
+        } catch (colErr: any) {
+          console.error(`[History Cleanup] Error sweeping '${colName}' collection:`, colErr);
+        }
+      }
+      console.log(`[History Cleanup] Successfully cleaned up loginHistory arrays in ${usersPatched} user/admin profiles.`);
+
+      // 2. Clean up Old Notifications (notifications collection group and top-level notifications)
+      let notificationsDeleted = 0;
+      try {
+        const notifSnapshot = await clientGetDocs(clientCollectionGroup(dbClient, "notifications"));
+        console.log(`[History Cleanup] Found ${notifSnapshot.size} total notification documents across all paths.`);
+        
+        const batch = clientWriteBatch(dbClient);
+        let batchCount = 0;
+
+        for (const docSnap of notifSnapshot.docs) {
+          const data = docSnap.data();
+          let shouldDelete = false;
+
+          if (data && data.timestamp) {
+            const parsedTime = Date.parse(data.timestamp);
+            if (!isNaN(parsedTime) && parsedTime < cutoffTime) {
+              shouldDelete = true;
+            }
+          }
+
+          if (shouldDelete) {
+            batch.delete(docSnap.ref);
+            notificationsDeleted++;
+            batchCount++;
+            
+            // Commit batch in chunks of 400 (Firestore limit is 500)
+            if (batchCount >= 400) {
+              await batch.commit();
+              batchCount = 0;
+            }
+          }
+        }
+
+        if (batchCount > 0) {
+          await batch.commit();
+        }
+      } catch (notifErr: any) {
+        console.error("[History Cleanup] Error sweeping notification histories:", notifErr);
+      }
+      console.log(`[History Cleanup] Successfully deleted ${notificationsDeleted} expired notifications.`);
+      console.log("[History Cleanup] Background database cleanup sweep completed.");
+
+    } catch (cleanupErr: any) {
+      console.error("[History Cleanup] Fatal error during history database cleanup:", cleanupErr);
+    }
+  };
+
+  // Run immediately on start (delayed slightly to allow server setup to settle) and schedule every 12 hours
+  setTimeout(() => {
+    runHistoryCleanup();
+  }, 15000);
+
+  setInterval(() => {
+    runHistoryCleanup();
+  }, 12 * 60 * 60 * 1000); // Every 12 hours
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://0.0.0.0:${PORT}`);

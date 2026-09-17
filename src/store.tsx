@@ -9,6 +9,7 @@ import { storageService } from '@/services/storageService';
 import { getFirebaseCollection, subscribeFirebaseCollection, subscribeFirebaseCollectionGroup, saveFirebaseDoc, deleteFirebaseDoc, clearFirebaseCollection, syncFirebaseCollection, subscribeFirebaseDoc, saveFirebaseDocMerge, auth } from '@/services/firebase';
 import { where } from 'firebase/firestore';
 import { parseExpiryDate, isExpired, isExpiringSoon } from './utils/dateUtils';
+import { getApiUrl } from './utils/apiUrl';
 import { decryptSensitiveFields } from './utils/security';
 import { WORLD_COUNTRIES, scanAndDetectCountry } from './utils/countryUtils';
 import { translateDigits, formatNumber, formatDate, formatTime } from './utils/formatUtils';
@@ -1193,7 +1194,74 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
          });
        }
      });
-     handlersRef.current['clearNotifications'] = () => mutate((d: any) => d.notifications = []);
+     handlersRef.current['clearNotifications'] = async () => {
+        const currentNotifs = [...(stateRef.current.notifications || [])];
+        mutate((d: any) => d.notifications = []);
+        try {
+           for (const notif of currentNotifs) {
+              if (notif.id) {
+                 if (notif._path) {
+                    const parts = notif._path.split('/');
+                    if (parts.length > 1) {
+                       const docId = parts.pop();
+                       const colPath = parts.join('/');
+                       await deleteFirebaseDoc(colPath, docId);
+                       continue;
+                    }
+                 }
+                 
+                 let colPath = '';
+                 const targetUserId = notif.userId || notif.targetUserId;
+                 const parentCol = stateRef.current.user?.role === 'ADMIN' ? 'admins' : 'users';
+                 colPath = stateRef.current.user ? `${parentCol}/${stateRef.current.user.id}/notifications` : 'notifications';
+                 if (targetUserId) {
+                    const targetUser = stateRef.current.users?.find((u: any) => u.id === targetUserId);
+                    const tCol = targetUser?.role === 'ADMIN' ? 'admins' : 'users';
+                    colPath = `${tCol}/${targetUserId}/notifications`;
+                 }
+                 await deleteFirebaseDoc(colPath, notif.id);
+              }
+           }
+        } catch (err) {
+           console.error("Failed to clear notifications from backend:", err);
+        }
+     };
+     handlersRef.current['removeNotification'] = async (id: string) => {
+        const currentNotifs = stateRef.current.notifications || [];
+        const targetNotif = currentNotifs.find((n: any) => n.id === id);
+        mutate((d: any) => {
+           if (d.notifications) {
+              d.notifications = d.notifications.filter((n: any) => n.id !== id);
+           }
+        });
+        try {
+           if (targetNotif && targetNotif._path) {
+               const parts = targetNotif._path.split('/');
+               if (parts.length > 1) {
+                  const docId = parts.pop();
+                  const colPath = parts.join('/');
+                  await deleteFirebaseDoc(colPath, docId);
+                  return;
+               }
+           }
+
+           let colPath = '';
+           let docId = id;
+           
+           const targetUserId = targetNotif?.userId || targetNotif?.targetUserId;
+           const parentCol = stateRef.current.user?.role === 'ADMIN' ? 'admins' : 'users';
+           colPath = stateRef.current.user ? `${parentCol}/${stateRef.current.user.id}/notifications` : 'notifications';
+           if (targetUserId) {
+              const targetUser = stateRef.current.users?.find((u: any) => u.id === targetUserId);
+              const tCol = targetUser?.role === 'ADMIN' ? 'admins' : 'users';
+              colPath = `${tCol}/${targetUserId}/notifications`;
+           }
+           
+           await deleteFirebaseDoc(colPath, docId);
+        } catch (err) {
+           console.error("Failed to delete notification from backend:", err);
+        }
+     };
       handlersRef.current['approveUser'] = async (userId: string, tempPassword?: string) => {
          let hashedPassword = '';
          if (tempPassword) {
@@ -1251,6 +1319,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         // The most critical part is preventing the app from crashing.
      };
      handlersRef.current['markNotificationAsRead'] = (id: string) => {
+        const currentNotifs = stateRef.current.notifications || [];
+        const originalNotif = currentNotifs.find((n: any) => n.id === id);
+        if (!originalNotif) return;
+        
+        const updatedNotif = { ...originalNotif, isRead: true };
         mutate((d: any) => {
            if (d.notifications) {
               const notif = d.notifications.find((n: any) => n.id === id);
@@ -1259,6 +1332,36 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               }
            }
         });
+
+        if (updatedNotif) {
+           try {
+              let colPath = '';
+              let docId = id;
+              
+              if (updatedNotif._path) {
+                 const parts = updatedNotif._path.split('/');
+                 if (parts.length > 1) {
+                    docId = parts.pop();
+                    colPath = parts.join('/');
+                 }
+              }
+              
+              if (!colPath) {
+                 const targetUserId = updatedNotif.userId || updatedNotif.targetUserId;
+                 const parentCol = stateRef.current.user?.role === 'ADMIN' ? 'admins' : 'users';
+                 colPath = stateRef.current.user ? `${parentCol}/${stateRef.current.user.id}/notifications` : 'notifications';
+                 if (targetUserId) {
+                    const targetUser = stateRef.current.users?.find((u: any) => u.id === targetUserId);
+                    const tCol = targetUser?.role === 'ADMIN' ? 'admins' : 'users';
+                    colPath = `${tCol}/${targetUserId}/notifications`;
+                 }
+              }
+              
+              saveFirebaseDoc(colPath, docId, updatedNotif);
+           } catch (err) {
+              console.error("Failed to persist notification read state to Firestore:", err);
+           }
+        }
      };
      handlersRef.current['confirmAction'] = (msg: any, onConfirm?: () => void, options?: any) => {
         mutate((d: any) => {
@@ -1285,6 +1388,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         });
      };
      handlersRef.current['logout'] = () => {
+         const sessionId = localStorage.getItem('fleetpro_session_id');
+         if (sessionId) {
+            const fetchFn = (window as any)._originalFetch || window.fetch;
+            fetchFn(getApiUrl('/api/auth/logout-session'), {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ sessionId })
+            }).catch((err: any) => console.error("[Session Manager] Failed to invalidate session on server:", err));
+            
+            localStorage.removeItem('fleetpro_session_id');
+            localStorage.removeItem('fleetpro_session_user_id');
+         }
          const currentUser = stateRef.current.user;
          if (currentUser) {
             const history = currentUser.loginHistory || [];

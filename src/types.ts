@@ -257,12 +257,19 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  type: 'EXPIRY' | 'REGISTRATION' | 'INFO';
+  type: 'EXPIRY' | 'REGISTRATION' | 'INFO' | 'LOGIN_INFO';
   timestamp: string;
   isRead: boolean;
   userId?: string;
   targetUserId?: string;
   firebaseUid?: string;
+  loginDetails?: {
+    userId: string;
+    dateTime: string;
+    ip: string;
+    areaName: string;
+    device: string;
+  };
 }
 
 export interface SupportInfo {

@@ -183,7 +183,7 @@ const formatMobileNumber = (mobile: any, code: any) => {
 };
 
 const UserProfile: React.FC = () => {
-  const { theme, selectedUser, user: loggedInUser, language, selectedCurrency, removePayment, showFeedback, updatePayment, updateUser, appThemeMode, backgroundColor, setAppThemeMode, activeSection, goBack, setSelectedUser, setView, setActiveSection, logout, allPayments, payments, allFinances, confirmAction, setCustomBackAction } = useStore();
+  const { theme, selectedUser, user: loggedInUser, language, selectedCurrency, removePayment, showFeedback, updatePayment, updateUser, appThemeMode, backgroundColor, setAppThemeMode, activeSection, goBack, setSelectedUser, setView, setActiveSection, logout, allPayments, payments, allFinances, confirmAction, setCustomBackAction, addNotification } = useStore();
 
   const handleLogout = () => {
     confirmAction(
@@ -617,6 +617,26 @@ const UserProfile: React.FC = () => {
                           await saveFirebaseDocMerge(coll, displayUser.id, { password: hashedPassword });
                           
                           updateUser({ ...displayUser, password: hashedPassword });
+                          
+                          const now = new Date();
+                          const formattedDateTime = now.toLocaleString('en-US', { 
+                            year: 'numeric', 
+                            month: '2-digit', 
+                            day: '2-digit', 
+                            hour: '2-digit', 
+                            minute: '2-digit', 
+                            second: '2-digit', 
+                            hour12: true 
+                          });
+
+                          addNotification({
+                            title: language === 'bn' ? 'পাসওয়ার্ড পরিবর্তিত হয়েছে' : 'Password Changed',
+                            message: `Success: Password changed successfully.\nDate & Time: ${formattedDateTime}`,
+                            type: 'INFO',
+                            userId: displayUser.id,
+                            targetUserId: displayUser.id
+                          });
+
                           showFeedback(
                             language === "bn"
                               ? "পাসওয়ার্ড সফলভাবে রিসেট হয়েছে"
@@ -626,6 +646,26 @@ const UserProfile: React.FC = () => {
                           setNewPassword("");
                         } catch (err) {
                           console.error("Failed to update password:", err);
+                          
+                          const now = new Date();
+                          const formattedDateTime = now.toLocaleString('en-US', { 
+                            year: 'numeric', 
+                            month: '2-digit', 
+                            day: '2-digit', 
+                            hour: '2-digit', 
+                            minute: '2-digit', 
+                            second: '2-digit', 
+                            hour12: true 
+                          });
+
+                          addNotification({
+                            title: language === 'bn' ? 'পাসওয়ার্ড পরিবর্তন ব্যর্থ' : 'Password Change Failed',
+                            message: `Failed: Password change failed. Please try again.\nDate & Time: ${formattedDateTime}`,
+                            type: 'INFO',
+                            userId: displayUser.id,
+                            targetUserId: displayUser.id
+                          });
+
                           showFeedback(
                             language === "bn"
                               ? "পাসওয়ার্ড আপডেট করতে ব্যর্থ হয়েছে"
@@ -1322,10 +1362,50 @@ const UserProfile: React.FC = () => {
                       await saveFirebaseDocMerge(coll, displayUser.id, { password: hashedPassword });
                       
                       updateUser({ ...displayUser, password: hashedPassword });
+
+                      const now = new Date();
+                      const formattedDateTime = now.toLocaleString('en-US', { 
+                        year: 'numeric', 
+                        month: '2-digit', 
+                        day: '2-digit', 
+                        hour: '2-digit', 
+                        minute: '2-digit', 
+                        second: '2-digit', 
+                        hour12: true 
+                      });
+
+                      addNotification({
+                        title: language === 'bn' ? 'পাসওয়ার্ড পরিবর্তিত হয়েছে' : 'Password Changed',
+                        message: `Success: Password changed successfully.\nDate & Time: ${formattedDateTime}`,
+                        type: 'INFO',
+                        userId: displayUser.id,
+                        targetUserId: displayUser.id
+                      });
+
                       showFeedback("Password updated successfully");
                       setNewPassword("");
                     } catch (err) {
                       console.error("Failed to update password:", err);
+
+                      const now = new Date();
+                      const formattedDateTime = now.toLocaleString('en-US', { 
+                        year: 'numeric', 
+                        month: '2-digit', 
+                        day: '2-digit', 
+                        hour: '2-digit', 
+                        minute: '2-digit', 
+                        second: '2-digit', 
+                        hour12: true 
+                      });
+
+                      addNotification({
+                        title: language === 'bn' ? 'পাসওয়ার্ড পরিবর্তন ব্যর্থ' : 'Password Change Failed',
+                        message: `Failed: Password change failed. Please try again.\nDate & Time: ${formattedDateTime}`,
+                        type: 'INFO',
+                        userId: displayUser.id,
+                        targetUserId: displayUser.id
+                      });
+
                       showFeedback("Failed to update password", "error");
                     }
                   }}
@@ -1742,6 +1822,7 @@ const UserProfile: React.FC = () => {
                 title="Select Month"
                 selectedValue={String(filterMonth)}
                 searchable={false}
+                allowAdd={false}
               />
 
               <GlobalFullscreenSelect
@@ -1753,7 +1834,7 @@ const UserProfile: React.FC = () => {
                 }}
                 options={[
                   { label: language === 'bn' ? 'সব বছর' : 'All Years', value: 'ALL' },
-                  ...[2024, 2025, 2026, 2027].map((y) => ({
+                  ...Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => ({
                     label: String(y),
                     value: String(y),
                   }))
@@ -1761,6 +1842,7 @@ const UserProfile: React.FC = () => {
                 title="Select Year"
                 selectedValue={String(filterYear)}
                 searchable={false}
+                allowAdd={false}
               />
             </div>
           </div>

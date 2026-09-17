@@ -9,7 +9,7 @@ import GlobalFullscreenSelect from '../components/GlobalFullscreenSelect';
 import { User } from '../types';
 
 const UserPasswordReset: React.FC = () => {
-  const { language, users, updateUser, user: currentUser, showFeedback, confirmAction, setView, currentThemeObj } = useStore();
+  const { language, users, updateUser, user: currentUser, showFeedback, confirmAction, setView, currentThemeObj, addNotification } = useStore();
   const t = TRANSLATIONS[language];
   const primaryColor = currentThemeObj?.primary || '#10b981';
 
@@ -78,6 +78,26 @@ const UserPasswordReset: React.FC = () => {
 
       const updatedUser = { ...selectedTargetUser, password: hashedPassword };
       updateUser(updatedUser);
+
+      const now = new Date();
+      const formattedDateTime = now.toLocaleString('en-US', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit', 
+        hour12: true 
+      });
+
+      addNotification({
+        title: language === 'bn' ? 'পাসওয়ার্ড পরিবর্তিত হয়েছে' : 'Password Changed',
+        message: `Success: Password changed successfully.\nDate & Time: ${formattedDateTime}`,
+        type: 'INFO',
+        userId: selectedTargetUser.id,
+        targetUserId: selectedTargetUser.id
+      });
+
       showFeedback(`Password for ${selectedTargetUser.name} reset successfully`);
       
       // Reset form
@@ -87,6 +107,26 @@ const UserPasswordReset: React.FC = () => {
       setConfirmPassword('');
     } catch (err) {
       console.error('Failed to update password:', err);
+
+      const now = new Date();
+      const formattedDateTime = now.toLocaleString('en-US', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit', 
+        hour12: true 
+      });
+
+      addNotification({
+        title: language === 'bn' ? 'পাসওয়ার্ড পরিবর্তন ব্যর্থ' : 'Password Change Failed',
+        message: `Failed: Password change failed. Please try again.\nDate & Time: ${formattedDateTime}`,
+        type: 'INFO',
+        userId: selectedTargetUser.id,
+        targetUserId: selectedTargetUser.id
+      });
+
       showFeedback('Failed to reset user password in database');
     }
   };

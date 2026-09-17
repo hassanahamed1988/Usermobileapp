@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Bell, 
   Trash2, 
@@ -117,11 +118,79 @@ const NotificationsView: React.FC = () => {
     updateUser,
     approveUser,
     removeUser,
-    showFeedback
+    showFeedback,
+    user
   } = useStore();
 
   const [selectedNotif, setSelectedNotif] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [longPressTimer, setLongPressTimer] = useState<any>(null);
+  const [isLongPressed, setIsLongPressed] = useState(false);
+
+  useEffect(() => {
+    if (selectedIds.length === 0) {
+      setIsSelectionMode(false);
+    }
+  }, [selectedIds]);
+
+  const startPress = (e: React.PointerEvent, id: string) => {
+    // Only handle main pointer (left click / touch)
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('input') || target.closest('.no-long-press')) {
+      return;
+    }
+
+    setIsLongPressed(false);
+    
+    const timer = setTimeout(() => {
+      setIsLongPressed(true);
+      setIsSelectionMode(true);
+      setSelectedIds(prev => {
+        if (prev.includes(id)) return prev;
+        return [...prev, id];
+      });
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }, 600); // 600ms hold
+    
+    setLongPressTimer(timer);
+  };
+
+  const endPress = (e: React.PointerEvent, n: any) => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+    
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('input') || target.closest('.no-long-press')) {
+      return;
+    }
+
+    if (!isLongPressed) {
+      if (isSelectionMode) {
+        if (selectedIds.includes(n.id)) {
+          setSelectedIds(prev => prev.filter(id => id !== n.id));
+        } else {
+          setSelectedIds(prev => [...prev, n.id]);
+        }
+      } else {
+        handleNotificationClick(n);
+      }
+    }
+  };
+
+  const cancelPress = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
 
   const tGlobal = TRANSLATIONS[language] || {};
   const tLocal = LOCAL_TRANSLATIONS[language === 'bn' ? 'bn' : 'en'];
@@ -135,16 +204,80 @@ const NotificationsView: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const isAllSelected = notifications.length > 0 && selectedIds.length === notifications.length;
+
+  const handleToggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(notifications.map(n => n.id));
+    }
+  };
+
+  const handleToggleSelectOne = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (selectedIds.includes(id)) {
+      setSelectedIds(prev => prev.filter(item => item !== id));
+    } else {
+      setSelectedIds(prev => [...prev, id]);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    const isBn = language === 'bn';
+    if (window.confirm(isBn ? `আপনি কি সিলেক্ট করা ${selectedIds.length} টি বিজ্ঞপ্তি মুছে ফেলতে চান?` : `Are you sure you want to delete ${selectedIds.length} selected notifications?`)) {
+      showFeedback(isBn ? "মুছে ফেলা হচ্ছে..." : "Deleting...", 'success');
+      for (const id of selectedIds) {
+        await removeNotification(id);
+      }
+      setSelectedIds([]);
+      showFeedback(isBn ? "বিজ্ঞপ্তিগুলো সফলভাবে মুছে ফেলা হয়েছে!" : "Selected notifications deleted successfully!", 'success');
+    }
+  };
+
   return (
-    <div className="space-y-6 max-w-2xl mx-auto relative">
-      <div className="flex justify-end">
-        <button
-          onClick={clearNotifications}
-          className="text-[10px] font-black uppercase tracking-wider text-red-500 hover:bg-red-500/10 px-3 py-1.5 rounded-lg transition-colors border border-red-500/20"
-        >
-          {tGlobal.CLEAR_ALL || "Clear All"}
-        </button>
-      </div>
+    <div className="space-y-6 max-w-2xl mx-auto relative select-none">
+      {/* SELECTION CONTROL TOOLBAR (Only shown when selection mode is active) */}
+      {isSelectionMode && notifications.length > 0 && (
+        <div className="flex justify-between items-center bg-slate-50 dark:bg-zinc-900/50 p-3 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm sticky top-2 z-40 animate-fade-in">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => {
+                setSelectedIds([]);
+                setIsSelectionMode(false);
+              }}
+              className="p-1 text-text-muted hover:text-text-main rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-all"
+            >
+              <X size={16} />
+            </button>
+            <div 
+              onClick={handleToggleSelectAll}
+              className="flex items-center gap-2.5 cursor-pointer select-none group"
+            >
+              <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                isAllSelected 
+                  ? 'bg-primary border-primary text-white scale-105' 
+                  : 'border-black/20 dark:border-white/20 bg-transparent group-hover:border-primary/50'
+              }`}>
+                {isAllSelected && <Check size={12} strokeWidth={4} />}
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-text-muted">
+                {language === 'bn' ? 'সবগুলো সিলেক্ট করুন' : 'Select All'}
+              </span>
+            </div>
+          </div>
+
+          {selectedIds.length > 0 && (
+            <button
+              onClick={handleDeleteSelected}
+              className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-[0.98] border border-red-500/10"
+            >
+              <Trash2 size={12} />
+              {language === 'bn' ? `মুছে ফেলুন (${selectedIds.length})` : `Delete Selected (${selectedIds.length})`}
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4">
         {notifications.length === 0 ? (
@@ -153,22 +286,43 @@ const NotificationsView: React.FC = () => {
               <Bell size={32} className="text-text-muted opacity-20" />
             </div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">
-              No notifications yet
+              {language === 'bn' ? 'কোন বিজ্ঞপ্তি নেই' : 'No notifications yet'}
             </p>
           </div>
         ) : (
           displayedNotifications.map((n, index) => (
             <div
               key={n.id || `notif-${index}-${n.timestamp || Date.now()}`}
-              onClick={() => handleNotificationClick(n)}
-              className={`group relative p-4 rounded-[8px] border transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99] shadow-sm hover:shadow-md ${
+              onPointerDown={(e) => startPress(e, n.id)}
+              onPointerUp={(e) => endPress(e, n)}
+              onPointerCancel={cancelPress}
+              onPointerLeave={cancelPress}
+              className={`group relative p-4 rounded-2xl border transition-all cursor-pointer hover:scale-[1.005] active:scale-[0.995] bg-white dark:bg-[#161616] ${
                 !n.isRead 
-                  ? 'bg-white dark:bg-[#1a1a1a]' 
-                  : 'bg-white dark:bg-[#1a1a1a] border-black/5 dark:border-white/5 opacity-80 hover:opacity-100'
+                  ? 'border-primary/40' 
+                  : 'border-black/[0.08] dark:border-white/[0.08] opacity-90 hover:opacity-100'
               }`}
-              style={!n.isRead ? { borderColor: 'var(--primary)', boxShadow: '0 4px 6px -1px var(--primary)' } : {}}
+              style={{
+                boxShadow: '0 8px 30px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)'
+              }}
             >
               <div className="flex items-center gap-4">
+                {/* Round Checkbox for Multi-Select (Only visible in selection mode) */}
+                {isSelectionMode && (
+                  <div 
+                    onClick={(e) => { e.stopPropagation(); handleToggleSelectOne(e as any, n.id); }}
+                    className="shrink-0 flex items-center justify-center cursor-pointer p-1 -m-1 no-long-press"
+                  >
+                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
+                      selectedIds.includes(n.id)
+                        ? 'bg-primary border-primary text-white scale-110'
+                        : 'border-black/20 dark:border-white/20 bg-transparent hover:border-primary/50'
+                    }`}>
+                      {selectedIds.includes(n.id) && <Check size={12} strokeWidth={4} />}
+                    </div>
+                  </div>
+                )}
+
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 relative overflow-hidden">
                   <div 
                     className="absolute inset-0" 
@@ -179,6 +333,7 @@ const NotificationsView: React.FC = () => {
                   />
                   {n.type === 'REGISTRATION' ? <UserIcon size={18} className="relative z-10" style={{ color: 'var(--success)' }} /> : <Info size={18} className="relative z-10" style={{ color: 'var(--primary)' }} />}
                 </div>
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -199,14 +354,26 @@ const NotificationsView: React.FC = () => {
                       {new Date(n.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                     </span>
                   </div>
-                  <p className="text-[11px] text-text-muted leading-tight transition-all">
-                    {n.message}
+                  <p className="text-[11px] text-text-muted leading-tight transition-all mt-1">
+                    {n.type === 'LOGIN_INFO' ? (
+                      <span className="font-medium">
+                        {language === 'bn' ? 'লগইন সম্পন্ন হয়েছে' : 'Login Successful'} - {n.loginDetails?.dateTime || new Date(n.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                      </span>
+                    ) : (
+                      n.message
+                    )}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button 
-                    onClick={(e) => { e.stopPropagation(); removeNotification(n.id); }}
-                    className="p-1.5 text-text-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                    onClick={async (e) => { 
+                      e.stopPropagation(); 
+                      if (window.confirm(language === 'bn' ? "আপনি কি এই বিজ্ঞপ্তিটি মুছে ফেলতে চান?" : "Are you sure you want to delete this notification?")) {
+                        await removeNotification(n.id);
+                        showFeedback(language === 'bn' ? "সফলভাবে মুছে ফেলা হয়েছে!" : "Deleted successfully!", 'success');
+                      }
+                    }}
+                    className="p-1.5 text-text-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all no-long-press"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -244,6 +411,7 @@ const NotificationsView: React.FC = () => {
           approveUser={approveUser}
           removeUser={removeUser}
           showFeedback={showFeedback}
+          removeNotification={removeNotification}
         />
       )}
     </div>
@@ -260,6 +428,7 @@ interface NotificationModalProps {
   approveUser: (userId: string, tempPassword?: string) => void;
   removeUser: (userId: string) => void;
   showFeedback: (msg: string, type?: 'success' | 'error') => void;
+  removeNotification: (id: string) => void;
 }
 
 const NotificationModal: React.FC<NotificationModalProps> = ({
@@ -270,9 +439,148 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
   updateUser,
   approveUser,
   removeUser,
-  showFeedback
+  showFeedback,
+  removeNotification
 }) => {
   const t = LOCAL_TRANSLATIONS[language === 'bn' ? 'bn' : 'en'];
+
+  // Parse login details dynamically for the LOGIN_INFO type
+  const parsedLoginDetails = useMemo(() => {
+    if (notification.loginDetails) return notification.loginDetails;
+    
+    // Fallback parsing from notification.message via Regex if loginDetails is not set directly
+    const msg = notification.message || '';
+    const userIdMatch = msg.match(/(?:User ID|ইউজার আইডি):\s*([^\n]+)/i);
+    const dateTimeMatch = msg.match(/(?:Date & Time|তারিখ ও সময়):\s*([^\n]+)/i);
+    const ipMatch = msg.match(/(?:IP Address|আইপি অ্যাড্রেস):\s*([^\n]+)/i);
+    const areaMatch = msg.match(/(?:Area Name|এরিয়া নাম):\s*([^\n]+)/i);
+    const deviceMatch = msg.match(/(?:Device|ডিভাইস):\s*([^\n]+)/i);
+
+    return {
+      userId: userIdMatch ? userIdMatch[1].trim() : (notification.userId || 'N/A'),
+      dateTime: dateTimeMatch ? dateTimeMatch[1].trim() : new Date(notification.timestamp).toLocaleString(),
+      ip: ipMatch ? ipMatch[1].trim() : 'Unavailable',
+      areaName: areaMatch ? areaMatch[1].trim() : 'Unavailable',
+      device: deviceMatch ? deviceMatch[1].trim() : 'Web Browser'
+    };
+  }, [notification]);
+
+  // If notification is a Login notification, render ONLY the login-related information and nothing else
+  if (notification.type === 'LOGIN_INFO') {
+    const isBn = language === 'bn';
+    const info = parsedLoginDetails;
+
+    return createPortal(
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[9999] flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+        <div className="bg-white dark:bg-[#121212] rounded-2xl max-w-md w-full shadow-2xl border border-black/10 dark:border-white/10 flex flex-col overflow-hidden animate-scale-up">
+          {/* HEADER SECTION - GRADIENT */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 relative shrink-0">
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+              <button 
+                onClick={async () => {
+                  if (window.confirm(isBn ? "আপনি কি এই নোটিফিকেশনটি মুছে ফেলতে চান?" : "Are you sure you want to delete this notification?")) {
+                    await removeNotification(notification.id);
+                    onClose();
+                    showFeedback(isBn ? "বিজ্ঞপ্তিটি মুছে ফেলা হয়েছে!" : "Notification deleted successfully!", 'success');
+                  }
+                }}
+                className="text-white/80 hover:text-red-400 hover:bg-white/10 p-1.5 rounded-full transition-colors"
+                title={isBn ? "মুছে ফেলুন" : "Delete"}
+              >
+                <Trash2 size={18} />
+              </button>
+              <button 
+                onClick={onClose}
+                className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-full transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex items-center gap-3 pr-16">
+              <div className="bg-white/10 p-2 rounded-xl">
+                <Bell size={24} className="text-white animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black tracking-tight leading-tight">
+                  {isBn ? "লগইন সংক্রান্ত তথ্য" : "Login Information"}
+                </h3>
+                <p className="text-[10px] text-white/75 flex items-center gap-1 mt-1 font-bold uppercase tracking-wider">
+                  <Clock size={10} />
+                  {info.dateTime}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* LOGIN INFO BODY */}
+          <div className="p-6 space-y-4">
+            <div className="space-y-3 bg-slate-50 dark:bg-zinc-900/50 p-5 rounded-2xl border border-slate-100 dark:border-zinc-800">
+              {/* User ID */}
+              <div className="flex justify-between items-center py-2 border-b border-black/5 dark:border-white/5">
+                <span className="text-xs font-bold text-text-muted">
+                  {isBn ? "ইউজার আইডি / অ্যাকাউন্ট" : "User ID / Account"}
+                </span>
+                <span className="text-xs font-black text-text-main">
+                  {info.userId}
+                </span>
+              </div>
+
+              {/* Date & Time */}
+              <div className="flex justify-between items-center py-2 border-b border-black/5 dark:border-white/5">
+                <span className="text-xs font-bold text-text-muted">
+                  {isBn ? "তারিখ ও সময়" : "Date & Time"}
+                </span>
+                <span className="text-xs font-extrabold text-text-main">
+                  {info.dateTime}
+                </span>
+              </div>
+
+              {/* IP Address */}
+              <div className="flex justify-between items-center py-2 border-b border-black/5 dark:border-white/5">
+                <span className="text-xs font-bold text-text-muted">
+                  {isBn ? "আইপি অ্যাড্রেস" : "IP Address"}
+                </span>
+                <span className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-md font-mono">
+                  {info.ip}
+                </span>
+              </div>
+
+              {/* Area / Location Name */}
+              <div className="flex justify-between items-center py-2 border-b border-black/5 dark:border-white/5">
+                <span className="text-xs font-bold text-text-muted">
+                  {isBn ? "এলাকা / লোকেশন" : "Area / Location"}
+                </span>
+                <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                  {info.areaName}
+                </span>
+              </div>
+
+              {/* Device */}
+              <div className="flex justify-between items-center py-2">
+                <span className="text-xs font-bold text-text-muted">
+                  {isBn ? "ডিভাইস" : "Device"}
+                </span>
+                <span className="text-xs font-extrabold text-text-main truncate max-w-[200px]" title={info.device}>
+                  {info.device}
+                </span>
+              </div>
+            </div>
+
+            {/* CLOSE BUTTON */}
+            <div className="pt-2">
+              <button
+                onClick={onClose}
+                className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white hover:from-blue-700 hover:to-indigo-800 rounded-xl font-bold transition-all shadow-md active:scale-[0.98]"
+              >
+                {isBn ? "বন্ধ করুন" : "Close"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  }
 
   // Identify Target User
   const targetUser = useMemo(() => {
@@ -633,19 +941,34 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[9999] flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white dark:bg-[#121212] rounded-2xl max-w-lg w-full shadow-2xl border border-black/10 dark:border-white/10 flex flex-col max-h-[90vh] overflow-hidden">
         
         {/* HEADER SECTION - GRADIENT */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 relative shrink-0">
-          <button 
-            onClick={onClose}
-            className="absolute top-4 right-4 text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-full transition-colors"
-          >
-            <X size={18} />
-          </button>
-          <div className="flex items-center gap-3">
+          <div className="absolute top-4 right-4 flex items-center gap-2">
+            <button 
+              onClick={async () => {
+                if (window.confirm(language === 'bn' ? "আপনি কি এই নোটিফিকেশনটি মুছে ফেলতে চান?" : "Are you sure you want to delete this notification?")) {
+                  await removeNotification(notification.id);
+                  onClose();
+                  showFeedback(language === 'bn' ? "বিজ্ঞপ্তিটি মুছে ফেলা হয়েছে!" : "Notification deleted successfully!", 'success');
+                }
+              }}
+              className="text-white/80 hover:text-red-400 hover:bg-white/10 p-1.5 rounded-full transition-colors"
+              title={language === 'bn' ? "মুছে ফেলুন" : "Delete"}
+            >
+              <Trash2 size={18} />
+            </button>
+            <button 
+              onClick={onClose}
+              className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-full transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div className="flex items-center gap-3 pr-16">
             <div className="bg-white/10 p-2 rounded-xl">
               <Bell size={24} className="text-white" />
             </div>
@@ -1266,7 +1589,8 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

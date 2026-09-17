@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Check, Search, X, Plus, AlertCircle, Sparkles } from 'lucide-react';
+import { ChevronLeft, Check, Search, X, Plus, AlertCircle, Sparkles, Trash2 } from 'lucide-react';
 import { useStore } from '@/store';
 import { THEMES, TRANSLATIONS } from '@/constants';
 import { getContrastColor } from '../utils/colorUtils';
@@ -160,8 +160,20 @@ const GlobalFullscreenSelect: React.FC<GlobalFullscreenSelectProps> = ({
 
   // Combine custom added options with prop options (preventing duplicate values)
   const existingValues = new Set(normalizedPropOptions.map(o => o.value.toLowerCase()));
-  const uniqueCustomOptions = customAddedOptions.filter(o => !existingValues.has(o.value.toLowerCase()));
+  const uniqueCustomOptions = allowAdd ? customAddedOptions.filter(o => !existingValues.has(o.value.toLowerCase())) : [];
   const allOptions: Option[] = [...uniqueCustomOptions, ...normalizedPropOptions];
+
+  const handleDeleteCustomOption = (e: React.MouseEvent, val: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCustomAddedOptions(prev => {
+      const updated = prev.filter(x => x.value.toLowerCase() !== val.toLowerCase());
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
 
   const filteredOptions = allOptions.filter(opt => 
     opt.label.toLowerCase().includes(search.toLowerCase()) ||
@@ -502,6 +514,7 @@ const GlobalFullscreenSelect: React.FC<GlobalFullscreenSelectProps> = ({
                         };
 
                         const roleColors = isRoleSelect ? getRoleColors(option.value) : null;
+                        const isCustomOption = allowAdd && customAddedOptions.some(c => c.value.toLowerCase() === option.value.toLowerCase());
 
                         const buttonStyle = roleColors
                           ? {
@@ -541,7 +554,7 @@ const GlobalFullscreenSelect: React.FC<GlobalFullscreenSelectProps> = ({
                                 style={{ transition: 'none' }}
                               />
                             )}
-                            <div className="flex items-center gap-3 relative z-10 w-full">
+                            <div className="flex items-center gap-3 relative z-10 w-full min-w-0 pr-2">
                               {option.icon && (
                                 typeof option.icon === 'string' && (option.icon.startsWith('http') || option.icon.startsWith('https') || option.icon.startsWith('data:')) ? (
                                   <img src={option.icon} alt="" className="w-5 h-auto rounded-sm" />
@@ -549,18 +562,30 @@ const GlobalFullscreenSelect: React.FC<GlobalFullscreenSelectProps> = ({
                                   <span className="text-xl">{option.icon}</span>
                                 )
                               )}
-                              <div className="flex flex-col flex-1">
-                                <span className={`text-[12px] ${isSelected ? 'font-bold' : 'font-semibold'}`} style={{ color: roleColors ? roleColors.text : undefined }}>{option.label}</span>
+                              <div className="flex flex-col flex-1 min-w-0">
+                                <span className={`text-[12px] truncate ${isSelected ? 'font-bold' : 'font-semibold'}`} style={{ color: roleColors ? roleColors.text : undefined }}>{option.label}</span>
                                 {option.subLabel && (
-                                  <span className="text-[9px] mt-0.5 opacity-70" style={{ color: roleColors ? roleColors.text : undefined }}>{option.subLabel}</span>
+                                  <span className="text-[9px] mt-0.5 opacity-70 truncate" style={{ color: roleColors ? roleColors.text : undefined }}>{option.subLabel}</span>
                                 )}
                               </div>
                             </div>
-                            {isSelected && (
-                              <div className="bg-white/20 rounded-full p-0.5 relative z-10">
-                                <Check size={12} strokeWidth={3} className={roleColors ? '' : 'text-white'} style={{ color: roleColors ? roleColors.text : undefined }} />
-                              </div>
-                            )}
+                            <div className="flex items-center gap-1.5 relative z-10 shrink-0">
+                              {isCustomOption && (
+                                <span
+                                  role="button"
+                                  onClick={(e) => handleDeleteCustomOption(e, option.value)}
+                                  className="p-1 rounded-md hover:bg-red-500/20 text-neutral-400 hover:text-red-500 transition-all cursor-pointer"
+                                  title={language === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
+                                >
+                                  <Trash2 size={14} />
+                                </span>
+                              )}
+                              {isSelected && (
+                                <div className="bg-white/20 rounded-full p-0.5">
+                                  <Check size={12} strokeWidth={3} className={roleColors ? '' : 'text-white'} style={{ color: roleColors ? roleColors.text : undefined }} />
+                                </div>
+                              )}
+                            </div>
                           </button>
                         );
                       })}

@@ -2052,6 +2052,7 @@ const NewTrip: React.FC = () => {
                     title={t.SELECT_MONTH || "Select Month"}
                     selectedValue={String(newFileMonth)}
                     searchable={false}
+                    allowAdd={false}
                   />
 
                   <GlobalFullscreenSelect
@@ -2061,10 +2062,11 @@ const NewTrip: React.FC = () => {
                       setNewFileYear(parseInt(val));
                       setIsYearSheetOpen(false);
                     }}
-                    options={[2024, 2025, 2026, 2027].map(y => ({ label: String(y), value: String(y) }))}
+                    options={Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(y => ({ label: String(y), value: String(y) }))}
                     title={t.SELECT_YEAR || "Select Year"}
                     selectedValue={String(newFileYear)}
                     searchable={false}
+                    allowAdd={false}
                   />
                 </div>
                 <button 

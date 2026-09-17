@@ -13,6 +13,7 @@ import fleetproLogo from './assets/logo.png';
 import defaultLoginWallpaper from './assets/login_wallpaper.png';
 import { ShoppingCart, Wallet as WalletIcon, ArrowLeft, Bell, Moon, Sun, Menu, ChevronLeft } from 'lucide-react';
 import { getContrastColor, getHexColor, isColorLight } from './utils/colorUtils';
+import { getApiUrl } from '@/utils/apiUrl';
 import Layout from '@/components/Layout';
 
 import { THEMES, TRANSLATIONS } from '@/constants';
@@ -71,7 +72,7 @@ const ViewContainer: React.FC = () => {
     const { 
       currentView, user, setView, theme, selectedUser, fontStyle, fontSize, fontBold, 
       backgroundColor, wallpaper, loginWallpaper, loginBackgroundColor, isNightMode, isEyeComfort, appThemeMode, isLoadingView, editingTrip,
-      logo, logout, activeSection, activeDetailView, headerBg, navBg, goBack, confirmAction, language,
+      logo, logout, activeSection, activeDetailView, headerBg, navBg, goBack, confirmAction, language, showFeedback,
       monthlyFiles, addMonthlyFile, setCurrentFile, primaryColor, isEntryFormOpen, isPaymentPopupOpen, setIsPaymentPopupOpen, isContactSelectionMode, isKeyboardOpen, setIsKeyboardOpen, customBackAction, navigationDirection,
       showReceivedBreakdown, showPendingBreakdown, customHeaderTitle,
       confirmConfig, showAvailableBalancePage, showPendingBreakdownPage, notifications, setAppThemeMode,
@@ -862,6 +863,56 @@ const ViewContainer: React.FC = () => {
           document.documentElement.classList.remove('dark-theme');
         }
     }, [theme, fontStyle, fontSize, fontBold, backgroundColor, wallpaper, loginWallpaper, isNightMode, isEyeComfort, appThemeMode, headerBg, navBg, primaryColor, isAppLoading, user, currentView]);
+
+    // Server-side login session tracking and auto-logout
+    useEffect(() => {
+      if (!user) return;
+
+      const checkSessionOnServer = async () => {
+        const sessionId = localStorage.getItem('fleetpro_session_id');
+        if (!sessionId) {
+          console.warn("[Session Manager] No session ID found in localStorage for logged-in user. Logging out.");
+          logout();
+          return;
+        }
+
+        try {
+          const fetchFn = (window as any)._originalFetch || window.fetch;
+          const res = await fetchFn(getApiUrl('/api/auth/check-session'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId })
+          });
+          
+          if (!res.ok) {
+            console.warn("[Session Manager] Session invalid/expired on server-side. Logging out user.");
+            logout();
+            showFeedback(language === 'bn' ? 'লগইন সেশন শেষ হয়ে গেছে' : 'Login session expired', 'error');
+          }
+        } catch (err) {
+          console.error("[Session Manager] Failed to verify session on server:", err, "URL:", getApiUrl("/api/auth/check-session"));
+        }
+      };
+
+      // Check immediately upon login/hydration
+      checkSessionOnServer();
+
+      // Poll session status every 5 seconds (100% real-time and secure)
+      const interval = setInterval(checkSessionOnServer, 5000);
+
+      const handleForceLogout = () => {
+        console.warn("[Session Manager] Force logout triggered via API error response.");
+        logout();
+        showFeedback(language === 'bn' ? 'লগইন সেশন শেষ হয়ে গেছে' : 'Login session expired', 'error');
+      };
+
+      window.addEventListener('force-logout', handleForceLogout);
+
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('force-logout', handleForceLogout);
+      };
+    }, [user, logout, language, showFeedback]);
 
     if (isAppLoading) {
       const effectiveLoginWallpaper = loginWallpaper || wallpaper || defaultLoginWallpaper;

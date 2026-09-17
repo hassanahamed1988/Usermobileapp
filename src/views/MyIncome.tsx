@@ -240,6 +240,22 @@ const MyIncome: React.FC = () => {
   const [isMonthSelectOpen, setIsMonthSelectOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<number | 'ALL'>('ALL');
 
+  const monthsList = useMemo(() => [
+    { value: 1, label: language === 'bn' ? 'জানুয়ারি' : 'January' },
+    { value: 2, label: language === 'bn' ? 'ফেব্রুয়ারি' : 'February' },
+    { value: 3, label: language === 'bn' ? 'মার্চ' : 'March' },
+    { value: 4, label: language === 'bn' ? 'এপ্রিল' : 'April' },
+    { value: 5, label: language === 'bn' ? 'মে' : 'May' },
+    { value: 6, label: language === 'bn' ? 'জুন' : 'June' },
+    { value: 7, label: language === 'bn' ? 'জুলাই' : 'July' },
+    { value: 8, label: language === 'bn' ? 'আগস্ট' : 'August' },
+    { value: 9, label: language === 'bn' ? 'সেপ্টেম্বর' : 'September' },
+    { value: 10, label: language === 'bn' ? 'অক্টোবর' : 'October' },
+    { value: 11, label: language === 'bn' ? 'নভেম্বর' : 'November' },
+    { value: 12, label: language === 'bn' ? 'ডিসেম্বর' : 'December' }
+  ], [language]);
+  const yearsList = useMemo(() => Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i), []);
+
 
 const PendingBreakdownPage = ({ data, total, onClose, currency, isDark, wallpaper, backgroundColor, isNightMode, appThemeMode, trips, monthlyFiles, payments }: any) => {
   const { setIsLoadingView, user, removePayment, confirmAction, showFeedback, language, updateTrip, trips: storeTrips, activeSection, setActiveSection, goBack, setView, setSelectedTrip, globalFilterMonth, setGlobalFilterMonth, globalFilterYear, setGlobalFilterYear, notifications, setAppThemeMode } = useStore();
@@ -252,6 +268,10 @@ const PendingBreakdownPage = ({ data, total, onClose, currency, isDark, wallpape
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMonth, setFilterMonth] = useState<number | 'ALL'>('ALL');
   const [filterYear, setFilterYear] = useState<number | 'ALL'>('ALL');
+  const [isPendingMainMonthSelectOpen, setIsPendingMainMonthSelectOpen] = useState(false);
+  const [isPendingMainYearSelectOpen, setIsPendingMainYearSelectOpen] = useState(false);
+  const [isPendingCategoryMonthSelectOpen, setIsPendingCategoryMonthSelectOpen] = useState(false);
+  const [isPendingCategoryYearSelectOpen, setIsPendingCategoryYearSelectOpen] = useState(false);
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
@@ -582,53 +602,34 @@ const PendingBreakdownPage = ({ data, total, onClose, currency, isDark, wallpape
               </div>
 
               {/* Month & Year Filters */}
-              <div className="grid grid-cols-2 gap-3 mb-2">
-                {/* Month Selector */}
-                <div className="relative">
-                  <select
-                    value={globalFilterMonth}
-                    onChange={(e) => setGlobalFilterMonth(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                    className="w-full px-4 py-3 rounded-[10px] text-xs bg-card-bg border border-black/10 dark:border-white/10 text-text-main focus:outline-none appearance-none cursor-pointer pr-10 font-bold shadow-sm"
-                  >
-                    <option value="ALL">{language === 'bn' ? 'সকল মাস' : 'All Months'}</option>
-                    {[
-                      { value: 1, label: language === 'bn' ? 'জানুয়ারি' : 'January' },
-                      { value: 2, label: language === 'bn' ? 'ফেব্রুয়ারি' : 'February' },
-                      { value: 3, label: language === 'bn' ? 'মার্চ' : 'March' },
-                      { value: 4, label: language === 'bn' ? 'এপ্রিল' : 'April' },
-                      { value: 5, label: language === 'bn' ? 'মে' : 'May' },
-                      { value: 6, label: language === 'bn' ? 'জুন' : 'June' },
-                      { value: 7, label: language === 'bn' ? 'জুলাই' : 'July' },
-                      { value: 8, label: language === 'bn' ? 'আগস্ট' : 'August' },
-                      { value: 9, label: language === 'bn' ? 'সেপ্টেম্বর' : 'September' },
-                      { value: 10, label: language === 'bn' ? 'অক্টোবর' : 'October' },
-                      { value: 11, label: language === 'bn' ? 'নভেম্বর' : 'November' },
-                      { value: 12, label: language === 'bn' ? 'ডিসেম্বর' : 'December' }
-                    ].map(m => (
-                      <option key={m.value} value={m.value}>{m.label}</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
-                    <ChevronDown size={14} />
-                  </div>
-                </div>
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                {/* Month Select Button-Card */}
+                <button
+                  type="button"
+                  onClick={() => setIsPendingMainMonthSelectOpen(true)}
+                  className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[8px] px-3 py-3.5 text-xs font-bold flex items-center justify-between active:scale-95 transition-all shadow-sm"
+                >
+                  <span>
+                    {globalFilterMonth === 'ALL'
+                      ? (language === 'bn' ? 'সকল মাস' : 'All Months')
+                      : monthsList.find(m => m.value === globalFilterMonth)?.label || globalFilterMonth}
+                  </span>
+                  <ChevronDown size={14} className="text-text-muted shrink-0" />
+                </button>
 
-                {/* Year Selector */}
-                <div className="relative">
-                  <select
-                    value={globalFilterYear}
-                    onChange={(e) => setGlobalFilterYear(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                    className="w-full px-4 py-3 rounded-[10px] text-xs bg-card-bg border border-black/10 dark:border-white/10 text-text-main focus:outline-none appearance-none cursor-pointer pr-10 font-bold shadow-sm"
-                  >
-                    <option value="ALL">{language === 'bn' ? 'সকল বছর' : 'All Years'}</option>
-                    {years.map(y => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
-                    <ChevronDown size={14} />
-                  </div>
-                </div>
+                {/* Year Select Button-Card */}
+                <button
+                  type="button"
+                  onClick={() => setIsPendingMainYearSelectOpen(true)}
+                  className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[8px] px-3 py-3.5 text-xs font-bold flex items-center justify-between active:scale-95 transition-all shadow-sm"
+                >
+                  <span>
+                    {globalFilterYear === 'ALL'
+                      ? (language === 'bn' ? 'সকল বছর' : 'All Years')
+                      : globalFilterYear}
+                  </span>
+                  <ChevronDown size={14} className="text-text-muted shrink-0" />
+                </button>
               </div>
 
               {Object.entries(data).map(([key, value]: [string, any], index: number) => {
@@ -781,35 +782,33 @@ const PendingBreakdownPage = ({ data, total, onClose, currency, isDark, wallpape
 
                     <div className="mb-4">
                       <div className="grid grid-cols-2 gap-2">
-                        {/* Month Select */}
-                        <div className="relative">
-                          <select
-                            value={filterMonth}
-                            onChange={(e) => setFilterMonth(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                            className="w-full px-3 py-3 rounded-[10px] text-xs bg-card-bg border border-black/10 dark:border-white/10 text-text-main focus:outline-none appearance-none cursor-pointer pr-8 font-semibold"
-                          >
-                            <option value="ALL">{language === 'bn' ? 'সকল মাস' : 'All Months'}</option>
-                            {monthsList.map(m => (
-                              <option key={m.value} value={m.value}>{m.label}</option>
-                            ))}
-                          </select>
-                          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                        </div>
+                        {/* Month Select Button-Card */}
+                        <button
+                          type="button"
+                          onClick={() => setIsPendingCategoryMonthSelectOpen(true)}
+                          className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[8px] px-3 py-3.5 text-xs font-bold flex items-center justify-between active:scale-95 transition-all shadow-sm"
+                        >
+                          <span>
+                            {filterMonth === 'ALL'
+                              ? (language === 'bn' ? 'সকল মাস' : 'All Months')
+                              : monthsList.find(m => m.value === filterMonth)?.label || filterMonth}
+                          </span>
+                          <ChevronDown size={14} className="text-text-muted shrink-0" />
+                        </button>
 
-                        {/* Year Select */}
-                        <div className="relative">
-                          <select
-                            value={filterYear}
-                            onChange={(e) => setFilterYear(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                            className="w-full px-3 py-3 rounded-[10px] text-xs bg-card-bg border border-black/10 dark:border-white/10 text-text-main focus:outline-none appearance-none cursor-pointer pr-8 font-semibold"
-                          >
-                            <option value="ALL">{language === 'bn' ? 'সকল বছর' : 'All Years'}</option>
-                            {yearsList.map(y => (
-                              <option key={y} value={y}>{y}</option>
-                            ))}
-                          </select>
-                          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                        </div>
+                        {/* Year Select Button-Card */}
+                        <button
+                          type="button"
+                          onClick={() => setIsPendingCategoryYearSelectOpen(true)}
+                          className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[8px] px-3 py-3.5 text-xs font-bold flex items-center justify-between active:scale-95 transition-all shadow-sm"
+                        >
+                          <span>
+                            {filterYear === 'ALL'
+                              ? (language === 'bn' ? 'সকল বছর' : 'All Years')
+                              : filterYear}
+                          </span>
+                          <ChevronDown size={14} className="text-text-muted shrink-0" />
+                        </button>
                       </div>
                     </div>
                   </>
@@ -1145,6 +1144,70 @@ const PendingBreakdownPage = ({ data, total, onClose, currency, isDark, wallpape
         </>,
         document.body
       )}
+
+      {/* Main Pending Month & Year GlobalFullscreenSelect */}
+      <GlobalFullscreenSelect
+        isOpen={isPendingMainMonthSelectOpen}
+        onClose={() => setIsPendingMainMonthSelectOpen(false)}
+        onSelect={(val) => {
+          setGlobalFilterMonth(val === 'ALL' ? 'ALL' : Number(val));
+          setIsPendingMainMonthSelectOpen(false);
+        }}
+        options={[
+          { label: language === 'bn' ? 'সকল মাস' : 'All Months', value: 'ALL' },
+          ...monthsList.map(m => ({ label: m.label, value: String(m.value) }))
+        ]}
+        title={language === 'bn' ? 'মাস নির্বাচন করুন' : 'Select Month'}
+        selectedValue={String(globalFilterMonth)}
+        searchable={false}
+      />
+      <GlobalFullscreenSelect
+        isOpen={isPendingMainYearSelectOpen}
+        onClose={() => setIsPendingMainYearSelectOpen(false)}
+        onSelect={(val) => {
+          setGlobalFilterYear(val === 'ALL' ? 'ALL' : Number(val));
+          setIsPendingMainYearSelectOpen(false);
+        }}
+        options={[
+          { label: language === 'bn' ? 'সকল বছর' : 'All Years', value: 'ALL' },
+          ...yearsList.map(y => ({ label: String(y), value: String(y) }))
+        ]}
+        title={language === 'bn' ? 'বছর নির্বাচন করুন' : 'Select Year'}
+        selectedValue={String(globalFilterYear)}
+        searchable={false}
+      />
+
+      {/* Category Pending Month & Year GlobalFullscreenSelect */}
+      <GlobalFullscreenSelect
+        isOpen={isPendingCategoryMonthSelectOpen}
+        onClose={() => setIsPendingCategoryMonthSelectOpen(false)}
+        onSelect={(val) => {
+          setFilterMonth(val === 'ALL' ? 'ALL' : Number(val));
+          setIsPendingCategoryMonthSelectOpen(false);
+        }}
+        options={[
+          { label: language === 'bn' ? 'সকল মাস' : 'All Months', value: 'ALL' },
+          ...monthsList.map(m => ({ label: m.label, value: String(m.value) }))
+        ]}
+        title={language === 'bn' ? 'মাস নির্বাচন করুন' : 'Select Month'}
+        selectedValue={String(filterMonth)}
+        searchable={false}
+      />
+      <GlobalFullscreenSelect
+        isOpen={isPendingCategoryYearSelectOpen}
+        onClose={() => setIsPendingCategoryYearSelectOpen(false)}
+        onSelect={(val) => {
+          setFilterYear(val === 'ALL' ? 'ALL' : Number(val));
+          setIsPendingCategoryYearSelectOpen(false);
+        }}
+        options={[
+          { label: language === 'bn' ? 'সকল বছর' : 'All Years', value: 'ALL' },
+          ...yearsList.map(y => ({ label: String(y), value: String(y) }))
+        ]}
+        title={language === 'bn' ? 'বছর নির্বাচন করুন' : 'Select Year'}
+        selectedValue={String(filterYear)}
+        searchable={false}
+      />
     </div>
   );
 };
@@ -1510,6 +1573,10 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
   const [showNetIncomeBreakdown, setShowNetIncomeBreakdown] = useState(false);
   const [categoryFilterMonth, setCategoryFilterMonth] = useState<number | 'ALL'>('ALL');
   const [categoryFilterYear, setCategoryFilterYear] = useState<number | 'ALL'>('ALL');
+  const [isCategorySubpageMonthSelectOpen, setIsCategorySubpageMonthSelectOpen] = useState(false);
+  const [isCategorySubpageYearSelectOpen, setIsCategorySubpageYearSelectOpen] = useState(false);
+  const [isNetIncomeMonthSelectOpen, setIsNetIncomeMonthSelectOpen] = useState(false);
+  const [isNetIncomeYearSelectOpen, setIsNetIncomeYearSelectOpen] = useState(false);
 
   // New state for navigation mapped to activeSection
   const showPendingPage = activeSection === 'PENDING_PAGE';
@@ -1645,35 +1712,33 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
 
                 <div className="mb-4">
                   <div className="grid grid-cols-2 gap-2">
-                    {/* Month Select */}
-                    <div className="relative">
-                      <select
-                        value={categoryFilterMonth}
-                        onChange={(e) => setCategoryFilterMonth(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                        className="w-full px-3 py-3 rounded-[10px] text-xs bg-card-bg border border-black/10 dark:border-white/10 text-text-main focus:outline-none appearance-none cursor-pointer pr-8 font-semibold"
-                      >
-                        <option value="ALL">{language === 'bn' ? 'সকল মাস' : 'All Months'}</option>
-                        {monthsList.map(m => (
-                          <option key={m.value} value={m.value}>{m.label}</option>
-                        ))}
-                      </select>
-                      <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                    </div>
+                    {/* Month Select Button-Card */}
+                    <button
+                      type="button"
+                      onClick={() => setIsCategorySubpageMonthSelectOpen(true)}
+                      className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[8px] px-3 py-3.5 text-xs font-bold flex items-center justify-between active:scale-95 transition-all shadow-sm"
+                    >
+                      <span>
+                        {categoryFilterMonth === 'ALL'
+                          ? (language === 'bn' ? 'সকল মাস' : 'All Months')
+                          : monthsList.find(m => m.value === categoryFilterMonth)?.label || categoryFilterMonth}
+                      </span>
+                      <ChevronDown size={14} className="text-text-muted shrink-0" />
+                    </button>
 
-                    {/* Year Select */}
-                    <div className="relative">
-                      <select
-                        value={categoryFilterYear}
-                        onChange={(e) => setCategoryFilterYear(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                        className="w-full px-3 py-3 rounded-[10px] text-xs bg-card-bg border border-black/10 dark:border-white/10 text-text-main focus:outline-none appearance-none cursor-pointer pr-8 font-semibold"
-                      >
-                        <option value="ALL">{language === 'bn' ? 'সকল বছর' : 'All Years'}</option>
-                        {yearsList.map(y => (
-                          <option key={y} value={y}>{y}</option>
-                        ))}
-                      </select>
-                      <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
-                    </div>
+                    {/* Year Select Button-Card */}
+                    <button
+                      type="button"
+                      onClick={() => setIsCategorySubpageYearSelectOpen(true)}
+                      className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[8px] px-3 py-3.5 text-xs font-bold flex items-center justify-between active:scale-95 transition-all shadow-sm"
+                    >
+                      <span>
+                        {categoryFilterYear === 'ALL'
+                          ? (language === 'bn' ? 'সকল বছর' : 'All Years')
+                          : categoryFilterYear}
+                      </span>
+                      <ChevronDown size={14} className="text-text-muted shrink-0" />
+                    </button>
                   </div>
                 </div>
 
@@ -2072,6 +2137,38 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
         </>,
         document.body
       )}
+
+      {/* Category Subpage Month & Year Select */}
+      <GlobalFullscreenSelect
+        isOpen={isCategorySubpageMonthSelectOpen}
+        onClose={() => setIsCategorySubpageMonthSelectOpen(false)}
+        onSelect={(val) => {
+          setCategoryFilterMonth(val === 'ALL' ? 'ALL' : Number(val));
+          setIsCategorySubpageMonthSelectOpen(false);
+        }}
+        options={[
+          { label: language === 'bn' ? 'সকল মাস' : 'All Months', value: 'ALL' },
+          ...monthsList.map(m => ({ label: m.label, value: String(m.value) }))
+        ]}
+        title={language === 'bn' ? 'মাস নির্বাচন করুন' : 'Select Month'}
+        selectedValue={String(categoryFilterMonth)}
+        searchable={false}
+      />
+      <GlobalFullscreenSelect
+        isOpen={isCategorySubpageYearSelectOpen}
+        onClose={() => setIsCategorySubpageYearSelectOpen(false)}
+        onSelect={(val) => {
+          setCategoryFilterYear(val === 'ALL' ? 'ALL' : Number(val));
+          setIsCategorySubpageYearSelectOpen(false);
+        }}
+        options={[
+          { label: language === 'bn' ? 'সকল বছর' : 'All Years', value: 'ALL' },
+          ...yearsList.map(y => ({ label: String(y), value: String(y) }))
+        ]}
+        title={language === 'bn' ? 'বছর নির্বাচন করুন' : 'Select Year'}
+        selectedValue={String(categoryFilterYear)}
+        searchable={false}
+      />
       </div>
     );
   }
@@ -2538,53 +2635,34 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
           </div>
 
           {/* Month & Year Filters */}
-          <div className="grid grid-cols-2 gap-3 mb-2">
-            {/* Month Selector */}
-            <div className="relative">
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-[10px] text-xs bg-card-bg border border-black/10 dark:border-white/10 text-text-main focus:outline-none appearance-none cursor-pointer pr-10 font-bold shadow-sm"
-              >
-                <option value="ALL">{language === 'bn' ? 'সকল মাস' : 'All Months'}</option>
-                {[
-                  { value: 1, label: language === 'bn' ? 'জানুয়ারি' : 'January' },
-                  { value: 2, label: language === 'bn' ? 'ফেব্রুয়ারি' : 'February' },
-                  { value: 3, label: language === 'bn' ? 'মার্চ' : 'March' },
-                  { value: 4, label: language === 'bn' ? 'এপ্রিল' : 'April' },
-                  { value: 5, label: language === 'bn' ? 'মে' : 'May' },
-                  { value: 6, label: language === 'bn' ? 'জুন' : 'June' },
-                  { value: 7, label: language === 'bn' ? 'জুলাই' : 'July' },
-                  { value: 8, label: language === 'bn' ? 'আগস্ট' : 'August' },
-                  { value: 9, label: language === 'bn' ? 'সেপ্টেম্বর' : 'September' },
-                  { value: 10, label: language === 'bn' ? 'অক্টোবর' : 'October' },
-                  { value: 11, label: language === 'bn' ? 'নভেম্বর' : 'November' },
-                  { value: 12, label: language === 'bn' ? 'ডিসেম্বর' : 'December' }
-                ].map(m => (
-                  <option key={m.value} value={m.value}>{m.label}</option>
-                ))}
-              </select>
-              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
-                <ChevronDown size={14} />
-              </div>
-            </div>
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            {/* Month Select Button-Card */}
+            <button
+              type="button"
+              onClick={() => setIsNetIncomeMonthSelectOpen(true)}
+              className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[8px] px-3 py-3.5 text-xs font-bold flex items-center justify-between active:scale-95 transition-all shadow-sm"
+            >
+              <span>
+                {selectedMonth === 'ALL'
+                  ? (language === 'bn' ? 'সকল মাস' : 'All Months')
+                  : monthsList.find(m => m.value === selectedMonth)?.label || selectedMonth}
+              </span>
+              <ChevronDown size={14} className="text-text-muted shrink-0" />
+            </button>
 
-            {/* Year Selector */}
-            <div className="relative">
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-[10px] text-xs bg-card-bg border border-black/10 dark:border-white/10 text-text-main focus:outline-none appearance-none cursor-pointer pr-10 font-bold shadow-sm"
-              >
-                <option value="ALL">{language === 'bn' ? 'সকল বছর' : 'All Years'}</option>
-                {years.map(y => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
-              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
-                <ChevronDown size={14} />
-              </div>
-            </div>
+            {/* Year Select Button-Card */}
+            <button
+              type="button"
+              onClick={() => setIsNetIncomeYearSelectOpen(true)}
+              className="w-full bg-card-bg text-text-main border border-black/10 dark:border-white/10 rounded-[8px] px-3 py-3.5 text-xs font-bold flex items-center justify-between active:scale-95 transition-all shadow-sm"
+            >
+              <span>
+                {selectedYear === 'ALL'
+                  ? (language === 'bn' ? 'সকল বছর' : 'All Years')
+                  : selectedYear}
+              </span>
+              <ChevronDown size={14} className="text-text-muted shrink-0" />
+            </button>
           </div>
 
           {/* Income Section */}
@@ -2678,6 +2756,38 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
             </div>
           </div>
         </div>
+
+        {/* Income Breakdown Month & Year Select Modals */}
+        <GlobalFullscreenSelect
+          isOpen={isNetIncomeMonthSelectOpen}
+          onClose={() => setIsNetIncomeMonthSelectOpen(false)}
+          onSelect={(val) => {
+            setSelectedMonth(val === 'ALL' ? 'ALL' : Number(val));
+            setIsNetIncomeMonthSelectOpen(false);
+          }}
+          options={[
+            { label: language === 'bn' ? 'সকল মাস' : 'All Months', value: 'ALL' },
+            ...monthsList.map(m => ({ label: m.label, value: String(m.value) }))
+          ]}
+          title={language === 'bn' ? 'মাস নির্বাচন করুন' : 'Select Month'}
+          selectedValue={String(selectedMonth)}
+          searchable={false}
+        />
+        <GlobalFullscreenSelect
+          isOpen={isNetIncomeYearSelectOpen}
+          onClose={() => setIsNetIncomeYearSelectOpen(false)}
+          onSelect={(val) => {
+            setSelectedYear(val === 'ALL' ? 'ALL' : Number(val));
+            setIsNetIncomeYearSelectOpen(false);
+          }}
+          options={[
+            { label: language === 'bn' ? 'সকল বছর' : 'All Years', value: 'ALL' },
+            ...yearsList.map(y => ({ label: String(y), value: String(y) }))
+          ]}
+          title={language === 'bn' ? 'বছর নির্বাচন করুন' : 'Select Year'}
+          selectedValue={String(selectedYear)}
+          searchable={false}
+        />
       </div>
     );
   }
@@ -2763,14 +2873,14 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
                     <div className="flex gap-2">
                       <button 
                         onClick={() => setShowMonthSelect(true)}
-                        className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 shadow-lg cursor-pointer"
+                        className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-[8px] text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 shadow-lg cursor-pointer"
                       >
-                        {selectedMonth === 'ALL' ? (language === 'bn' ? 'সব মাস' : 'All Month') : months[selectedMonth - 1]}
+                        {selectedMonth === 'ALL' ? (language === 'bn' ? 'সব মাস' : 'All Month') : (monthsList.find(m => m.value === selectedMonth)?.label || months[selectedMonth - 1])}
                         <ChevronDown size={10} className="text-white/70" />
                       </button>
                       <button 
                         onClick={() => setShowYearSelect(true)}
-                        className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 shadow-lg cursor-pointer"
+                        className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-[8px] text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 shadow-lg cursor-pointer"
                       >
                         {selectedYear === 'ALL' ? (language === 'bn' ? 'সব বছর' : 'All Years') : selectedYear}
                         <ChevronDown size={10} className="text-white/70" />
@@ -2893,9 +3003,9 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
         }}
         options={[
           { label: language === 'bn' ? 'সব মাস' : 'All Month', value: 'ALL' },
-          ...months.map((m, i) => ({
-            label: m,
-            value: String(i + 1)
+          ...monthsList.map(m => ({
+            label: m.label,
+            value: String(m.value)
           }))
         ]}
         title={t.SELECT_MONTH || "Select Month"}
