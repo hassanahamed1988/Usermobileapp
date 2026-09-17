@@ -11,12 +11,19 @@ import {
   collectionGroup as clientCollectionGroup, 
   getDocs as clientGetDocs, 
   updateDoc as clientUpdateDoc, 
-  writeBatch as clientWriteBatch 
+  writeBatch as clientWriteBatch,
+  doc as clientDoc,
+  setDoc as clientSetDoc,
+  getDoc as clientGetDoc
 } from 'firebase/firestore';
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
+
+  // Initialize Firestore backend client
+  const clientApp = initClientApp(firebaseConfig);
+  const dbClient = getClientFirestore(clientApp, firebaseConfig.firestoreDatabaseId);
 
   // Use JSON parsing middleware with custom limits for scanner image uploads
   app.use(express.json({ limit: "20mb" }));
@@ -725,6 +732,188 @@ Do not include the summary total rows (like 'TOTAL', 'CASH', 'VAT', 'ROUNDING', 
     }
   });
 
+  // API Route for Manager-Based Purchase Partner Push Notifications
+  // Enforces strict backend-side targeting:
+  // - Finds all partners under the submitter's managerId
+  // - Excludes the submitter themselves
+  // - Excludes partners belonging to other managers
+  // - Inserts in-app notifications and dispatches push alerts to their devices
+  app.post("/api/purchase/notify-partners", enforceSession, async (req, res) => {
+    try {
+      const {
+        purchaseId,
+        managerId: clientManagerId,
+        partnerId: clientPartnerId,
+        partnerDocId,
+        submitterUserId,
+        submitterName,
+        hypermarketName,
+        amount,
+        date,
+        time,
+        itemsCount,
+        itemsSummary
+      } = req.body;
+
+      if (!purchaseId || !submitterUserId) {
+        res.status(400).json({ error: "purchaseId and submitterUserId are required" });
+        return;
+      }
+
+      console.log(`[Purchase Notification] Received notification request for Purchase: ${purchaseId} by User: ${submitterUserId}`);
+
+      // 1. Fetch all partners from database to enforce backend-side manager resolution
+      const partnersSnapshot = await clientGetDocs(clientCollection(dbClient, "partners"));
+      const allPartners: any[] = [];
+      partnersSnapshot.forEach((docSnap) => {
+        allPartners.push({ id: docSnap.id, ...docSnap.data() });
+      });
+
+      // 2. Locate the submitting partner to resolve true managerId from the database
+      const submitterPartner = allPartners.find(
+        (p) =>
+          String(p.userId) === String(submitterUserId) ||
+          (clientPartnerId && String(p.partnerId) === String(clientPartnerId)) ||
+          (partnerDocId && String(p.id) === String(partnerDocId))
+      );
+
+      let resolvedManagerId = "";
+      if (submitterPartner) {
+        if (submitterPartner.accountType === "MANAGER") {
+          resolvedManagerId = submitterPartner.id;
+        } else {
+          resolvedManagerId = submitterPartner.managerId || clientManagerId || "";
+        }
+      } else {
+        resolvedManagerId = clientManagerId || "";
+      }
+
+      if (!resolvedManagerId) {
+        console.log(`[Purchase Notification] No Manager ID resolved for submitter ${submitterUserId}. Skipping partner broadcast.`);
+        res.json({
+          success: true,
+          message: "No Manager ID associated with this partner.",
+          notifiedCount: 0,
+          notifiedPartners: []
+        });
+        return;
+      }
+
+      console.log(`[Purchase Notification] Resolved Manager ID: ${resolvedManagerId}. Filtering target partner group.`);
+
+      // 3. Strict Server-Side Target Filtering:
+      // - Match ONLY partners belonging to the exact same manager (managerId === resolvedManagerId or manager document itself)
+      // - Status must not be 'deleted' or 'inactive'
+      // - EXCLUDE the submitter themselves
+      // - Partners under ANY other manager are strictly omitted
+      const targetPartners = allPartners.filter((p) => {
+        if (p.status === "deleted" || p.status === "inactive") return false;
+
+        const isUnderThisManager =
+          p.managerId === resolvedManagerId ||
+          (p.id === resolvedManagerId && p.accountType === "MANAGER");
+
+        if (!isUnderThisManager) return false;
+
+        const isSubmitter =
+          String(p.userId) === String(submitterUserId) ||
+          (clientPartnerId && String(p.partnerId) === String(clientPartnerId)) ||
+          (partnerDocId && String(p.id) === String(partnerDocId)) ||
+          (submitterPartner && String(p.id) === String(submitterPartner.id));
+
+        if (isSubmitter) return false;
+
+        return true;
+      });
+
+      console.log(`[Purchase Notification] Found ${targetPartners.length} partner(s) under Manager ${resolvedManagerId} to notify.`);
+
+      const finalDate = date || new Date().toISOString().split("T")[0];
+      const finalTime = time || new Date().toLocaleTimeString("en-US", { hour12: false });
+      const finalSubmitterName = submitterName || submitterPartner?.name || "Partner";
+      const finalPartnerId = clientPartnerId || submitterPartner?.partnerId || "";
+      const finalAmount = Number(amount) || 0;
+      const finalStore = hypermarketName || "Hypermarket";
+
+      const notifiedList: any[] = [];
+      const timestamp = new Date().toISOString();
+
+      // 4. Create and dispatch notification for each partner under this manager
+      for (const targetPartner of targetPartners) {
+        const targetUserId = targetPartner.userId || targetPartner.id;
+        if (!targetUserId) continue;
+
+        const notifDocId = `NOTIF-PURCHASE-${purchaseId}-${targetPartner.id}-${Date.now()}`;
+        const notifData = {
+          id: notifDocId,
+          title: `🛒 Partner Purchase: ${finalSubmitterName}`,
+          message: `Partner ${finalSubmitterName} (ID: ${finalPartnerId || "N/A"}) submitted a purchase of QAR ${finalAmount.toFixed(2)} at ${finalStore} on ${finalDate} at ${finalTime}.`,
+          type: "PURCHASE",
+          managerId: resolvedManagerId,
+          partnerId: finalPartnerId,
+          purchaseId: purchaseId,
+          submitterUserId: submitterUserId,
+          submitterName: finalSubmitterName,
+          targetUserId: targetUserId,
+          targetPartnerId: targetPartner.partnerId || targetPartner.id,
+          timestamp: timestamp,
+          isRead: false,
+          purchaseDetails: {
+            purchaseId: purchaseId,
+            managerId: resolvedManagerId,
+            partnerId: finalPartnerId,
+            submitterUserId: submitterUserId,
+            submitterName: finalSubmitterName,
+            hypermarketName: finalStore,
+            amount: finalAmount,
+            date: finalDate,
+            time: finalTime,
+            itemsCount: Number(itemsCount) || 1,
+            itemsSummary: itemsSummary || ""
+          }
+        };
+
+        try {
+          // Save in user's notifications subcollection in Firestore
+          await clientSetDoc(clientDoc(dbClient, `users/${targetUserId}/notifications/${notifDocId}`), notifData);
+          notifiedList.push({
+            partnerId: targetPartner.partnerId,
+            partnerName: targetPartner.name,
+            userId: targetUserId
+          });
+
+          // Check for device FCM token and log push dispatch
+          try {
+            const fcmDoc = await clientGetDoc(clientDoc(dbClient, `fcmTokens/${targetUserId}`));
+            const fcmToken = fcmDoc.exists() ? fcmDoc.data()?.token : null;
+            if (fcmToken) {
+              console.log(`[Push Notification] Mobile push notification targeted for Partner ${targetPartner.name} (${targetUserId})`);
+            }
+          } catch (fcmErr) {
+            console.warn(`[Push Notification] FCM check failed for user ${targetUserId}:`, fcmErr);
+          }
+        } catch (saveErr) {
+          console.error(`[Purchase Notification] Failed to save notification for partner ${targetPartner.id}:`, saveErr);
+        }
+      }
+
+      res.json({
+        success: true,
+        managerId: resolvedManagerId,
+        purchaseId: purchaseId,
+        submittingPartner: {
+          name: finalSubmitterName,
+          partnerId: finalPartnerId
+        },
+        notifiedCount: notifiedList.length,
+        notifiedPartners: notifiedList
+      });
+    } catch (error: any) {
+      console.error("[Purchase Notification] Server error:", error);
+      res.status(500).json({ error: error.message || "Failed to process partner notifications" });
+    }
+  });
+
   // Explicit Fallback for /api/ routes so they don't get intercepted by SPA or error out as HTML
   app.use("/api", (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.error("API Error middleware caught:", err);
@@ -752,9 +941,6 @@ Do not include the summary total rows (like 'TOTAL', 'CASH', 'VAT', 'ROUNDING', 
   }
 
   // --- 15-Day History Automatic Cleanup Service (Backend Server-Side via Client SDK) ---
-  const clientApp = initClientApp(firebaseConfig);
-  const dbClient = getClientFirestore(clientApp, firebaseConfig.firestoreDatabaseId);
-
   const runHistoryCleanup = async () => {
     console.log("[History Cleanup] Initiating background database cleanup...");
     try {

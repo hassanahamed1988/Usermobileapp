@@ -207,7 +207,7 @@ const FeedbackModal: React.FC = () => {
               
               
               
-              className={`text-[14px] font-semibold text-center leading-snug px-1 tracking-tight ${
+              className={`text-[14px] font-semibold text-center leading-snug px-1 tracking-tight whitespace-pre-line ${
                 isDarkMode ? 'text-white' : 'text-black'
               }`}
             >

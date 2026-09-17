@@ -20,7 +20,10 @@ import {
   CreditCard,
   CheckCircle,
   AlertTriangle,
-  MapPin
+  MapPin,
+  ShoppingCart,
+  Store,
+  Tag
 } from 'lucide-react';
 import { useStore } from '../store';
 import { TRANSLATIONS } from '../constants';
@@ -119,7 +122,8 @@ const NotificationsView: React.FC = () => {
     approveUser,
     removeUser,
     showFeedback,
-    user
+    user,
+    confirmAction
   } = useStore();
 
   const [selectedNotif, setSelectedNotif] = useState<any | null>(null);
@@ -195,8 +199,43 @@ const NotificationsView: React.FC = () => {
   const tGlobal = TRANSLATIONS[language] || {};
   const tLocal = LOCAL_TRANSLATIONS[language === 'bn' ? 'bn' : 'en'];
 
-  // Limit rendering to first 50 items to prevent UI freeze
-  const displayedNotifications = useMemo(() => notifications.slice(0, 50), [notifications]);
+  const getDisplayMessage = (n: any) => {
+    const safeTitle = n.title || '';
+    const safeMsg = n.message || '';
+    
+    if (n.type === 'LOGIN_INFO') {
+      if (n.loginDetails) {
+        return `${n.loginDetails.areaName || 'Unknown Area'} • ${n.loginDetails.device || 'Web Browser'} • IP: ${n.loginDetails.ip || 'N/A'}`;
+      } else if (safeMsg.includes('IP Address') || safeMsg.includes('আইপি অ্যাড্রেস')) {
+        const ipMatch = safeMsg.match(/(?:IP Address|আইপি অ্যাড্রেস):\s*([^\n]+)/i);
+        const areaMatch = safeMsg.match(/(?:Area Name|এরিয়া নাম):\s*([^\n]+)/i);
+        const deviceMatch = safeMsg.match(/(?:Device|ডিভাইস):\s*([^\n]+)/i);
+        return `${areaMatch ? areaMatch[1].trim() : 'Unknown Area'} • ${deviceMatch ? deviceMatch[1].trim() : 'Web Browser'} • IP: ${ipMatch ? ipMatch[1].trim() : 'N/A'}`;
+      }
+    }
+    
+    if (safeTitle && safeMsg.startsWith(safeTitle)) {
+      return safeMsg.substring(safeTitle.length).replace(/^[\s\-:]+/, '');
+    }
+    
+    return safeMsg;
+  };
+
+  // Sort array and pin the latest LOGIN_INFO to the top
+  const displayedNotifications = useMemo(() => {
+    if (!notifications || notifications.length === 0) return [];
+    
+    const sorted = [...notifications].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    const latestLoginNotifIndex = sorted.findIndex(n => n.type === 'LOGIN_INFO');
+    
+    if (latestLoginNotifIndex > 0) {
+      const latestLoginNotif = sorted[latestLoginNotifIndex];
+      const otherNotifs = sorted.filter((_, idx) => idx !== latestLoginNotifIndex);
+      return [latestLoginNotif, ...otherNotifs].slice(0, 50);
+    }
+    
+    return sorted.slice(0, 50);
+  }, [notifications]);
 
   const handleNotificationClick = (n: any) => {
     markNotificationAsRead(n.id);
@@ -204,10 +243,11 @@ const NotificationsView: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const hasAnySelected = selectedIds.length > 0;
   const isAllSelected = notifications.length > 0 && selectedIds.length === notifications.length;
 
   const handleToggleSelectAll = () => {
-    if (isAllSelected) {
+    if (hasAnySelected) {
       setSelectedIds([]);
     } else {
       setSelectedIds(notifications.map(n => n.id));
@@ -225,44 +265,51 @@ const NotificationsView: React.FC = () => {
 
   const handleDeleteSelected = async () => {
     const isBn = language === 'bn';
-    if (window.confirm(isBn ? `আপনি কি সিলেক্ট করা ${selectedIds.length} টি বিজ্ঞপ্তি মুছে ফেলতে চান?` : `Are you sure you want to delete ${selectedIds.length} selected notifications?`)) {
-      showFeedback(isBn ? "মুছে ফেলা হচ্ছে..." : "Deleting...", 'success');
-      for (const id of selectedIds) {
-        await removeNotification(id);
+    confirmAction(
+      isBn ? `আপনি কি সিলেক্ট করা ${selectedIds.length} টি বিজ্ঞপ্তি মুছে ফেলতে চান?` : `Are you sure you want to delete ${selectedIds.length} selected notifications?`,
+      async () => {
+        showFeedback(isBn ? "মুছে ফেলা হচ্ছে..." : "Deleting...", 'success');
+        for (const id of selectedIds) {
+          await removeNotification(id);
+        }
+        setSelectedIds([]);
+        showFeedback(isBn ? "বিজ্ঞপ্তিগুলো সফলভাবে মুছে ফেলা হয়েছে!" : "Selected notifications deleted successfully!", 'success');
       }
-      setSelectedIds([]);
-      showFeedback(isBn ? "বিজ্ঞপ্তিগুলো সফলভাবে মুছে ফেলা হয়েছে!" : "Selected notifications deleted successfully!", 'success');
-    }
+    );
   };
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto relative select-none">
       {/* SELECTION CONTROL TOOLBAR (Only shown when selection mode is active) */}
-      {isSelectionMode && notifications.length > 0 && (
-        <div className="flex justify-between items-center bg-slate-50 dark:bg-zinc-900/50 p-3 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm sticky top-2 z-40 animate-fade-in">
+      {isSelectionMode && notifications.length > 0 && createPortal(
+        <div 
+          className="fixed left-0 right-0 z-50 h-14 flex justify-between items-center px-4 shadow-md border-b animate-fade-in backdrop-blur-md"
+          style={{ 
+            top: 'calc(3.5rem + env(safe-area-inset-top))',
+            backgroundColor: 'var(--header-bg)',
+            borderBottomColor: 'rgba(0,0,0,0.06)',
+          }}
+        >
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => {
-                setSelectedIds([]);
-                setIsSelectionMode(false);
-              }}
-              className="p-1 text-text-muted hover:text-text-main rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-all"
-            >
-              <X size={16} />
-            </button>
             <div 
               onClick={handleToggleSelectAll}
               className="flex items-center gap-2.5 cursor-pointer select-none group"
             >
               <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
-                isAllSelected 
-                  ? 'bg-primary border-primary text-white scale-105' 
-                  : 'border-black/20 dark:border-white/20 bg-transparent group-hover:border-primary/50'
-              }`}>
-                {isAllSelected && <Check size={12} strokeWidth={4} />}
+                hasAnySelected 
+                  ? 'text-white scale-105' 
+                  : 'border-black/20 dark:border-white/20 bg-transparent'
+              }`}
+              style={{
+                backgroundColor: hasAnySelected ? 'var(--primary)' : undefined,
+                borderColor: hasAnySelected ? 'var(--primary)' : undefined
+              }}>
+                {hasAnySelected && <Check size={12} strokeWidth={4} />}
               </div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-text-muted">
-                {language === 'bn' ? 'সবগুলো সিলেক্ট করুন' : 'Select All'}
+              <span className="text-sm font-semibold opacity-90" style={{ color: 'var(--header-text)' }}>
+                {hasAnySelected
+                  ? (language === 'bn' ? 'সবগুলো আনসিলেক্ট করুন' : 'Unselect All')
+                  : (language === 'bn' ? 'সবগুলো সিলেক্ট করুন' : 'Select All')}
               </span>
             </div>
           </div>
@@ -270,13 +317,19 @@ const NotificationsView: React.FC = () => {
           {selectedIds.length > 0 && (
             <button
               onClick={handleDeleteSelected}
-              className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-[0.98] border border-red-500/10"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/10 hover:bg-red-600/20 text-red-600 dark:text-red-500 text-sm font-semibold rounded-lg transition-all active:scale-[0.98]"
             >
-              <Trash2 size={12} />
-              {language === 'bn' ? `মুছে ফেলুন (${selectedIds.length})` : `Delete Selected (${selectedIds.length})`}
+              <Trash2 size={16} />
+              {language === 'bn' ? `মুছুন` : `Delete`}
             </button>
           )}
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Spacer when selection toolbar is open to prevent covering top notification cards */}
+      {isSelectionMode && notifications.length > 0 && (
+        <div className="h-14 w-full shrink-0 -mb-2" aria-hidden="true" />
       )}
 
       <div className="grid grid-cols-1 gap-4">
@@ -315,9 +368,13 @@ const NotificationsView: React.FC = () => {
                   >
                     <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
                       selectedIds.includes(n.id)
-                        ? 'bg-primary border-primary text-white scale-110'
-                        : 'border-black/20 dark:border-white/20 bg-transparent hover:border-primary/50'
-                    }`}>
+                        ? 'text-white scale-110'
+                        : 'border-black/20 dark:border-white/20 bg-transparent'
+                    }`}
+                    style={{
+                      backgroundColor: selectedIds.includes(n.id) ? 'var(--primary)' : undefined,
+                      borderColor: selectedIds.includes(n.id) ? 'var(--primary)' : undefined
+                    }}>
                       {selectedIds.includes(n.id) && <Check size={12} strokeWidth={4} />}
                     </div>
                   </div>
@@ -327,11 +384,17 @@ const NotificationsView: React.FC = () => {
                   <div 
                     className="absolute inset-0" 
                     style={{ 
-                      background: n.type === 'REGISTRATION' ? 'var(--success)' : 'var(--primary)',
+                      background: n.type === 'REGISTRATION' ? 'var(--success)' : (n.type === 'PURCHASE' ? '#10b981' : 'var(--primary)'),
                       opacity: 0.1
                     }} 
                   />
-                  {n.type === 'REGISTRATION' ? <UserIcon size={18} className="relative z-10" style={{ color: 'var(--success)' }} /> : <Info size={18} className="relative z-10" style={{ color: 'var(--primary)' }} />}
+                  {n.type === 'REGISTRATION' ? (
+                    <UserIcon size={18} className="relative z-10" style={{ color: 'var(--success)' }} />
+                  ) : n.type === 'PURCHASE' ? (
+                    <ShoppingCart size={18} className="relative z-10 text-emerald-600 dark:text-emerald-400" />
+                  ) : (
+                    <Info size={18} className="relative z-10" style={{ color: 'var(--primary)' }} />
+                  )}
                 </div>
 
                 <div className="flex-1 min-w-0">
@@ -354,24 +417,25 @@ const NotificationsView: React.FC = () => {
                       {new Date(n.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                     </span>
                   </div>
-                  <p className="text-[11px] text-text-muted leading-tight transition-all mt-1">
+                  <p className="text-[11px] text-text-muted leading-tight transition-all mt-1 line-clamp-2">
                     {n.type === 'LOGIN_INFO' ? (
-                      <span className="font-medium">
-                        {language === 'bn' ? 'লগইন সম্পন্ন হয়েছে' : 'Login Successful'} - {n.loginDetails?.dateTime || new Date(n.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
-                      </span>
+                      <span className="font-medium">{getDisplayMessage(n)}</span>
                     ) : (
-                      n.message
+                      getDisplayMessage(n)
                     )}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button 
-                    onClick={async (e) => { 
+                    onClick={(e) => { 
                       e.stopPropagation(); 
-                      if (window.confirm(language === 'bn' ? "আপনি কি এই বিজ্ঞপ্তিটি মুছে ফেলতে চান?" : "Are you sure you want to delete this notification?")) {
-                        await removeNotification(n.id);
-                        showFeedback(language === 'bn' ? "সফলভাবে মুছে ফেলা হয়েছে!" : "Deleted successfully!", 'success');
-                      }
+                      confirmAction(
+                        language === 'bn' ? "আপনি কি এই বিজ্ঞপ্তিটি মুছে ফেলতে চান?" : "Are you sure you want to delete this notification?",
+                        async () => {
+                          await removeNotification(n.id);
+                          showFeedback(language === 'bn' ? "সফলভাবে মুছে ফেলা হয়েছে!" : "Deleted successfully!", 'success');
+                        }
+                      );
                     }}
                     className="p-1.5 text-text-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all no-long-press"
                   >
@@ -412,6 +476,7 @@ const NotificationsView: React.FC = () => {
           removeUser={removeUser}
           showFeedback={showFeedback}
           removeNotification={removeNotification}
+          confirmAction={confirmAction}
         />
       )}
     </div>
@@ -429,6 +494,7 @@ interface NotificationModalProps {
   removeUser: (userId: string) => void;
   showFeedback: (msg: string, type?: 'success' | 'error') => void;
   removeNotification: (id: string) => void;
+  confirmAction: (msg: string, action: () => void) => void;
 }
 
 const NotificationModal: React.FC<NotificationModalProps> = ({
@@ -440,7 +506,8 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
   approveUser,
   removeUser,
   showFeedback,
-  removeNotification
+  removeNotification,
+  confirmAction
 }) => {
   const t = LOCAL_TRANSLATIONS[language === 'bn' ? 'bn' : 'en'];
 
@@ -477,12 +544,15 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
           <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 relative shrink-0">
             <div className="absolute top-4 right-4 flex items-center gap-2">
               <button 
-                onClick={async () => {
-                  if (window.confirm(isBn ? "আপনি কি এই নোটিফিকেশনটি মুছে ফেলতে চান?" : "Are you sure you want to delete this notification?")) {
-                    await removeNotification(notification.id);
-                    onClose();
-                    showFeedback(isBn ? "বিজ্ঞপ্তিটি মুছে ফেলা হয়েছে!" : "Notification deleted successfully!", 'success');
-                  }
+                onClick={() => {
+                  confirmAction(
+                    isBn ? "আপনি কি এই নোটিফিকেশনটি মুছে ফেলতে চান?" : "Are you sure you want to delete this notification?",
+                    async () => {
+                      await removeNotification(notification.id);
+                      onClose();
+                      showFeedback(isBn ? "বিজ্ঞপ্তিটি মুছে ফেলা হয়েছে!" : "Notification deleted successfully!", 'success');
+                    }
+                  );
                 }}
                 className="text-white/80 hover:text-red-400 hover:bg-white/10 p-1.5 rounded-full transition-colors"
                 title={isBn ? "মুছে ফেলুন" : "Delete"}
@@ -571,6 +641,171 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
               <button
                 onClick={onClose}
                 className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white hover:from-blue-700 hover:to-indigo-800 rounded-xl font-bold transition-all shadow-md active:scale-[0.98]"
+              >
+                {isBn ? "বন্ধ করুন" : "Close"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  }
+
+  // If notification is a Purchase Partner notification, render the dedicated purchase partner modal
+  if (notification.type === 'PURCHASE') {
+    const isBn = language === 'bn';
+    const details = notification.purchaseDetails || {};
+    const purchaseId = notification.purchaseId || details.purchaseId || 'N/A';
+    const managerId = notification.managerId || details.managerId || 'N/A';
+    const partnerId = notification.partnerId || details.partnerId || 'N/A';
+    const submitterName = notification.submitterName || details.submitterName || 'Partner';
+    const hypermarketName = details.hypermarketName || 'Hypermarket';
+    const amount = details.amount !== undefined ? Number(details.amount) : null;
+    const date = details.date || (notification.timestamp ? notification.timestamp.split('T')[0] : 'N/A');
+    const time = details.time || (notification.timestamp ? new Date(notification.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A');
+    const itemsCount = details.itemsCount || 1;
+    const itemsSummary = details.itemsSummary || '';
+
+    return createPortal(
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[9999] flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+        <div className="bg-white dark:bg-[#121212] rounded-2xl max-w-md w-full shadow-2xl border border-black/10 dark:border-white/10 flex flex-col overflow-hidden animate-scale-up">
+          {/* HEADER SECTION - GRADIENT */}
+          <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-6 relative shrink-0">
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+              <button 
+                onClick={() => {
+                  confirmAction(
+                    isBn ? "আপনি কি এই নোটিফিকেশনটি মুছে ফেলতে চান?" : "Are you sure you want to delete this notification?",
+                    async () => {
+                      await removeNotification(notification.id);
+                      onClose();
+                      showFeedback(isBn ? "বিজ্ঞপ্তিটি মুছে ফেলা হয়েছে!" : "Notification deleted successfully!", 'success');
+                    }
+                  );
+                }}
+                className="text-white/80 hover:text-red-400 hover:bg-white/10 p-1.5 rounded-full transition-colors"
+                title={isBn ? "মুছে ফেলুন" : "Delete"}
+              >
+                <Trash2 size={18} />
+              </button>
+              <button 
+                onClick={onClose}
+                className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-full transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex items-center gap-3 pr-16">
+              <div className="bg-white/10 p-2 rounded-xl">
+                <ShoppingCart size={24} className="text-white animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black tracking-tight leading-tight">
+                  {isBn ? "পার্টনার ক্রয় (Purchase) বিবরণ" : "Partner Purchase Details"}
+                </h3>
+                <p className="text-[10px] text-white/75 flex items-center gap-1 mt-1 font-bold uppercase tracking-wider">
+                  <Clock size={10} />
+                  {date} • {time}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* PURCHASE INFO BODY */}
+          <div className="p-6 space-y-4">
+            <div className="space-y-3 bg-slate-50 dark:bg-zinc-900/50 p-5 rounded-2xl border border-slate-100 dark:border-zinc-800">
+              {/* Submitting Partner */}
+              <div className="flex justify-between items-center py-2 border-b border-black/5 dark:border-white/5">
+                <span className="text-xs font-bold text-text-muted">
+                  {isBn ? "পার্টনারের নাম" : "Partner Name"}
+                </span>
+                <span className="text-xs font-black text-text-main flex items-center gap-1">
+                  <UserIcon size={12} className="text-emerald-600" />
+                  {submitterName}
+                </span>
+              </div>
+
+              {/* Partner ID */}
+              <div className="flex justify-between items-center py-2 border-b border-black/5 dark:border-white/5">
+                <span className="text-xs font-bold text-text-muted">
+                  {isBn ? "পার্টনার আইডি (Partner ID)" : "Partner ID"}
+                </span>
+                <span className="text-xs font-mono font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                  {partnerId}
+                </span>
+              </div>
+
+              {/* Manager ID */}
+              <div className="flex justify-between items-center py-2 border-b border-black/5 dark:border-white/5">
+                <span className="text-xs font-bold text-text-muted">
+                  {isBn ? "ম্যানেজার আইডি (Manager ID)" : "Manager ID"}
+                </span>
+                <span className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-md">
+                  {managerId}
+                </span>
+              </div>
+
+              {/* Purchase ID */}
+              <div className="flex justify-between items-center py-2 border-b border-black/5 dark:border-white/5">
+                <span className="text-xs font-bold text-text-muted">
+                  {isBn ? "পারচেজ আইডি (Purchase ID)" : "Purchase ID"}
+                </span>
+                <span className="text-xs font-mono font-bold text-text-main">
+                  {purchaseId}
+                </span>
+              </div>
+
+              {/* Hypermarket / Store */}
+              <div className="flex justify-between items-center py-2 border-b border-black/5 dark:border-white/5">
+                <span className="text-xs font-bold text-text-muted">
+                  {isBn ? "হাইপারমার্কেট / দোকান" : "Store / Hypermarket"}
+                </span>
+                <span className="text-xs font-extrabold text-text-main">
+                  {hypermarketName}
+                </span>
+              </div>
+
+              {/* Amount */}
+              {amount !== null && (
+                <div className="flex justify-between items-center py-2 border-b border-black/5 dark:border-white/5">
+                  <span className="text-xs font-bold text-text-muted">
+                    {isBn ? "মোট পরিমাণ (Amount)" : "Total Amount"}
+                  </span>
+                  <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                    QAR {amount.toFixed(2)}
+                  </span>
+                </div>
+              )}
+
+              {/* Date & Time */}
+              <div className="flex justify-between items-center py-2 border-b border-black/5 dark:border-white/5">
+                <span className="text-xs font-bold text-text-muted">
+                  {isBn ? "সাবমিট তারিখ ও সময়" : "Submission Date & Time"}
+                </span>
+                <span className="text-xs font-extrabold text-text-main">
+                  {date} {time}
+                </span>
+              </div>
+
+              {/* Items Summary */}
+              {itemsSummary ? (
+                <div className="py-2">
+                  <span className="text-xs font-bold text-text-muted block mb-1">
+                    {isBn ? "পণ্য সামগ্রী (Items)" : "Items Summary"}
+                  </span>
+                  <p className="text-xs font-medium text-text-main bg-black/5 dark:bg-white/5 p-2.5 rounded-lg leading-relaxed">
+                    {itemsSummary}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+
+            {/* CLOSE BUTTON */}
+            <div className="pt-2">
+              <button
+                onClick={onClose}
+                className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-700 text-white hover:from-emerald-700 hover:to-teal-800 rounded-xl font-bold transition-all shadow-md active:scale-[0.98]"
               >
                 {isBn ? "বন্ধ করুন" : "Close"}
               </button>
@@ -724,11 +959,14 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
 
   const handleDeleteUser = () => {
     if (!targetUser) return;
-    if (window.confirm(t.confirmDeleteUser)) {
-      removeUser(targetUser.id);
-      showFeedback(t.deleteSuccess, 'success');
-      onClose();
-    }
+    confirmAction(
+      t.confirmDeleteUser,
+      () => {
+        removeUser(targetUser.id);
+        showFeedback(t.deleteSuccess, 'success');
+        onClose();
+      }
+    );
   };
 
   const handleSaveUserEdit = () => {
@@ -799,19 +1037,22 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
 
   const handleDeletePurchase = async (purchase: any) => {
     if (!targetUser) return;
-    if (window.confirm(t.confirmDeletePurchase)) {
-      const parentCol = targetUser.role === 'ADMIN' ? 'admins' : 'users';
-      setLoading(true);
-      try {
-        await deleteFirebaseDoc(`${parentCol}/${targetUser.id}/Purchase`, purchase.id);
-        setPurchases(prev => prev.filter(p => p.id !== purchase.id));
-        showFeedback(t.deleteSuccess, 'success');
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+    confirmAction(
+      t.confirmDeletePurchase,
+      async () => {
+        const parentCol = targetUser.role === 'ADMIN' ? 'admins' : 'users';
+        setLoading(true);
+        try {
+          await deleteFirebaseDoc(`${parentCol}/${targetUser.id}/Purchase`, purchase.id);
+          setPurchases(prev => prev.filter(p => p.id !== purchase.id));
+          showFeedback(t.deleteSuccess, 'success');
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoading(false);
+        }
       }
-    }
+    );
   };
 
   const startEditPurchase = (purchase: any) => {
@@ -889,19 +1130,22 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
 
   const handleDeletePayment = async (payment: any) => {
     if (!targetUser) return;
-    if (window.confirm(t.confirmDeletePayment)) {
-      const parentCol = targetUser.role === 'ADMIN' ? 'admins' : 'users';
-      setLoading(true);
-      try {
-        await deleteFirebaseDoc(`${parentCol}/${targetUser.id}/messPayments`, payment.id);
-        setPayments(prev => prev.filter(p => p.id !== payment.id));
-        showFeedback(t.deleteSuccess, 'success');
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+    confirmAction(
+      t.confirmDeletePayment,
+      async () => {
+        const parentCol = targetUser.role === 'ADMIN' ? 'admins' : 'users';
+        setLoading(true);
+        try {
+          await deleteFirebaseDoc(`${parentCol}/${targetUser.id}/messPayments`, payment.id);
+          setPayments(prev => prev.filter(p => p.id !== payment.id));
+          showFeedback(t.deleteSuccess, 'success');
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoading(false);
+        }
       }
-    }
+    );
   };
 
   const startEditPayment = (payment: any) => {
@@ -949,12 +1193,15 @@ const NotificationModal: React.FC<NotificationModalProps> = ({
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 relative shrink-0">
           <div className="absolute top-4 right-4 flex items-center gap-2">
             <button 
-              onClick={async () => {
-                if (window.confirm(language === 'bn' ? "আপনি কি এই নোটিফিকেশনটি মুছে ফেলতে চান?" : "Are you sure you want to delete this notification?")) {
-                  await removeNotification(notification.id);
-                  onClose();
-                  showFeedback(language === 'bn' ? "বিজ্ঞপ্তিটি মুছে ফেলা হয়েছে!" : "Notification deleted successfully!", 'success');
-                }
+              onClick={() => {
+                confirmAction(
+                  language === 'bn' ? "আপনি কি এই নোটিফিকেশনটি মুছে ফেলতে চান?" : "Are you sure you want to delete this notification?",
+                  async () => {
+                    await removeNotification(notification.id);
+                    onClose();
+                    showFeedback(language === 'bn' ? "বিজ্ঞপ্তিটি মুছে ফেলা হয়েছে!" : "Notification deleted successfully!", 'success');
+                  }
+                );
               }}
               className="text-white/80 hover:text-red-400 hover:bg-white/10 p-1.5 rounded-full transition-colors"
               title={language === 'bn' ? "মুছে ফেলুন" : "Delete"}

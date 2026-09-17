@@ -19,6 +19,7 @@ import { Share } from "@capacitor/share";
 import { FileOpener } from "@capacitor-community/file-opener";
 import ReceiptCropperModal from '@/components/ReceiptCropperModal';
 import ReceiptZoomViewer from '@/components/ReceiptZoomViewer';
+import { getApiUrl } from '@/utils/apiUrl';
 
 // Assuming we add Partner type to types later defining it here for now if needed.
 // Or we just save it to Firebase under 'partners' collection.
@@ -1003,9 +1004,14 @@ const fileName = `Invoice_${purchase.id}.pdf`;
     }
 
     const purchaseId = editingPurchaseId || `PURCHASE-${Date.now()}`;
+    const resolvedManagerId = currentManagerId || currentUserPartner?.managerId || (currentUserPartner?.accountType === 'MANAGER' ? currentUserPartner?.id : (user?.managerId || '')) || '';
+    const resolvedPartnerId = currentUserPartner?.partnerId || '';
+
     const purchaseData = {
       id: purchaseId
       ,userId: editingPurchaseId ? (selectedPendingPurchase?.userId || user?.userId || user?.id) : (user?.userId || user?.id)
+      ,managerId: resolvedManagerId
+      ,partnerId: resolvedPartnerId
       ,hypermarketName
       ,date: purchaseDate
       ,time: editingPurchaseId ? (selectedPendingPurchase?.time || purchaseTime) : purchaseTime
@@ -1022,6 +1028,43 @@ const fileName = `Invoice_${purchase.id}.pdf`;
       // Clear local storage copy of scanned receipt upon successful submission
       localStorage.removeItem('temp_scanned_receipt');
       
+      // Trigger Backend-Enforced Manager-Based Partner Push Notifications
+      try {
+        const fetchFn = (window as any)._originalFetch || window.fetch;
+        const sessionId = localStorage.getItem('fleetpro_session_id') || '';
+        const reqHeaders: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+        if (sessionId) {
+          reqHeaders['Authorization'] = `Bearer ${sessionId}`;
+          reqHeaders['x-session-id'] = sessionId;
+        }
+        if (user?.id) {
+          reqHeaders['x-user-id'] = user.id;
+        }
+
+        await fetchFn(getApiUrl('/api/purchase/notify-partners'), {
+          method: 'POST',
+          headers: reqHeaders,
+          body: JSON.stringify({
+            purchaseId: purchaseData.id,
+            managerId: resolvedManagerId,
+            partnerId: resolvedPartnerId,
+            partnerDocId: currentUserPartner?.id || '',
+            submitterUserId: purchaseData.userId,
+            submitterName: user?.name || currentUserPartner?.name || 'Partner',
+            hypermarketName: purchaseData.hypermarketName,
+            amount: purchaseData.amount,
+            date: purchaseData.date,
+            time: purchaseData.time,
+            itemsCount: purchaseData.items?.length || 0,
+            itemsSummary: (purchaseData.items || []).map((it: any) => `${it.name} (${it.quantity} ${it.unit || ''})`).slice(0, 3).join(', ')
+          })
+        });
+      } catch (notifyErr) {
+        console.warn('[Purchase Notification] Backend partner notification dispatch failed:', notifyErr);
+      }
+
       // Notify admins if submitted by a normal user and it's not an edit
       if (user?.role !== 'ADMIN' && user?.role !== 'MANAGER' && !editingPurchaseId) {
         const adminUsers = globalUsers.filter((u: any) => u.role === 'ADMIN');

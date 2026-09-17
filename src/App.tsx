@@ -864,19 +864,114 @@ const ViewContainer: React.FC = () => {
         }
     }, [theme, fontStyle, fontSize, fontBold, backgroundColor, wallpaper, loginWallpaper, isNightMode, isEyeComfort, appThemeMode, headerBg, navBg, primaryColor, isAppLoading, user, currentView]);
 
-    // Server-side login session tracking and auto-logout
+    // 3-Minute Inactivity Auto-Logout & Session Sync System
     useEffect(() => {
-      if (!user) return;
+      const currentUserId = user?.id;
+      if (!currentUserId) return;
 
+      const INACTIVITY_TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes (180,000 ms)
+
+      // Initialize or retrieve last active time
+      let lastActivityTime = Date.now();
+      const storedLastActive = localStorage.getItem('fleetpro_last_active_time');
+      if (storedLastActive) {
+        const parsed = parseInt(storedLastActive, 10);
+        if (!isNaN(parsed) && parsed <= Date.now()) {
+          // Preserve the actual last active time. If it's expired, the interval will catch it and log out.
+          lastActivityTime = parsed;
+        } else {
+          lastActivityTime = Date.now();
+          localStorage.setItem('fleetpro_last_active_time', String(lastActivityTime));
+        }
+      } else {
+        localStorage.setItem('fleetpro_last_active_time', String(lastActivityTime));
+      }
+
+      // Throttled activity recording on user interactions
+      let lastThrottledRecord = 0;
+      const recordUserActivity = () => {
+        const now = Date.now();
+        lastActivityTime = now;
+        if (now - lastThrottledRecord > 2000) {
+          lastThrottledRecord = now;
+          localStorage.setItem('fleetpro_last_active_time', String(now));
+        }
+      };
+
+      // Listen to user interaction events across the entire application
+      const activityEvents = [
+        'mousedown',
+        'mousemove',
+        'keydown',
+        'scroll',
+        'touchstart',
+        'touchmove',
+        'click',
+        'pointerdown',
+        'wheel'
+      ];
+
+      activityEvents.forEach((evt) => {
+        window.addEventListener(evt, recordUserActivity, { passive: true });
+      });
+
+      let isLoggedOut = false;
+      const performInactivityLogout = (reason?: string) => {
+        if (isLoggedOut) return;
+        isLoggedOut = true;
+        console.warn("[Auto-Logout] 3 minutes of inactivity reached. Logging out user automatically.", reason);
+        localStorage.removeItem('fleetpro_last_active_time');
+        logout();
+        showFeedback(
+          language === 'bn' 
+            ? 'আপনার সেশনের মেয়াদ শেষ হয়ে গেছে। নিরাপত্তার স্বার্থে আপনাকে সফলভাবে লগআউট করা হয়েছে।' 
+            : 'Your session has expired. You have been successfully logged out for security purposes.',
+          'success'
+        );
+      };
+
+      // Immediate check in case they were inactive before the effect re-ran
+      if (Date.now() - lastActivityTime >= INACTIVITY_TIMEOUT_MS) {
+        performInactivityLogout('immediate_expired');
+      }
+
+      // Periodic check every 2 seconds for inactivity timeout
+      const inactivityInterval = setInterval(() => {
+        const now = Date.now();
+        const stored = parseInt(localStorage.getItem('fleetpro_last_active_time') || '0', 10);
+        const effectiveLast = Math.max(lastActivityTime, stored || 0);
+
+        if (now - effectiveLast >= INACTIVITY_TIMEOUT_MS) {
+          performInactivityLogout('timer_expired');
+        }
+      }, 2000);
+
+      // Visibility change & Window Focus check (e.g. app in background / screen locked / tab switched for > 3 minutes)
+      const handleVisibilityOrFocus = () => {
+        const now = Date.now();
+        const stored = parseInt(localStorage.getItem('fleetpro_last_active_time') || '0', 10);
+        const effectiveLast = Math.max(lastActivityTime, stored || 0);
+
+        if (now - effectiveLast >= INACTIVITY_TIMEOUT_MS) {
+          performInactivityLogout('visibility_inactive');
+        } else {
+          recordUserActivity();
+        }
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+      window.addEventListener('focus', handleVisibilityOrFocus);
+
+      // Server-side login session tracking and auto-logout
       const checkSessionOnServer = async () => {
         let sessionId = localStorage.getItem('fleetpro_session_id');
-        if (!sessionId && user?.id) {
+        if (!sessionId && currentUserId) {
           try {
             const fetchFn = (window as any)._originalFetch || window.fetch;
             const res = await fetchFn(getApiUrl('/api/auth/login-session'), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId: user.id })
+              body: JSON.stringify({ userId: currentUserId })
             });
             if (res.ok) {
               const data = await res.json();
@@ -897,15 +992,14 @@ const ViewContainer: React.FC = () => {
           const res = await fetchFn(getApiUrl('/api/auth/check-session'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sessionId, userId: user?.id })
+            body: JSON.stringify({ sessionId, userId: currentUserId })
           });
           
           if (!res.ok && res.status === 401) {
             const errorData = await res.json().catch(() => null);
-            if (errorData?.error === 'Session expired') {
+            if (errorData?.error?.includes('expired') || errorData?.error?.includes('inactivity')) {
               console.warn("[Session Manager] Session expired on server-side. Logging out user.");
-              logout();
-              showFeedback(language === 'bn' ? 'লগইন সেশন শেষ হয়ে গেছে' : 'Login session expired', 'error');
+              performInactivityLogout('server_session_expired');
             }
           }
         } catch (err) {
@@ -916,22 +1010,27 @@ const ViewContainer: React.FC = () => {
       // Check immediately upon login/hydration
       checkSessionOnServer();
 
-      // Periodic session refresh
-      const interval = setInterval(checkSessionOnServer, 30000);
+      // Periodic session check
+      const serverInterval = setInterval(checkSessionOnServer, 30000);
 
       const handleForceLogout = () => {
         console.warn("[Session Manager] Force logout triggered via API error response.");
-        logout();
-        showFeedback(language === 'bn' ? 'লগইন সেশন শেষ হয়ে গেছে' : 'Login session expired', 'error');
+        performInactivityLogout('force_logout_event');
       };
 
       window.addEventListener('force-logout', handleForceLogout);
 
       return () => {
-        clearInterval(interval);
+        activityEvents.forEach((evt) => {
+          window.removeEventListener(evt, recordUserActivity);
+        });
+        clearInterval(inactivityInterval);
+        clearInterval(serverInterval);
+        document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+        window.removeEventListener('focus', handleVisibilityOrFocus);
         window.removeEventListener('force-logout', handleForceLogout);
       };
-    }, [user, logout, language, showFeedback]);
+    }, [user?.id, logout, language, showFeedback]);
 
     if (isAppLoading) {
       const effectiveLoginWallpaper = loginWallpaper || wallpaper || defaultLoginWallpaper;

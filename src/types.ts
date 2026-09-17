@@ -257,12 +257,30 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  type: 'EXPIRY' | 'REGISTRATION' | 'INFO' | 'LOGIN_INFO';
+  type: 'EXPIRY' | 'REGISTRATION' | 'INFO' | 'LOGIN_INFO' | 'PURCHASE';
   timestamp: string;
   isRead: boolean;
   userId?: string;
   targetUserId?: string;
+  targetPartnerId?: string;
   firebaseUid?: string;
+  managerId?: string;
+  partnerId?: string;
+  purchaseId?: string;
+  submitterUserId?: string;
+  submitterName?: string;
+  purchaseDetails?: {
+    purchaseId: string;
+    managerId: string;
+    partnerId: string;
+    submitterName: string;
+    hypermarketName: string;
+    amount: number;
+    date: string;
+    time: string;
+    itemsCount?: number;
+    itemsSummary?: string;
+  };
   loginDetails?: {
     userId: string;
     dateTime: string;

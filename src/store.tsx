@@ -1400,6 +1400,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             localStorage.removeItem('fleetpro_session_id');
             localStorage.removeItem('fleetpro_session_user_id');
          }
+         localStorage.removeItem('fleetpro_last_active_time');
          const currentUser = stateRef.current.user;
          if (currentUser) {
             const history = currentUser.loginHistory || [];
