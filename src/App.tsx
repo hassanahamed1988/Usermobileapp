@@ -869,36 +869,55 @@ const ViewContainer: React.FC = () => {
       if (!user) return;
 
       const checkSessionOnServer = async () => {
-        const sessionId = localStorage.getItem('fleetpro_session_id');
-        if (!sessionId) {
-          console.warn("[Session Manager] No session ID found in localStorage for logged-in user. Logging out.");
-          logout();
-          return;
+        let sessionId = localStorage.getItem('fleetpro_session_id');
+        if (!sessionId && user?.id) {
+          try {
+            const fetchFn = (window as any)._originalFetch || window.fetch;
+            const res = await fetchFn(getApiUrl('/api/auth/login-session'), {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: user.id })
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.sessionId) {
+                localStorage.setItem('fleetpro_session_id', data.sessionId);
+                sessionId = data.sessionId;
+              }
+            }
+          } catch (e) {
+            console.warn("[Session Manager] Error auto-initializing session:", e);
+          }
         }
+
+        if (!sessionId) return;
 
         try {
           const fetchFn = (window as any)._originalFetch || window.fetch;
           const res = await fetchFn(getApiUrl('/api/auth/check-session'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sessionId })
+            body: JSON.stringify({ sessionId, userId: user?.id })
           });
           
-          if (!res.ok) {
-            console.warn("[Session Manager] Session invalid/expired on server-side. Logging out user.");
-            logout();
-            showFeedback(language === 'bn' ? 'লগইন সেশন শেষ হয়ে গেছে' : 'Login session expired', 'error');
+          if (!res.ok && res.status === 401) {
+            const errorData = await res.json().catch(() => null);
+            if (errorData?.error === 'Session expired') {
+              console.warn("[Session Manager] Session expired on server-side. Logging out user.");
+              logout();
+              showFeedback(language === 'bn' ? 'লগইন সেশন শেষ হয়ে গেছে' : 'Login session expired', 'error');
+            }
           }
         } catch (err) {
-          console.error("[Session Manager] Failed to verify session on server:", err, "URL:", getApiUrl("/api/auth/check-session"));
+          console.error("[Session Manager] Failed to verify session on server:", err);
         }
       };
 
       // Check immediately upon login/hydration
       checkSessionOnServer();
 
-      // Poll session status every 5 seconds (100% real-time and secure)
-      const interval = setInterval(checkSessionOnServer, 5000);
+      // Periodic session refresh
+      const interval = setInterval(checkSessionOnServer, 30000);
 
       const handleForceLogout = () => {
         console.warn("[Session Manager] Force logout triggered via API error response.");

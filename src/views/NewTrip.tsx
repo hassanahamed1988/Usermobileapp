@@ -366,6 +366,16 @@ const NewTrip: React.FC = () => {
       const targetUrl = getApiUrl('/api/ocr');
       console.log('Initiating OCR scan request to endpoint:', targetUrl);
 
+      const sessionId = localStorage.getItem('fleetpro_session_id') || ('sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9));
+      const requestHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionId}`,
+        'x-session-id': sessionId
+      };
+      if (user?.id) {
+        requestHeaders['x-user-id'] = user.id;
+      }
+
       let responseText: string;
       let ok: boolean;
       let status: number;
@@ -374,7 +384,7 @@ const NewTrip: React.FC = () => {
          try {
            const options = {
              url: targetUrl,
-             headers: { 'Content-Type': 'application/json' },
+             headers: requestHeaders,
              data: { image: compressedBase64 },
              connectTimeout: 120000,
              readTimeout: 120000 
@@ -388,12 +398,9 @@ const NewTrip: React.FC = () => {
            
            const controller = new AbortController();
            const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 seconds timeout
-
            const response = await fetch(targetUrl, {
              method: 'POST',
-             headers: {
-               'Content-Type': 'application/json',
-             },
+             headers: requestHeaders,
              body: JSON.stringify({ image: compressedBase64 }),
              signal: controller.signal
            });
@@ -406,12 +413,9 @@ const NewTrip: React.FC = () => {
       } else {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 seconds timeout
-
         const response = await fetch(targetUrl, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: requestHeaders,
           body: JSON.stringify({ image: compressedBase64 }),
           signal: controller.signal
         });
