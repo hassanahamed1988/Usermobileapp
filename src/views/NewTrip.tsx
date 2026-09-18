@@ -10,6 +10,7 @@ import GlobalFullscreenSelect from '@/components/GlobalFullscreenSelect';
 import InputField, { InputFieldThemeContext } from '@/components/InputField';
 import { getApiUrl } from '@/utils/apiUrl';
 import { scanAndDetectCountry } from '@/utils/countryUtils';
+import { compressDocumentImage } from '@/utils/imageUtils';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 
 import FormWindow from '@/components/FormWindow';
@@ -94,6 +95,7 @@ const NewTrip: React.FC = () => {
     bonus: '',
     overtime: '',
     receiptImage: '',
+    deliveryNoteImage: '',
   });
 
   const loadedTripIdRef = useRef<string | null>(null);
@@ -140,6 +142,7 @@ const NewTrip: React.FC = () => {
         bonus: (editingTrip.bonus && Number(editingTrip.bonus) !== 0) ? editingTrip.bonus.toString() : '',
         overtime: (editingTrip.overtime && Number(editingTrip.overtime) !== 0) ? editingTrip.overtime.toString() : '',
         receiptImage: editingTrip.receiptImage || '',
+        deliveryNoteImage: editingTrip.deliveryNoteImage || '',
       });
       if (editingTrip.generatorDiesel || editingTrip.generatorReceiveNumber || editingTrip.dieselReceiptDate) setShowGenerator(true);
       if (editingTrip.generatorReceiveNumber) setHasGeneratorReceipt(true);
@@ -335,39 +338,8 @@ const NewTrip: React.FC = () => {
         reader.readAsDataURL(file);
       });
 
-      // Compress Image to reduce payload size
-      const compressedBase64 = await new Promise<string>((resolve) => {
-        const img = document.createElement('img');
-        img.src = rawBase64;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          
-          const MAX_SIZE = 1200;
-          if (width > height) {
-            if (width > MAX_SIZE) {
-              height *= MAX_SIZE / width;
-              width = MAX_SIZE;
-            }
-          } else {
-            if (height > MAX_SIZE) {
-              width *= MAX_SIZE / height;
-              height = MAX_SIZE;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', 0.6)); // 60% quality jpeg
-          } else {
-            resolve(rawBase64);
-          }
-        };
-        img.onerror = () => resolve(rawBase64); // Fallback to raw on error
-      });
+      // Compress Image for maximum legibility and small footprint (~35-50 KB)
+      const compressedBase64 = await compressDocumentImage(rawBase64, 1100, 0.55);
 
       // Show preview image during scanning
       setScannedImagePreview(compressedBase64);
@@ -523,6 +495,11 @@ const NewTrip: React.FC = () => {
         deliveryDate: getNormalizedVal(['deliveryDate', 'trailerExitDate', 'exitDate', 'deliveryDateVal']),
         deliveryTime: getNormalizedVal(['deliveryTime', 'trailerExitTime', 'exitTime', 'deliveryTimeVal']),
       };
+
+      setFormData(prev => ({
+        ...prev,
+        deliveryNoteImage: compressedBase64
+      }));
 
       setExtractedData(normalizedData);
       setScannedImagePreview(null);

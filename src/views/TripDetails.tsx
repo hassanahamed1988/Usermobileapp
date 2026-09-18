@@ -1,13 +1,19 @@
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+import { FileOpener } from '@capacitor-community/file-opener';
 
 import { useStore } from '../store';
-import { ChevronLeft, Truck, MapPin, Calendar, User, Receipt, DollarSign, Clock, Hash, Package, Fuel, Eye, Trash2, X, Camera, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { ChevronLeft, Truck, MapPin, Calendar, User, Receipt, DollarSign, Clock, Hash, Package, Fuel, Eye, Trash2, X, Camera, ZoomIn, ZoomOut, RotateCcw, Download } from 'lucide-react';
 import { TRANSLATIONS } from '../constants';
+import { compressDocumentImage } from '../utils/imageUtils';
 
 const TripDetails: React.FC = () => {
-  const { selectedTrip, goBack, language, users, appThemeMode, isEyeComfort, currencies, selectedCurrency, updateTrip } = useStore();
+  const { selectedTrip, goBack, language, users, appThemeMode, isEyeComfort, currencies, selectedCurrency, updateTrip, showFeedback } = useStore();
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [modalType, setModalType] = useState<'receipt' | 'delivery_note'>('receipt');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -42,6 +48,108 @@ const TripDetails: React.FC = () => {
     setZoom(1);
     setPan({ x: 0, y: 0 });
   };
+
+  const handleDownloadReceipt = async () => {
+    if (!trip) return;
+    const isReceipt = modalType === 'receipt';
+    const targetImg = isReceipt ? trip.receiptImage : trip.deliveryNoteImage;
+    if (!targetImg) return;
+
+    const base64Data = targetImg.includes(',') 
+      ? targetImg.split(',')[1] 
+      : targetImg;
+
+    const prefix = isReceipt ? 'receipt' : 'delivery_note';
+    const fileName = `${prefix}_trip_${trip.id || 'unknown'}_${Date.now()}.jpg`;
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        // Try writing to Cache first (doesn't require permissions on Android)
+        const writeResult = await Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.Cache
+        });
+
+        showFeedback?.(
+          language === 'bn' ? 'ডাউনলোড সফল হয়েছে!' : 'Download successful!',
+          'success'
+        );
+
+        // Try opening the image file
+        try {
+          await FileOpener.open({
+            filePath: writeResult.uri,
+            contentType: 'image/jpeg',
+            openWithDefault: false
+          });
+        } catch (openErr) {
+          // If file-opener fails, try to share it
+          try {
+            await Share.share({
+              title: fileName,
+              url: writeResult.uri,
+              dialogTitle: language === 'bn' ? (isReceipt ? 'রসিদটি সেভ বা শেয়ার করুন' : 'ডেলিভারি নোটটি সেভ বা শেয়ার করুন') : (isReceipt ? 'Save or Share Receipt' : 'Save or Share Delivery Note')
+            });
+          } catch (shareErr) {
+            console.error('Sharing failed:', shareErr);
+          }
+        }
+      } catch (err: any) {
+        console.error('Error saving image to Cache:', err);
+        // Fallback to Documents directory
+        try {
+          const writeResult = await Filesystem.writeFile({
+            path: fileName,
+            data: base64Data,
+            directory: Directory.Documents
+          });
+
+          showFeedback?.(
+            language === 'bn' ? 'ডাউনলোড সফল হয়েছে! ডকুমেন্টস ফোল্ডারে সেভ করা হয়েছে।' : 'Download successful! Saved to Documents.',
+            'success'
+          );
+
+          try {
+            await FileOpener.open({
+              filePath: writeResult.uri,
+              contentType: 'image/jpeg',
+              openWithDefault: false
+            });
+          } catch (openErr2) {
+            try {
+              await Share.share({
+                title: fileName,
+                url: writeResult.uri,
+                dialogTitle: language === 'bn' ? (isReceipt ? 'রসিদটি সেভ বা শেয়ার করুন' : 'ডেলিভারি নোটটি সেভ বা শেয়ার করুন') : (isReceipt ? 'Save or Share Receipt' : 'Save or Share Delivery Note')
+              });
+            } catch (shareErr2) {
+              console.error('Sharing fallback failed:', shareErr2);
+            }
+          }
+        } catch (docErr) {
+          console.error('Error saving image to Documents:', docErr);
+          showFeedback?.(
+            language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে। অনুগ্রহ করে পারমিশন চেক করুন।' : 'Download failed. Please check permissions.',
+            'error'
+          );
+        }
+      }
+    } else {
+      // Browser fallback
+      const link = document.createElement('a');
+      link.href = targetImg;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showFeedback?.(
+        language === 'bn' ? 'ডাউনলোড সফল হয়েছে!' : 'Download successful!',
+        'success'
+      );
+    }
+  };
+
   const currency = currencies?.find(c => c.code === selectedCurrency) || { symbol: '$', code: 'USD', name: 'US Dollar' };
   const t = TRANSLATIONS[language];
   const trip = selectedTrip;
@@ -59,39 +167,12 @@ const TripDetails: React.FC = () => {
         reader.readAsDataURL(file);
       });
 
-      const compressedBase64 = await new Promise<string>((resolve) => {
-        const img = document.createElement('img');
-        img.src = rawBase64;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          const MAX_SIZE = 1200;
-          if (width > height) {
-            if (width > MAX_SIZE) {
-              height *= MAX_SIZE / width;
-              width = MAX_SIZE;
-            }
-          } else {
-            if (height > MAX_SIZE) {
-              width *= MAX_SIZE / height;
-              height = MAX_SIZE;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', 0.6));
-          } else {
-            resolve(rawBase64);
-          }
-        };
-        img.onerror = () => resolve(rawBase64);
-      });
+      const compressedBase64 = await compressDocumentImage(rawBase64, 1100, 0.55);
 
-      const updated = { ...trip, receiptImage: compressedBase64 };
+      const updated = { 
+        ...trip, 
+        [modalType === 'receipt' ? 'receiptImage' : 'deliveryNoteImage']: compressedBase64 
+      };
       updateTrip(updated);
     } catch (err) {
       console.error('Error compressing and saving image', err);
@@ -175,6 +256,29 @@ const TripDetails: React.FC = () => {
                 <Clock size={12} className="text-text-muted" />
                 <span className="text-xs font-medium text-text-muted">{trip.deliveryTime}</span>
               </div>
+              {trip.deliveryNoteImage ? (
+                <button
+                  onClick={() => {
+                    setModalType('delivery_note');
+                    setShowReceiptModal(true);
+                  }}
+                  className="mt-3 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-sm w-fit cursor-pointer active:scale-95"
+                >
+                  <Eye size={12} />
+                  <span>{language === 'bn' ? 'ডেলিভারি নোট দেখুন' : 'View Delivery Note'}</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setModalType('delivery_note');
+                    fileInputRef.current?.click();
+                  }}
+                  className="mt-3 py-1.5 px-3 bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-text-main font-bold text-[10px] uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-sm border border-gray-200/50 dark:border-white/5 w-fit cursor-pointer active:scale-95"
+                >
+                  <Camera size={12} />
+                  <span>{language === 'bn' ? 'ডেলিভারি নোট যুক্ত করুন' : 'Add Delivery Note'}</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -403,7 +507,10 @@ const TripDetails: React.FC = () => {
               {/* View Receipt Option */}
               {trip.receiptImage && (
                 <button
-                  onClick={() => setShowReceiptModal(true)}
+                  onClick={() => {
+                    setModalType('receipt');
+                    setShowReceiptModal(true);
+                  }}
                   className="w-full mt-2 py-2.5 px-4 bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm"
                 >
                   <Eye size={14} />
@@ -424,7 +531,7 @@ const TripDetails: React.FC = () => {
         className="hidden" 
       />
 
-      {/* Receipt View Modal */}
+      {/* Receipt / Delivery Note View Modal */}
       {showReceiptModal && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={() => { setShowReceiptModal(false); resetZoom(); }}>
           <div className="bg-theme-card border border-black/5 dark:border-white/10 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
@@ -432,10 +539,14 @@ const TripDetails: React.FC = () => {
             <div className="p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/[0.02] dark:bg-white/[0.02]">
               <div className="text-left">
                 <span className="text-[10px] font-black uppercase text-cyan-500 tracking-wider">
-                  {language === 'bn' ? 'সংরক্ষিত রসিদ' : 'Stored Receipt'}
+                  {modalType === 'receipt' 
+                    ? (language === 'bn' ? 'সংরক্ষিত রসিদ' : 'Stored Receipt') 
+                    : (language === 'bn' ? 'সংরক্ষিত ডেলিভারি নোট' : 'Stored Delivery Note')}
                 </span>
                 <h3 className="text-sm font-black text-text-main truncate mt-0.5">
-                  {trip.generatorReceiveNumber ? `${language === 'bn' ? 'রিসিট নম্বর' : 'Receipt No'}: ${trip.generatorReceiveNumber}` : (language === 'bn' ? 'রসিদ ছবি' : 'Receipt Image')}
+                  {modalType === 'receipt' 
+                    ? (trip.generatorReceiveNumber ? `${language === 'bn' ? 'রিসিট নম্বর' : 'Receipt No'}: ${trip.generatorReceiveNumber}` : (language === 'bn' ? 'রসিদ ছবি' : 'Receipt Image'))
+                    : (language === 'bn' ? 'ডেলিভারি নোট ছবি' : 'Delivery Note Image')}
                 </h3>
               </div>
               <button 
@@ -448,7 +559,7 @@ const TripDetails: React.FC = () => {
 
             {/* Modal Body */}
             <div className="p-6 overflow-hidden flex-1 flex flex-col items-center justify-center bg-gray-900/10 min-h-[350px] relative select-none">
-              {trip.receiptImage ? (
+              {(modalType === 'receipt' ? trip.receiptImage : trip.deliveryNoteImage) ? (
                 <>
                   {/* Zoom Controls Overlay */}
                   <div className="absolute top-4 right-4 z-50 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm p-1.5 rounded-xl border border-white/10 shadow-lg">
@@ -509,8 +620,8 @@ const TripDetails: React.FC = () => {
                       className="flex items-center justify-center max-w-full max-h-full"
                     >
                       <img 
-                        src={trip.receiptImage} 
-                        alt="Receipt" 
+                        src={modalType === 'receipt' ? trip.receiptImage : trip.deliveryNoteImage} 
+                        alt={modalType === 'receipt' ? 'Receipt' : 'Delivery Note'} 
                         className="max-w-full max-h-[50vh] object-contain rounded-lg shadow-md pointer-events-none"
                         referrerPolicy="no-referrer"
                       />
@@ -521,25 +632,29 @@ const TripDetails: React.FC = () => {
                   <p className="text-[10px] text-text-muted mt-3">
                     {language === 'bn' 
                       ? 'জুম করতে + / - ব্যবহার করুন এবং ড্র্যাগ করে নড়াচড়া করুন' 
-                      : 'Use + / - to zoom and drag to pan the receipt'}
+                      : 'Use + / - to zoom and drag to pan'}
                   </p>
                 </>
               ) : (
                 <div className="flex flex-col items-center text-center p-6 border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-2xl bg-white/5 w-full">
                   <Camera size={48} className="text-gray-400 dark:text-zinc-600 mb-3" />
                   <p className="text-xs font-bold text-text-main mb-1">
-                    {language === 'bn' ? 'কোনো রসিদ আপলোড করা হয়নি' : 'No Receipt Uploaded'}
+                    {modalType === 'receipt' 
+                      ? (language === 'bn' ? 'কোনো রসিদ আপলোড করা হয়নি' : 'No Receipt Uploaded')
+                      : (language === 'bn' ? 'কোনো ডেলিভারি নোট আপলোড করা হয়নি' : 'No Delivery Note Uploaded')}
                   </p>
                   <p className="text-[10px] text-text-muted mb-4 max-w-[240px]">
-                    {language === 'bn' ? 'এই ট্রিপের জন্য কোনো রসিদ সংযুক্ত নেই। নিচে ক্লিক করে আপলোড করুন।' : 'There is no receipt attached to this trip yet. Click below to upload.'}
+                    {modalType === 'receipt'
+                      ? (language === 'bn' ? 'এই ট্রিপের জন্য কোনো রসিদ সংযুক্ত নেই। নিচে ক্লিক করে আপলোড করুন।' : 'There is no receipt attached to this trip yet. Click below to upload.')
+                      : (language === 'bn' ? 'এই ট্রিপের জন্য কোনো ডেলিভারি নোট সংযুক্ত নেই। নিচে ক্লিক করে আপলোড করুন।' : 'There is no delivery note attached to this trip yet. Click below to upload.')}
                   </p>
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading}
-                    className="py-2 px-4 bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                    className="py-2 px-4 bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                   >
                     <Camera size={12} />
-                    <span>{isUploading ? (language === 'bn' ? 'আপলোড হচ্ছে...' : 'Uploading...') : (language === 'bn' ? 'রসিদ আপলোড করুন' : 'Upload Receipt')}</span>
+                    <span>{isUploading ? (language === 'bn' ? 'আপলোড হচ্ছে...' : 'Uploading...') : (modalType === 'receipt' ? (language === 'bn' ? 'রসিদ আপলোড করুন' : 'Upload Receipt') : (language === 'bn' ? 'ডেলিভারি নোট আপলোড করুন' : 'Upload Delivery Note'))}</span>
                   </button>
                 </div>
               )}
@@ -547,29 +662,47 @@ const TripDetails: React.FC = () => {
 
             {/* Modal Footer */}
             <div className="p-4 border-t border-black/5 dark:border-white/5 bg-black/[0.01] dark:bg-white/[0.01] flex gap-3">
-              {trip.receiptImage ? (
+              {(modalType === 'receipt' ? trip.receiptImage : trip.deliveryNoteImage) ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const deleteMsg = modalType === 'receipt'
+                        ? (language === 'bn' ? 'আপনি কি রসিদটি ডিলিট করতে চান?' : 'Are you sure you want to delete this receipt?')
+                        : (language === 'bn' ? 'আপনি কি ডেলিভারি নোটটি ডিলিট করতে চান?' : 'Are you sure you want to delete this delivery note?');
+                      if (confirm(deleteMsg)) {
+                        const updated = { 
+                          ...trip, 
+                          [modalType === 'receipt' ? 'receiptImage' : 'deliveryNoteImage']: '' 
+                        };
+                        updateTrip(updated);
+                        setShowReceiptModal(false);
+                      }
+                    }}
+                    className="flex-1 py-2.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-black uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+                  >
+                    <Trash2 size={14} />
+                    <span>{language === 'bn' ? 'ডিলিট করুন' : 'Delete'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadReceipt}
+                    className="flex-1 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+                  >
+                    <Download size={14} />
+                    <span>{language === 'bn' ? 'ডাউনলোড' : 'Download'}</span>
+                  </button>
+                </>
+              ) : (
                 <button
                   type="button"
-                  onClick={() => {
-                    if (confirm(language === 'bn' ? 'আপনি কি রসিদটি ডিলিট করতে চান?' : 'Are you sure you want to delete this receipt?')) {
-                      const updated = { ...trip, receiptImage: '' };
-                      updateTrip(updated);
-                      setShowReceiptModal(false);
-                    }
-                  }}
-                  className="flex-1 py-2.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-black uppercase rounded-xl transition-all flex items-center justify-center gap-1.5"
+                  onClick={() => { setShowReceiptModal(false); resetZoom(); }}
+                  className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-text-main text-xs font-black uppercase rounded-xl transition-all cursor-pointer"
                 >
-                  <Trash2 size={14} />
-                  <span>{language === 'bn' ? 'ডিলিট করুন' : 'Delete'}</span>
+                  {language === 'bn' ? 'বন্ধ করুন' : 'Close'}
                 </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => { setShowReceiptModal(false); resetZoom(); }}
-                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-text-main text-xs font-black uppercase rounded-xl transition-all"
-              >
-                {language === 'bn' ? 'বন্ধ করুন' : 'Close'}
-              </button>
+              )}
             </div>
           </div>
         </div>,

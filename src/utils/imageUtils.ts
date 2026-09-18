@@ -56,6 +56,87 @@ export async function compressImage(
 }
 
 /**
+ * Compresses document images (Delivery Notes & Diesel Receipts) with crystal-clear legibility
+ * while maintaining a small memory footprint (~35KB - 60KB).
+ * Uses 1100px max dimension, high-quality image smoothing, and background paper whitening.
+ */
+export async function compressDocumentImage(
+  dataUrl: string,
+  maxDimension: number = 1100,
+  quality: number = 0.55
+): Promise<string> {
+  return new Promise((resolve) => {
+    const img = document.createElement('img');
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxDimension) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          }
+        } else {
+          if (height > maxDimension) {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(dataUrl);
+          return;
+        }
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Document contrast sharpening: whiten paper background so JPEG compresses cleanly & text stays sharp
+        try {
+          const imgData = ctx.getImageData(0, 0, width, height);
+          const data = imgData.data;
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+            
+            if (luminance > 190) {
+              data[i] = 255;
+              data[i + 1] = 255;
+              data[i + 2] = 255;
+            } else if (luminance < 80) {
+              data[i] = Math.max(0, r - 30);
+              data[i + 1] = Math.max(0, g - 30);
+              data[i + 2] = Math.max(0, b - 30);
+            }
+          }
+          ctx.putImageData(imgData, 0, 0);
+        } catch {
+          // Fallback if crossOrigin/canvas access is restricted
+        }
+
+        const compressed = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressed);
+      } catch (err) {
+        console.error('compressDocumentImage error:', err);
+        resolve(dataUrl);
+      }
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+/**
  * Compresses receipt image data URLs to ensure they strictly stay within Firestore's 1MB limit
  * (typically around 60KB - 180KB) while maintaining document legibility.
  * Supports skipping background auto-crop/enhance if the image has already been manually edited.
@@ -71,20 +152,20 @@ export async function compressReceiptImage(
       result = await processAndEnhanceReceipt(dataUrl);
     }
     
-    // Determine compression parameters to optimize legibility and size
-    const maxW = skipAutoCropAndEnhance ? 900 : 600;
-    const maxH = skipAutoCropAndEnhance ? 1300 : 900;
-    const quality = skipAutoCropAndEnhance ? 0.7 : 0.45;
+    // Determine compression parameters to optimize legibility and size to ~30 KB
+    const maxW = skipAutoCropAndEnhance ? 600 : 450;
+    const maxH = skipAutoCropAndEnhance ? 900 : 650;
+    const quality = skipAutoCropAndEnhance ? 0.45 : 0.35;
 
-    // Guarantee size is well under 250KB for rapid, error-free saves
-    if (result.length > 250000 || skipAutoCropAndEnhance) {
+    // Guarantee size is around 30KB
+    if (result.length > 40000 || skipAutoCropAndEnhance) {
       result = await compressImage(result, maxW, maxH, quality);
     }
     return result;
   } catch (error) {
     console.error('compressReceiptImage error:', error);
     try {
-      return await compressImage(dataUrl, 600, 900, 0.5);
+      return await compressImage(dataUrl, 450, 650, 0.35);
     } catch {
       return dataUrl;
     }

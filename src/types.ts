@@ -243,6 +243,7 @@ export interface Trip {
   payments?: Payment[];
   firebaseUid?: string;
   receiptImage?: string;
+  deliveryNoteImage?: string;
 }
 
 export interface FinancialRecord {
