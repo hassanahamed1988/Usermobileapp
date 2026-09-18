@@ -1,14 +1,104 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 import { useStore } from '../store';
-import { ChevronLeft, Truck, MapPin, Calendar, User, Receipt, DollarSign, Clock, Hash, Package, Fuel } from 'lucide-react';
+import { ChevronLeft, Truck, MapPin, Calendar, User, Receipt, DollarSign, Clock, Hash, Package, Fuel, Eye, Trash2, X, Camera, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { TRANSLATIONS } from '../constants';
 
 const TripDetails: React.FC = () => {
-  const { selectedTrip, goBack, language, users, appThemeMode, isEyeComfort, currencies, selectedCurrency } = useStore();
+  const { selectedTrip, goBack, language, users, appThemeMode, isEyeComfort, currencies, selectedCurrency, updateTrip } = useStore();
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    if (zoom <= 1) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    setIsDragging(true);
+    setDragStart({ x: clientX - pan.x, y: clientY - pan.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    if (!isDragging || zoom <= 1) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    setPan({
+      x: clientX - dragStart.x,
+      y: clientY - dragStart.y
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const resetZoom = () => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  };
   const currency = currencies?.find(c => c.code === selectedCurrency) || { symbol: '$', code: 'USD', name: 'US Dollar' };
   const t = TRANSLATIONS[language];
   const trip = selectedTrip;
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !trip) return;
+
+    setIsUploading(true);
+    try {
+      const rawBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const compressedBase64 = await new Promise<string>((resolve) => {
+        const img = document.createElement('img');
+        img.src = rawBase64;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const MAX_SIZE = 1200;
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.6));
+          } else {
+            resolve(rawBase64);
+          }
+        };
+        img.onerror = () => resolve(rawBase64);
+      });
+
+      const updated = { ...trip, receiptImage: compressedBase64 };
+      updateTrip(updated);
+    } catch (err) {
+      console.error('Error compressing and saving image', err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   if (!trip) {
     return (
@@ -309,10 +399,182 @@ const TripDetails: React.FC = () => {
                   </p>
                 </div>
               </div>
+
+              {/* View Receipt Option */}
+              {trip.receiptImage && (
+                <button
+                  onClick={() => setShowReceiptModal(true)}
+                  className="w-full mt-2 py-2.5 px-4 bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <Eye size={14} />
+                  <span>{language === 'bn' ? 'রসিদ দেখুন' : 'View Receipt'}</span>
+                </button>
+              )}
             </div>
           </div>
         )}
       </div>
+
+      {/* Hidden File Input for Uploading Receipt */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileChange} 
+        accept="image/*" 
+        className="hidden" 
+      />
+
+      {/* Receipt View Modal */}
+      {showReceiptModal && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={() => { setShowReceiptModal(false); resetZoom(); }}>
+          <div className="bg-theme-card border border-black/5 dark:border-white/10 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/[0.02] dark:bg-white/[0.02]">
+              <div className="text-left">
+                <span className="text-[10px] font-black uppercase text-cyan-500 tracking-wider">
+                  {language === 'bn' ? 'সংরক্ষিত রসিদ' : 'Stored Receipt'}
+                </span>
+                <h3 className="text-sm font-black text-text-main truncate mt-0.5">
+                  {trip.generatorReceiveNumber ? `${language === 'bn' ? 'রিসিট নম্বর' : 'Receipt No'}: ${trip.generatorReceiveNumber}` : (language === 'bn' ? 'রসিদ ছবি' : 'Receipt Image')}
+                </h3>
+              </div>
+              <button 
+                onClick={() => { setShowReceiptModal(false); resetZoom(); }}
+                className="p-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors text-text-muted hover:text-text-main"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-hidden flex-1 flex flex-col items-center justify-center bg-gray-900/10 min-h-[350px] relative select-none">
+              {trip.receiptImage ? (
+                <>
+                  {/* Zoom Controls Overlay */}
+                  <div className="absolute top-4 right-4 z-50 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm p-1.5 rounded-xl border border-white/10 shadow-lg">
+                    <button
+                      type="button"
+                      onClick={() => setZoom(prev => Math.min(prev + 0.25, 4))}
+                      title="Zoom In"
+                      className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-all active:scale-95"
+                    >
+                      <ZoomIn size={16} />
+                    </button>
+                    <span className="text-[10px] font-mono font-bold text-white px-1">
+                      {Math.round(zoom * 100)}%
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setZoom(prev => {
+                          const next = Math.max(prev - 0.25, 1);
+                          if (next === 1) setPan({ x: 0, y: 0 });
+                          return next;
+                        });
+                      }}
+                      title="Zoom Out"
+                      className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-all active:scale-95"
+                    >
+                      <ZoomOut size={16} />
+                    </button>
+                    {zoom > 1 && (
+                      <button
+                        type="button"
+                        onClick={resetZoom}
+                        title="Reset"
+                        className="p-1.5 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-white transition-all active:scale-95"
+                      >
+                        <RotateCcw size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Zoomable Image Wrapper */}
+                  <div 
+                    className="w-full h-full min-h-[250px] max-h-[50vh] overflow-hidden flex items-center justify-center cursor-move rounded-lg"
+                    onMouseDown={handleMouseDown}
+                    onTouchStart={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onTouchMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onTouchEnd={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                  >
+                    <div
+                      style={{
+                        transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
+                        transition: isDragging ? 'none' : 'transform 0.15s ease-out',
+                        transformOrigin: 'center center'
+                      }}
+                      className="flex items-center justify-center max-w-full max-h-full"
+                    >
+                      <img 
+                        src={trip.receiptImage} 
+                        alt="Receipt" 
+                        className="max-w-full max-h-[50vh] object-contain rounded-lg shadow-md pointer-events-none"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Hint helper */}
+                  <p className="text-[10px] text-text-muted mt-3">
+                    {language === 'bn' 
+                      ? 'জুম করতে + / - ব্যবহার করুন এবং ড্র্যাগ করে নড়াচড়া করুন' 
+                      : 'Use + / - to zoom and drag to pan the receipt'}
+                  </p>
+                </>
+              ) : (
+                <div className="flex flex-col items-center text-center p-6 border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-2xl bg-white/5 w-full">
+                  <Camera size={48} className="text-gray-400 dark:text-zinc-600 mb-3" />
+                  <p className="text-xs font-bold text-text-main mb-1">
+                    {language === 'bn' ? 'কোনো রসিদ আপলোড করা হয়নি' : 'No Receipt Uploaded'}
+                  </p>
+                  <p className="text-[10px] text-text-muted mb-4 max-w-[240px]">
+                    {language === 'bn' ? 'এই ট্রিপের জন্য কোনো রসিদ সংযুক্ত নেই। নিচে ক্লিক করে আপলোড করুন।' : 'There is no receipt attached to this trip yet. Click below to upload.'}
+                  </p>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="py-2 px-4 bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                  >
+                    <Camera size={12} />
+                    <span>{isUploading ? (language === 'bn' ? 'আপলোড হচ্ছে...' : 'Uploading...') : (language === 'bn' ? 'রসিদ আপলোড করুন' : 'Upload Receipt')}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-black/5 dark:border-white/5 bg-black/[0.01] dark:bg-white/[0.01] flex gap-3">
+              {trip.receiptImage ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm(language === 'bn' ? 'আপনি কি রসিদটি ডিলিট করতে চান?' : 'Are you sure you want to delete this receipt?')) {
+                      const updated = { ...trip, receiptImage: '' };
+                      updateTrip(updated);
+                      setShowReceiptModal(false);
+                    }
+                  }}
+                  className="flex-1 py-2.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-black uppercase rounded-xl transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Trash2 size={14} />
+                  <span>{language === 'bn' ? 'ডিলিট করুন' : 'Delete'}</span>
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => { setShowReceiptModal(false); resetZoom(); }}
+                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-text-main text-xs font-black uppercase rounded-xl transition-all"
+              >
+                {language === 'bn' ? 'বন্ধ করুন' : 'Close'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

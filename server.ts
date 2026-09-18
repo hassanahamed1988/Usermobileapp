@@ -545,11 +545,11 @@ Follow these extraction maps strictly:
   - Extract only the substring BEFORE "to" (e.g. "Hamad Port" from "Hamad Port to Sanaiya"). Trim it. ➔ loadingPlace.
   - Extract only the substring AFTER "to" (e.g. "Sanaiya" from "Hamad Port to Sanaiya"). Trim it. ➔ deliveryPlace.
 - "Port Enter Time":
-  - "Date" ➔ loadingDate (Format as YYYY-MM-DD. E.g., 13-06-2026 becomes 2026-06-13. If blank or empty or not present in Port Enter Time columns, return "".)
-  - "Time" ➔ loadingTime (Format as HH:mm. E.g. "14:30". If blank or not present, return "".)
+  - "Date" ➔ loadingDate (Extract the EXACT raw date string as written or printed in the document, preserving its original format, e.g., "17/09/2026" or "17-09-2026" or "17-Sep-2026". Do NOT normalize or convert. If blank or empty or not present, return "".)
+  - "Time" ➔ loadingTime (Extract the EXACT raw time string as written or printed in the document, preserving its original format, e.g., "17:06" or "17:06:53 PM". Do NOT normalize or convert. If blank or not present, return "".)
 - "TRAILER EXIT" under Shipment delivery details table (the right-most Exit columns):
-  - "Date" ➔ deliveryDate (Format as YYYY-MM-DD. E.g., 14-06-2026 yields 2026-06-14. If blank or not present, return "".)
-  - "Time" ➔ deliveryTime (Format as HH:mm. If blank or not present, return "".)
+  - "Date" ➔ deliveryDate (Extract the EXACT raw date string as written or printed in the document, preserving its original format. Do NOT normalize or convert. If blank or not present, return "".)
+  - "Time" ➔ deliveryTime (Extract the EXACT raw time string as written or printed in the document, preserving its original format. Do NOT normalize or convert. If blank or not present, return "".)
 
 CRITICAL: If any field is physically blank, empty, unwritten, or missing in the document, you MUST set that field to "" (empty string). Do NOT invent, assume, simulate, or guess metadata. Be absolute and accurate. Only fill fields where written or printed content exists.`;
 
@@ -568,10 +568,10 @@ CRITICAL: If any field is physically blank, empty, unwritten, or missing in the 
               containerNumber: { type: Type.STRING, description: "Extracted Container No. Empty string if not found." },
               loadingPlace: { type: Type.STRING, description: "Extracted location fraction before 'to'. Empty string if not found." },
               deliveryPlace: { type: Type.STRING, description: "Extracted location fraction after 'to'. Empty string if not found." },
-              loadingDate: { type: Type.STRING, description: "Port entering Date formatted YYYY-MM-DD. Empty string if not found." },
-              loadingTime: { type: Type.STRING, description: "Port entering Time formatted HH:mm. Empty string if not found." },
-              deliveryDate: { type: Type.STRING, description: "Trailer exit Date formatted YYYY-MM-DD. Empty string if not found." },
-              deliveryTime: { type: Type.STRING, description: "Trailer exit Time formatted HH:mm. Empty string if not found." },
+              loadingDate: { type: Type.STRING, description: "Port entering Date in its exact original raw format from the document. Empty string if not found." },
+              loadingTime: { type: Type.STRING, description: "Port entering Time in its exact original raw format from the document. Empty string if not found." },
+              deliveryDate: { type: Type.STRING, description: "Trailer exit Date in its exact original raw format from the document. Empty string if not found." },
+              deliveryTime: { type: Type.STRING, description: "Trailer exit Time in its exact original raw format from the document. Empty string if not found." },
             },
             required: [
               "invoiceNumber", "companyName", "bayanNumber", "truckNumber", "containerNumber", "loadingPlace", "deliveryPlace",
@@ -682,6 +682,93 @@ Do not include the summary total rows (like 'TOTAL', 'CASH', 'VAT', 'ROUNDING', 
       res.json(parsedData);
     } catch (error: any) {
       console.error("Purchase OCR API Error on Server:", error);
+      let errorMsg = error?.message || "Internal Server Error";
+      try {
+        const parsed = JSON.parse(error.message);
+        if (parsed?.error?.message) {
+          errorMsg = parsed.error.message;
+        }
+      } catch {}
+      res.status(500).json({ error: errorMsg, rawError: error?.message });
+    }
+  });
+
+  // API Route for Diesel Receipt OCR Scanner
+  app.post("/api/diesel-ocr", enforceSession, async (req, res) => {
+    try {
+      const { image, apiKey: clientApiKey } = req.body;
+      if (!image) {
+        res.status(400).json({ error: "Image data is required" });
+        return;
+      }
+
+      const apiKey = (clientApiKey && String(clientApiKey).trim()) || await getGeminiApiKey();
+      if (!apiKey) {
+        res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server. Please configure a valid API key in Settings." });
+        return;
+      }
+
+      const ai = new GoogleGenAI({
+        apiKey: apiKey
+      });
+
+      let cleanBase64 = image;
+      let mimeType = "image/jpeg";
+      if (image.startsWith("data:")) {
+        const match = image.match(/^data:([^;]+);base64,(.*)$/);
+        if (match) {
+          mimeType = match[1];
+          cleanBase64 = match[2];
+        }
+      }
+
+      const imagePart = {
+        inlineData: {
+          mimeType: mimeType,
+          data: cleanBase64,
+        }
+      };
+
+      const prompt = `Extract structured data from this Diesel/Fuel Receipt.
+Identify values correctly:
+1. "Pump Name" or supplier/station name (e.g., "WOQOD" or "Bu Sulba" or "WOQOD - Bu Sulba"). Maximize accuracy. ➔ pumpName
+2. "Fuel Quantity" or volume in Liters (e.g., 24.39). Convert to number/string. ➔ fuelQuantity
+3. "Unit Price" or cost per Liter (e.g., 2.05). Convert to number/string. ➔ unitPrice
+4. "Amount" or total amount/cost paid (e.g., 50). Convert to number/string. ➔ generatorDiesel
+5. "Receipt Number" or invoice/receipt No. (e.g., "249278"). ➔ generatorReceiveNumber
+6. "Receipt Date" ➔ Extract the EXACT raw date string as written or printed on the receipt, preserving its original format (e.g., "17/09/2026" or "17-09-2026" or "17-Sep-2026"). Do NOT convert or normalize. ➔ dieselReceiptDate
+7. "Receipt Time" ➔ Extract the EXACT raw time string as written or printed on the receipt, preserving its original format (e.g., "17:06:53" or "17:06" or "05:06 PM"). Do NOT convert or normalize. ➔ dieselReceiptTime
+8. Classify the "Diesel Type" depending on the receipt details. Default to "generator" unless "truck" or other is clear. ➔ dieselReceiptType
+
+CRITICAL: If any field is physically blank or not found, return empty string.`;
+
+      const response = await generateWithFallback(
+        ai,
+        [imagePart, { text: prompt }],
+        {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              pumpName: { type: Type.STRING, description: "Extracted Pump Station / Supplier Name. Empty string if not found." },
+              fuelQuantity: { type: Type.STRING, description: "Extracted fuel quantity in Liters (e.g., '24.39'). Empty string if not found." },
+              unitPrice: { type: Type.STRING, description: "Extracted unit price (e.g., '2.05'). Empty string if not found." },
+              generatorDiesel: { type: Type.STRING, description: "Extracted total amount (e.g., '50'). Empty string if not found." },
+              generatorReceiveNumber: { type: Type.STRING, description: "Extracted receipt number. Empty string if not found." },
+              dieselReceiptDate: { type: Type.STRING, description: "Extracted receipt Date in its exact original raw format from the receipt. Empty string if not found." },
+              dieselReceiptTime: { type: Type.STRING, description: "Extracted receipt Time in its exact original raw format from the receipt. Empty string if not found." },
+              dieselReceiptType: { type: Type.STRING, description: "Classification: 'truck', 'generator', or 'light_vehicle'." },
+            },
+            required: ["pumpName", "fuelQuantity", "unitPrice", "generatorDiesel", "generatorReceiveNumber", "dieselReceiptDate", "dieselReceiptTime", "dieselReceiptType"]
+          }
+        }
+      );
+
+      const resultText = response.text || "{}";
+      const parsedData = JSON.parse(resultText.trim());
+      res.json(parsedData);
+    } catch (error: any) {
+      console.error("Diesel OCR API Error on Server:", error);
       let errorMsg = error?.message || "Internal Server Error";
       try {
         const parsed = JSON.parse(error.message);

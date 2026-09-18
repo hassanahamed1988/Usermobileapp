@@ -20,7 +20,7 @@ const NewTrip: React.FC = () => {
     locations, countries, companies, containerTypes, loadingTypes, extraDieselReasons, emptyReturnYards,
     currentFile, monthlyFiles, setCurrentFile, addMonthlyFile, trips,
     currencies, selectedCurrency, showFeedback,
-    editingTrip, setEditingTrip, updateTrip,
+    editingTrip, setEditingTrip, updateTrip, setSelectedTrip,
     wallpaper, backgroundColor, theme,
     isNightMode, appThemeMode, goBack,
     isDarkMode: storeIsDarkMode,
@@ -82,14 +82,18 @@ const NewTrip: React.FC = () => {
     generatorDiesel: '',
     generatorReceiveNumber: '',
     dieselReceiptDate: '',
+    dieselReceiptTime: '',
     dieselReceiptType: 'generator',
     pumpName: '',
+    fuelQuantity: '',
+    unitPrice: '',
     extraDiesel: '',
     extraDieselReason: '',
     commission: '',
     friday: '',
     bonus: '',
     overtime: '',
+    receiptImage: '',
   });
 
   const loadedTripIdRef = useRef<string | null>(null);
@@ -124,14 +128,18 @@ const NewTrip: React.FC = () => {
         generatorDiesel: (editingTrip.generatorDiesel && Number(editingTrip.generatorDiesel) !== 0) ? editingTrip.generatorDiesel.toString() : '',
         generatorReceiveNumber: editingTrip.generatorReceiveNumber || '',
         dieselReceiptDate: editingTrip.dieselReceiptDate || '',
+        dieselReceiptTime: (editingTrip as any).dieselReceiptTime || '',
         dieselReceiptType: (editingTrip as any).dieselReceiptType || 'generator',
         pumpName: (editingTrip as any).pumpName || '',
+        fuelQuantity: (editingTrip as any).fuelQuantity || '',
+        unitPrice: (editingTrip as any).unitPrice || '',
         extraDiesel: (editingTrip.extraDiesel && Number(editingTrip.extraDiesel) !== 0) ? editingTrip.extraDiesel.toString() : '',
         extraDieselReason: editingTrip.extraDieselReason || '',
         commission: (editingTrip.commission && Number(editingTrip.commission) !== 0) ? editingTrip.commission.toString() : '',
         friday: (editingTrip.friday && Number(editingTrip.friday) !== 0) ? editingTrip.friday.toString() : '',
         bonus: (editingTrip.bonus && Number(editingTrip.bonus) !== 0) ? editingTrip.bonus.toString() : '',
         overtime: (editingTrip.overtime && Number(editingTrip.overtime) !== 0) ? editingTrip.overtime.toString() : '',
+        receiptImage: editingTrip.receiptImage || '',
       });
       if (editingTrip.generatorDiesel || editingTrip.generatorReceiveNumber || editingTrip.dieselReceiptDate) setShowGenerator(true);
       if (editingTrip.generatorReceiveNumber) setHasGeneratorReceipt(true);
@@ -162,6 +170,7 @@ const NewTrip: React.FC = () => {
   }>({ isOpen: false, field: '', label: '', options: [] });
 
   const [isScanning, setIsScanning] = useState(false);
+  const [scanType, setScanType] = useState<'delivery_note' | 'diesel_receipt'>('delivery_note');
   const [showScanOptions, setShowScanOptions] = useState(false);
   const [scannedImagePreview, setScannedImagePreview] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<any | null>(null);
@@ -363,7 +372,7 @@ const NewTrip: React.FC = () => {
       // Show preview image during scanning
       setScannedImagePreview(compressedBase64);
 
-      const targetUrl = getApiUrl('/api/ocr');
+      const targetUrl = getApiUrl(scanType === 'diesel_receipt' ? '/api/diesel-ocr' : '/api/ocr');
       console.log('Initiating OCR scan request to endpoint:', targetUrl);
 
       const sessionId = localStorage.getItem('fleetpro_session_id') || ('sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9));
@@ -452,6 +461,37 @@ const NewTrip: React.FC = () => {
            throw new Error('সার্ভার কানেকশন ব্লকড! এটি AI Studio এর ডিফল্ট প্রিভিউ সার্ভার, যা এপিকে-তে কাজ করে না। অনুগ্রহ করে সেটিংস (Settings) থেকে আপনার নিজের ক্লাউড সার্ভারের "API Base URL" সেট করুন।');
         }
         throw new Error(`Data format error (Not valid JSON). Server returned: ${typeof responseText === 'string' ? responseText.substring(0, 120) : 'Object'}...`);
+      }
+
+      if (scanType === 'diesel_receipt') {
+        setFormData(prev => {
+          const qty = parseFloat(data.fuelQuantity) || 0;
+          const price = parseFloat(data.unitPrice) || 0;
+          let calculatedDiesel = data.generatorDiesel || '';
+          if (qty > 0 && price > 0) {
+            calculatedDiesel = (qty * price).toFixed(2).replace(/\.00$/, '');
+          }
+          let combinedDate = data.dieselReceiptDate || prev.dieselReceiptDate || '';
+          if (data.dieselReceiptDate && data.dieselReceiptTime) {
+            combinedDate = `${data.dieselReceiptDate.trim()} ${data.dieselReceiptTime.trim()}`;
+          }
+          return {
+            ...prev,
+            pumpName: data.pumpName || prev.pumpName,
+            fuelQuantity: data.fuelQuantity || prev.fuelQuantity,
+            unitPrice: data.unitPrice || prev.unitPrice,
+            generatorDiesel: calculatedDiesel || prev.generatorDiesel,
+            generatorReceiveNumber: data.generatorReceiveNumber || prev.generatorReceiveNumber,
+            dieselReceiptDate: combinedDate,
+            dieselReceiptTime: '',
+            dieselReceiptType: data.dieselReceiptType || prev.dieselReceiptType || 'generator',
+            receiptImage: compressedBase64,
+          };
+        });
+        setScannedImagePreview(null);
+        setShowScanPromptModal(false);
+        showFeedback(isBangla ? 'ডিজেল রিসিট স্ক্যান সফল হয়েছে!' : 'Diesel receipt scan completed successfully!');
+        return;
       }
 
       // Normalize before presenting to the user so the fields represent clean human-readable text
@@ -724,6 +764,7 @@ const NewTrip: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => {
+                        setScanType('delivery_note');
                         setShowScanPromptModal(false);
                         setShowScanOptions(true);
                       }}
@@ -1072,7 +1113,17 @@ const NewTrip: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => {
+      const next = { ...prev, [name]: value };
+      if (name === 'fuelQuantity' || name === 'unitPrice') {
+        const qty = parseFloat(next.fuelQuantity) || 0;
+        const price = parseFloat(next.unitPrice) || 0;
+        if (qty > 0 && price > 0) {
+          next.generatorDiesel = (qty * price).toFixed(2).replace(/\.00$/, '');
+        }
+      }
+      return next;
+    });
   };
 
   const handleModalSelect = (selectedOption: any) => {
@@ -1266,8 +1317,12 @@ const NewTrip: React.FC = () => {
       tariffStatus: isCompleted ? 'Complete' : 'Incomplete',
       generatorReceiveNumber: !showGenerator ? '' : formData.generatorReceiveNumber,
       dieselReceiptDate: !showGenerator ? '' : formData.dieselReceiptDate,
+      dieselReceiptTime: !showGenerator ? '' : formData.dieselReceiptTime,
       dieselReceiptType: !showGenerator ? '' : formData.dieselReceiptType,
       pumpName: !showGenerator ? '' : formData.pumpName,
+      fuelQuantity: !showGenerator ? 0 : (parseFloat(formData.fuelQuantity) || 0),
+      unitPrice: !showGenerator ? 0 : (parseFloat(formData.unitPrice) || 0),
+      receiptImage: !showGenerator ? '' : (formData.receiptImage || ''),
       dieselPrice: parseFloat(formData.dieselPrice) || 0,
       generatorDiesel: parseFloat(formData.generatorDiesel) || 0,
       extraDiesel: parseFloat(formData.extraDiesel) || 0,
@@ -1284,6 +1339,8 @@ const NewTrip: React.FC = () => {
                   (parseFloat(formData.overtime) || 0)
     };
 
+    let finalTrip: Trip;
+
     if (editingTrip) {
       const updatedTrip: Trip = {
         ...editingTrip,
@@ -1299,6 +1356,7 @@ const NewTrip: React.FC = () => {
         payments: editingTrip.payments || []
       };
       updateTrip(updatedTrip);
+      finalTrip = updatedTrip;
       showFeedback('Trip updated successfully!');
       setEditingTrip(null);
     } else {
@@ -1318,6 +1376,7 @@ const NewTrip: React.FC = () => {
         payments: []
       };
       addTrip(newTrip);
+      finalTrip = newTrip;
       
       // Add payments for financial fields
       const paymentCategories = [
@@ -1354,7 +1413,8 @@ const NewTrip: React.FC = () => {
 
     setTimeout(() => {
       setIsSubmitting(false);
-      setView('MONTHLY_FILE_DETAILS');
+      setSelectedTrip(finalTrip);
+      setView('TRIP_DETAILS');
     }, 1500);
   };
 
@@ -1433,17 +1493,19 @@ const NewTrip: React.FC = () => {
               label={t.LOADING_DATE || "Loading Date"}
               name="loadingDate"
               icon={<Calendar size={16} />}
-              type="date"
+              type="text"
               value={formData.loadingDate}
               onChange={handleChange}
+              placeholder="e.g. 17/09/2026"
             />
             <InputField
               label={t.LOADING_TIME || "Loading Time"}
               name="loadingTime"
               icon={<Clock size={16} />}
-              type="time"
+              type="text"
               value={formData.loadingTime}
               onChange={handleChange}
+              placeholder="e.g. 17:06"
             />
           </div>
         </div>
@@ -1488,17 +1550,19 @@ const NewTrip: React.FC = () => {
               label={t.DELIVERY_DATE || "Delivery Date"}
               name="deliveryDate"
               icon={<Calendar size={16} />}
-              type="date"
+              type="text"
               value={formData.deliveryDate}
               onChange={handleChange}
+              placeholder="e.g. 17/09/2026"
             />
             <InputField
               label={t.DELIVERY_TIME || "Delivery Time"}
               name="deliveryTime"
               icon={<Clock size={16} />}
-              type="time"
+              type="text"
               value={formData.deliveryTime}
               onChange={handleChange}
+              placeholder="e.g. 17:06"
             />
           </div>
         </div>
@@ -1850,32 +1914,50 @@ const NewTrip: React.FC = () => {
                 
                 className="space-y-4 pt-1 relative z-10"
               >
-                {/* Added Type dropdown and Pump Name input on top of the card */}
+                {/* Added Type dropdown and Pump Name input on top of the card with Camera Scan button */}
                 <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-                  <InputField
-                    label={isBangla ? 'ডিজেল টাইপ (Diesel Type)' : 'Diesel Type'}
-                    name="dieselReceiptType"
-              icon={<Fuel size={16} />}
-                    value={
-                      formData.dieselReceiptType === 'truck'
-                        ? (isBangla ? 'ট্রাক ডিজেল' : 'Truck Diesel')
-                        : formData.dieselReceiptType === 'light_vehicle'
-                          ? (isBangla ? 'লাইট ভেহিকেল ডিজেল' : 'Light vehicle Diesel')
-                          : (isBangla ? 'জেনারেটর ডিজেল' : 'Generator Diesel')
-                    }
-                    onChange={handleChange}
-                    type="select"
-                    onOpenModal={openModal}
-                    options={[
-                      { label: isBangla ? 'ট্রাক ডিজেল' : 'Truck Diesel', value: 'truck' },
-                      { label: isBangla ? 'জেনারেটর ডিজেল' : 'Generator Diesel', value: 'generator' },
-                      { label: isBangla ? 'লাইট ভেহিকেল ডিজেল' : 'Light vehicle Diesel', value: 'light_vehicle' }
-                    ]}
-                  />
+                  <div className="flex flex-col">
+                    <div className="flex items-center justify-between mb-1.5 min-h-[22px]">
+                      <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
+                        {isBangla ? 'ডিজেল টাইপ (Diesel Type)' : 'Diesel Type'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setScanType('diesel_receipt');
+                          setShowScanOptions(true);
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-0.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-full text-[10px] font-black transition-all active:scale-95 cursor-pointer shadow-xs border border-rose-200/50 dark:border-rose-500/10"
+                      >
+                        <Camera size={11} className="animate-[pulse_1.5s_infinite]" />
+                        <span>{isBangla ? 'রিসিট স্ক্যান করুন' : 'Scan Receipt'}</span>
+                      </button>
+                    </div>
+                    <InputField
+                      label=""
+                      name="dieselReceiptType"
+                      icon={<Fuel size={16} />}
+                      value={
+                        formData.dieselReceiptType === 'truck'
+                          ? (isBangla ? 'ট্রাক ডিজেল' : 'Truck Diesel')
+                          : formData.dieselReceiptType === 'light_vehicle'
+                            ? (isBangla ? 'লাইট ভেহিকেল ডিজেল' : 'Light vehicle Diesel')
+                            : (isBangla ? 'জেনারেটর ডিজেল' : 'Generator Diesel')
+                      }
+                      onChange={handleChange}
+                      type="select"
+                      onOpenModal={openModal}
+                      options={[
+                        { label: isBangla ? 'ট্রাক ডিজেল' : 'Truck Diesel', value: 'truck' },
+                        { label: isBangla ? 'জেনারেটর ডিজেল' : 'Generator Diesel', value: 'generator' },
+                        { label: isBangla ? 'লাইট ভেহিকেল ডিজেল' : 'Light vehicle Diesel', value: 'light_vehicle' }
+                      ]}
+                    />
+                  </div>
                   <InputField
                     label={isBangla ? 'পাম্পের নাম (Pump Name)' : 'Pump Name'}
                     name="pumpName"
-              icon={<Fuel size={16} />}
+                    icon={<Fuel size={16} />}
                     value={formData.pumpName}
                     onChange={handleChange}
                     type="text"
@@ -1883,11 +1965,35 @@ const NewTrip: React.FC = () => {
                   />
                 </div>
 
+                <div className="grid gap-4 grid-cols-2">
+                  <InputField
+                    label={isBangla ? 'ডিজেলের পরিমাণ (Fuel Quantity)' : 'Fuel Quantity'}
+                    name="fuelQuantity"
+                    icon={<Fuel size={16} />}
+                    value={formData.fuelQuantity}
+                    onChange={handleChange}
+                    type="tel"
+                    inputMode="decimal"
+                    suffix="Liters"
+                    placeholder={isBangla ? 'যেমন: ১০০' : 'e.g. 100'}
+                  />
+                  <InputField
+                    label={isBangla ? 'ইউনিট মূল্য (Unit Price)' : 'Unit Price'}
+                    name="unitPrice"
+                    icon={<DollarSign size={16} />}
+                    value={formData.unitPrice}
+                    onChange={handleChange}
+                    type="tel"
+                    inputMode="decimal"
+                    placeholder={isBangla ? 'যেমন: ৪.৫' : 'e.g. 4.5'}
+                  />
+                </div>
+
                 <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
                   <InputField
                     label={isBangla ? 'টাকা (Amount)' : 'Amount'}
                     name="generatorDiesel"
-              icon={<DollarSign size={16} />}
+                    icon={<DollarSign size={16} />}
                     value={formData.generatorDiesel}
                     onChange={handleChange}
                     type="tel"
@@ -1895,17 +2001,18 @@ const NewTrip: React.FC = () => {
                     suggestions={getFieldSuggestions('generatorDiesel')}
                   />
                   <InputField
-                    label={isBangla ? 'ট্রানজেকশন ডেট' : 'Transaction Date'}
+                    label={isBangla ? 'ট্রানজেকশন ডেট ও টাইম' : 'Transaction Date & Time'}
                     name="dieselReceiptDate"
-              icon={<Calendar size={16} />}
+                    icon={<Calendar size={16} />}
                     value={formData.dieselReceiptDate}
                     onChange={handleChange}
-                    type="date"
+                    type="text"
+                    placeholder="e.g. 17/09/2026 17:06:53"
                   />
                   <InputField
                     label={isBangla ? 'রিসিট নম্বর' : 'Receipt Number'}
                     name="generatorReceiveNumber"
-              icon={<FileText size={16} />}
+                    icon={<FileText size={16} />}
                     value={formData.generatorReceiveNumber}
                     onChange={handleChange}
                     type="text"

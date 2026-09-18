@@ -221,6 +221,7 @@ export interface Trip {
   generatorDieselPaid?: number;
   generatorReceiveNumber?: string;
   dieselReceiptDate?: string;
+  dieselReceiptTime?: string;
   dieselReceiptType?: 'generator' | 'truck' | string;
   pumpName?: string;
   extraDiesel?: number;
@@ -241,6 +242,7 @@ export interface Trip {
   paymentStatus: 'PAID' | 'PARTIAL' | 'UNPAID';
   payments?: Payment[];
   firebaseUid?: string;
+  receiptImage?: string;
 }
 
 export interface FinancialRecord {

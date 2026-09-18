@@ -30,6 +30,7 @@ interface InputFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   hideCheckmark?: boolean;
   themeMode?: 'light' | 'dark';
   labelBgColor?: string;
+  suffix?: string;
 }
 
 const getLocalContrastColor = (hexColor: any) => {
@@ -77,6 +78,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(({
   themeMode,
   required,
   labelBgColor,
+  suffix,
   ...props
 }, ref) => {
   const { wallpaper, backgroundColor, theme, appThemeMode, isDarkMode: storeIsDarkMode, isNightMode, currentView, loginCardColor, user, loginWallpaper, loginBackgroundColor, language } = useStore();
@@ -642,7 +644,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(({
               ${isSelect || isDate || isTime ? 'cursor-pointer caret-transparent pointer-events-none' : ''}
               ${isFocused ? 'pl-3 pr-2' : (showCurrency ? 'pl-11 pr-2' : (leftActionIcon && icon) ? 'pl-[52px]' : (leftActionIcon || icon || isDate || isTime) ? 'pl-[34px] pr-2' : 'pl-3 pr-2')}
               ${readOnly && !isSearch && !isSelect && !isDate && !isTime ? 'bg-black/5 cursor-not-allowed opacity-50' : (readOnly && !isSelect && !isDate && !isTime ? 'cursor-not-allowed' : '')}
-              ${error || isPassword ? 'pr-10' : ''}
+              ${suffix && hasValue ? 'pr-16' : (error || isPassword ? 'pr-10' : '')}
               ${isPassword ? ((inputSize.includes('text-right') || inputSize.includes('text-end') || (inputClassName || '').includes('text-right') || (inputClassName || '').includes('text-end')) ? 'text-right text-end font-sans tracking-widest' : 'text-left text-start font-sans tracking-widest') : ''}
               ${inputClassName || ''}
             `}
@@ -720,6 +722,15 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(({
           >
             {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
+        )}
+
+        {suffix && hasValue && (
+          <div 
+            className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[11px] font-black uppercase tracking-wider select-none z-20"
+            style={{ color: isDarkMode ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.5)' }}
+          >
+            {suffix}
+          </div>
         )}
 
         <label
