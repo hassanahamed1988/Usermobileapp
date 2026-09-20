@@ -19,7 +19,8 @@ import {
   Receipt,
   Home,
   Contact,
-  Landmark
+  Landmark,
+  Scan
 } from "lucide-react";
 
 import { TRANSLATIONS } from './translations';
@@ -27,6 +28,7 @@ export { TRANSLATIONS };
 
 export const GLOBAL_DASHBOARD_MODULES = [
   { id: 'NEW_TRIP', labelKey: 'NEW_TRIP', icon: <Truck size={18} />, color: '#facc15', type: 'user' },
+  { id: 'SCANNER', labelKey: 'SCANNER', icon: <Scan size={18} />, color: '#06b6d4', type: 'user' },
   { id: 'MONTHLY_FILES', labelKey: 'MONTHLY_FILES', icon: <FileText size={18} />, color: '#2dd4bf', type: 'user' },
   { id: 'CONTACTS', labelKey: 'CONTACTS', icon: <Contact size={18} />, color: '#10b981', type: 'user' },
   { id: 'SEARCH', labelKey: 'SEARCH', icon: <Search size={18} />, color: '#818cf8', type: 'user' },
@@ -66,7 +68,7 @@ export const GLOBAL_DASHBOARD_MODULES = [
 // keeping their own copy, and the web admin app's permissionModules.ts
 // mirrors this exact same list on its side. Keep both in sync if this
 // list ever changes.
-export const DEFAULT_OVERRIDABLE_PERMISSIONS = ['SECURITY', 'THEME', 'DOWNLOAD', 'SEARCH', 'USER_PROFILE', 'SUPPORT', 'SETTINGS', 'STATEMENT', 'INVOICE', 'PAYMENT', 'LEAVE_SETTLEMENT', 'FUEL', 'WALLET', 'CHAT', 'CONTACTS'];
+export const DEFAULT_OVERRIDABLE_PERMISSIONS = ['SECURITY', 'THEME', 'DOWNLOAD', 'SEARCH', 'USER_PROFILE', 'SUPPORT', 'SETTINGS', 'STATEMENT', 'INVOICE', 'PAYMENT', 'LEAVE_SETTLEMENT', 'FUEL', 'WALLET', 'CHAT', 'CONTACTS', 'SCANNER'];
 
 // Single shared resolver for "can this user see this module": overridable
 // modules default to visible unless explicitly denied; everything else

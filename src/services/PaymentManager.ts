@@ -178,7 +178,6 @@ export class PaymentManager {
       // Define configurations for each category
       addCategoryItems('Trip Diesel', [
         { key: 'dieselPrice', paidField: 'dieselPaid', label: 'Trip Diesel' },
-        { key: 'extraDiesel', paidField: 'extraDieselPaid', label: 'Extra Diesel' },
         { key: 'generatorDiesel', paidField: 'generatorDieselPaid', label: 'Generator Diesel' },
         { key: 'friday', paidField: 'fridayPaid', label: 'Friday' }
       ]);

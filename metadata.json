@@ -1,7 +1,7 @@
 {
   "name": "Fleetpro App",
   "description": "A centralized digital fleet management system with profile tracking, daily trip logs, financial accounting, and professional CV generation, featuring a diamond-themed mobile-first UI.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["camera"],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]

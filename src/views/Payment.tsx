@@ -538,7 +538,6 @@ const PaymentView: React.FC = () => {
         const configs = [
           { key: 'dieselPrice', paidField: 'dieselPaid', label: 'Trip Diesel', category: 'Trip Diesel' },
           { key: 'generatorDiesel', paidField: 'generatorDieselPaid', label: 'Generator Diesel', category: 'Trip Diesel' },
-          { key: 'extraDiesel', paidField: 'extraDieselPaid', label: 'Extra Diesel', category: 'Trip Diesel' },
           { key: 'friday', paidField: 'fridayPaid', label: 'Friday', category: 'Trip Diesel' },
           { key: 'bonus', paidField: 'bonusPaid', label: 'Bonus', category: 'Bonus' },
         ];
@@ -3621,7 +3620,7 @@ setShowUserRenewSelection(false);
 
                             <div className="space-y-2.5">
                               {selectedConsolidatedTripForPopup.subItems?.map((subItem: any) => {
-                                const isVehicleInspection = (subItem.key === 'extraDiesel' || selectedPendingCategory?.toUpperCase() === 'EXTRA FUEL' || selectedConsolidatedTripForPopup.category === 'EXTRA FUEL');
+                                const isVehicleInspection = selectedPendingCategory?.toUpperCase() === 'EXTRA FUEL' || selectedConsolidatedTripForPopup.category === 'EXTRA FUEL';
                                 const isPaid = subItem.pending === 0;
                                 const labelText = isVehicleInspection 
                                   ? (isPaid 

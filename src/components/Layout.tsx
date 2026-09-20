@@ -47,7 +47,8 @@ import {
   Fuel,
   Download,
   Landmark,
-  ShoppingCart
+  ShoppingCart,
+  Scan
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore, GLOBAL_TRANSITION, GLOBAL_VARIANTS } from '../store';
@@ -284,6 +285,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
   const tripManagementItems = user ? filterItems([
     { id: 'MONTHLY_FILES', icon: <FileText size={20} />, label: t.MONTHLY_FILES, color: '#2dd4bf' },
     { id: 'NEW_TRIP', icon: <Truck size={20} />, label: t.NEW_TRIP_MENU, color: '#facc15' },
+    { id: 'SCANNER', icon: <Scan size={20} />, label: language === 'bn' ? 'স্ক্যানার' : 'Scanner', color: '#06b6d4' },
   ]) : [];
 
   const userViewItems = user ? filterItems([

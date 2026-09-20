@@ -54,6 +54,7 @@ import TripDetails from '@/views/TripDetails';
 import Chat from '@/views/Chat';
 import Statement from '@/views/Statement';
 import InvoiceView from '@/views/Invoice';
+import Scanner from '@/views/Scanner';
 import FeedbackModal from '@/components/FeedbackModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { ViewTransition } from '@/components/ViewTransition';
@@ -1152,6 +1153,7 @@ const ViewContainer: React.FC = () => {
 const renderView = (view: StoreState['currentView'], language: string) => {
   switch (view) { 
     case 'DASHBOARD': return <Dashboard />;
+    case 'SCANNER': return <Scanner />;
     case 'VEHICLE_LIST': return <VehicleList />;
     case 'VEHICLE_SERVICES': return <VehicleServices />;
     case 'TRIPS': return <Trips />;
@@ -1210,7 +1212,8 @@ const renderView = (view: StoreState['currentView'], language: string) => {
     'PRAYER_TIMES',
     'USER_PASSWORD_RESET',
     'NOTIFICATIONS',
-    'NOTIFICATION_DETAIL'
+    'NOTIFICATION_DETAIL',
+    'SCANNER'
   ].includes(currentView);
 
   const getTitle = () => {

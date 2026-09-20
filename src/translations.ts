@@ -2,6 +2,7 @@ export const TRANSLATIONS = {
   en: {
     // Nav & Section Headers
     DASHBOARD: 'Dashboard',
+    SCANNER: 'Scanner',
     TRIPS: 'Trip Entry',
     PROFILES: 'Profiles',
     FINANCE: 'Finance',
@@ -269,6 +270,7 @@ export const TRANSLATIONS = {
   bn: {
     // Nav & Section Headers
     DASHBOARD: 'ড্যাশবোর্ড',
+    SCANNER: 'স্ক্যানার',
     TRIPS: 'ট্রিপ এন্ট্রি',
     PROFILES: 'প্রোফাইলসমূহ',
     FINANCE: 'অর্থসংস্থান',
@@ -536,6 +538,7 @@ export const TRANSLATIONS = {
   ar: {
     // Nav & Section Headers
     DASHBOARD: 'الرئيسية',
+    SCANNER: 'الماسح الضوئي',
     TRIPS: 'إدخال الرحلة',
     PROFILES: 'الملفات الشخصية',
     FINANCE: 'المالية',
@@ -804,6 +807,7 @@ export const TRANSLATIONS = {
   hi: {
     // Nav & Section Headers
     DASHBOARD: 'डैशबोर्ड',
+    SCANNER: 'स्कैनर',
     TRIPS: 'ट्रिप एंट्री',
     PROFILES: 'प्रोफाइल',
     FINANCE: 'वित्त',
