@@ -537,7 +537,7 @@ const PaymentView: React.FC = () => {
         const subItemsMap: { [key: string]: any } = {};
         const configs = [
           { key: 'dieselPrice', paidField: 'dieselPaid', label: 'Trip Diesel', category: 'Trip Diesel' },
-          { key: 'generatorDiesel', paidField: 'generatorDieselPaid', label: 'Generator Diesel', category: 'Trip Diesel' },
+          { key: 'extraDiesel', paidField: 'extraDieselPaid', label: 'Generator Diesel', category: 'Trip Diesel' },
           { key: 'friday', paidField: 'fridayPaid', label: 'Friday', category: 'Trip Diesel' },
           { key: 'bonus', paidField: 'bonusPaid', label: 'Bonus', category: 'Bonus' },
         ];
@@ -723,7 +723,8 @@ const PaymentView: React.FC = () => {
                                   (updatedTrip.extraDieselPaid || 0) + 
                                   (updatedTrip.bonusPaid || 0) + 
                                   (updatedTrip.fridayPaid || 0) + 
-                                  (updatedTrip.overtimePaid || 0);
+                                  (updatedTrip.overtimePaid || 0) +
+                                  (updatedTrip.generatorDieselPaid || 0);
             
             updatedTrip.paidAmount = newPaidAmount;
             if (newPaidAmount <= 0) updatedTrip.paymentStatus = 'UNPAID';
@@ -766,7 +767,8 @@ const PaymentView: React.FC = () => {
                                 (updatedTrip.extraDieselPaid || 0) + 
                                 (updatedTrip.bonusPaid || 0) + 
                                 (updatedTrip.fridayPaid || 0) + 
-                                (updatedTrip.overtimePaid || 0);
+                                (updatedTrip.overtimePaid || 0) +
+                                (updatedTrip.generatorDieselPaid || 0);
           
           updatedTrip.paidAmount = newPaidAmount;
           if (newPaidAmount <= 0) updatedTrip.paymentStatus = 'UNPAID';

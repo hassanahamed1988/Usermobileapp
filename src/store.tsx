@@ -388,7 +388,11 @@ const recalculateTripPayments = (tripId: string, d: any) => {
   // Helper to sum received payments for a specific sub-key
   const getSumOfReceivedPayments = (subKey: string, categoryName: string) => {
     return listPayments
-      .filter((p: any) => p.category?.toUpperCase() === categoryName.toUpperCase() && p.status === 'RECEIVED')
+      .filter((p: any) => {
+        const cat = (p.category || '').toUpperCase();
+        const targetCat = categoryName.toUpperCase();
+        return (cat === targetCat || cat === 'TRIP PAYMENT') && p.status === 'RECEIVED';
+      })
       .reduce((sum: number, p: any) => {
         if (!p.details?.pendingItems) return sum;
         
@@ -405,7 +409,9 @@ const recalculateTripPayments = (tripId: string, d: any) => {
             (subKey === 'friday' && categoryName.toUpperCase() === 'FRIDAY') ||
             (subKey === 'bonus' && categoryName.toUpperCase() === 'BONUS') ||
             (subKey === 'bonus' && categoryName.toUpperCase() === 'TRIP DIESEL') || // fallback for bonus in trip diesel category
-            (subKey === 'overtime' && categoryName.toUpperCase() === 'OVERTIME')
+            (subKey === 'overtime' && categoryName.toUpperCase() === 'OVERTIME') ||
+            (subKey === 'generatorDiesel' && categoryName.toUpperCase() === 'TRIP DIESEL') ||
+            (subKey === 'extraDiesel' && categoryName.toUpperCase() === 'TRIP DIESEL')
           ) {
             return sum + (Number(legacyVal) || 0);
           }
@@ -1680,6 +1686,94 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               }
               d[col] = cleanData;
               d[targetKey] = cleanData;
+
+              // Dynamically recalculate all loaded trips in memory so existing records show corrected calculations instantly!
+              if (d.trips && d.trips.length > 0) {
+                d.trips.forEach((trip: any) => {
+                  const totalAmount = (Number(trip.dieselPrice) || 0) + 
+                                      (Number(trip.commission) || 0) + 
+                                      (Number(trip.extraDiesel) || 0) +
+                                      (Number(trip.friday) || 0) +
+                                      (Number(trip.bonus) || 0) +
+                                      (Number(trip.overtime) || 0);
+                  trip.totalAmount = totalAmount;
+
+                  if (d.payments && d.payments.length > 0) {
+                    const listPayments = d.payments;
+                    const getSumOfReceivedPaymentsForTrip = (subKey: string, categoryName: string) => {
+                      return listPayments
+                        .filter((p: any) => {
+                          const cat = (p.category || '').toUpperCase();
+                          const targetCat = categoryName.toUpperCase();
+                          return (cat === targetCat || cat === 'TRIP PAYMENT') && p.status === 'RECEIVED';
+                        })
+                        .reduce((sum: number, p: any) => {
+                          if (!p.details?.pendingItems) return sum;
+                          
+                          const exactVal = p.details.pendingItems[`${trip.id}-${subKey}`];
+                          if (exactVal !== undefined) return sum + (Number(exactVal) || 0);
+
+                          const legacyVal = p.details.pendingItems[trip.id];
+                          if (legacyVal !== undefined) {
+                            if (
+                              (subKey === 'dieselPrice' && categoryName.toUpperCase() === 'TRIP DIESEL') ||
+                              (subKey === 'commission' && categoryName.toUpperCase() === 'COMMISSION') ||
+                              (subKey === 'friday' && categoryName.toUpperCase() === 'FRIDAY') ||
+                              (subKey === 'bonus' && categoryName.toUpperCase() === 'BONUS') ||
+                              (subKey === 'bonus' && categoryName.toUpperCase() === 'TRIP DIESEL') ||
+                              (subKey === 'overtime' && categoryName.toUpperCase() === 'OVERTIME') ||
+                              (subKey === 'extraDiesel' && categoryName.toUpperCase() === 'TRIP DIESEL')
+                            ) {
+                              return sum + (Number(legacyVal) || 0);
+                            }
+                          }
+
+                          const aggPrefix = `AGG-${subKey}-${trip.fileId}-`;
+                          const matchingAggKey = Object.keys(p.details.pendingItems).find(k => k.startsWith(aggPrefix));
+                          if (matchingAggKey) {
+                            const originalValue = Number(trip[subKey]) || 0;
+                            return sum + originalValue;
+                          }
+
+                          return sum;
+                        }, 0);
+                    };
+
+                    const commissionPaid = getSumOfReceivedPaymentsForTrip('commission', 'Commission');
+                    const dieselPaid = getSumOfReceivedPaymentsForTrip('dieselPrice', 'Trip Diesel');
+                    const extraDieselPaid = getSumOfReceivedPaymentsForTrip('extraDiesel', 'Trip Diesel') + getSumOfReceivedPaymentsForTrip('extraDiesel', 'Extra Fuel');
+                    const bonusPaid = Math.max(
+                      getSumOfReceivedPaymentsForTrip('bonus', 'Bonus'),
+                      getSumOfReceivedPaymentsForTrip('bonus', 'Trip Diesel')
+                    );
+                    const fridayPaid = getSumOfReceivedPaymentsForTrip('friday', 'Friday');
+                    const overtimePaid = getSumOfReceivedPaymentsForTrip('overtime', 'Overtime');
+
+                    trip.commissionPaid = commissionPaid;
+                    trip.dieselPaid = dieselPaid;
+                    trip.generatorDieselPaid = 0;
+                    if ('genDieselPaid' in trip) {
+                      trip.genDieselPaid = 0;
+                    }
+                    trip.extraDieselPaid = extraDieselPaid;
+                    trip.bonusPaid = bonusPaid;
+                    trip.fridayPaid = fridayPaid;
+                    trip.overtimePaid = overtimePaid;
+
+                    const newPaidAmount = commissionPaid + dieselPaid + extraDieselPaid + bonusPaid + fridayPaid + overtimePaid;
+                    trip.paidAmount = newPaidAmount;
+
+                    if (newPaidAmount <= 0) {
+                      trip.paymentStatus = 'UNPAID';
+                    } else if (newPaidAmount < totalAmount) {
+                      trip.paymentStatus = 'PARTIAL';
+                    } else {
+                      trip.paymentStatus = 'PAID';
+                    }
+                  }
+                });
+                d.allTrips = [...d.trips];
+              }
             });
           })
         );

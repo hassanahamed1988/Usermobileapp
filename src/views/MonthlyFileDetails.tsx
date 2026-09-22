@@ -1084,7 +1084,7 @@ const AvailableBalancePage = ({
                         const parts = fullKey.split('-');
                         let targetId = '';
                         let subType = '';
-                        const KNOWN_SUBKEYS = ['dieselPrice', 'extraDiesel'];
+                        const KNOWN_SUBKEYS = ['dieselPrice', 'extraDiesel', 'generatorDiesel', 'friday', 'bonus'];
                         const lastPart = parts[parts.length - 1];
                         if (KNOWN_SUBKEYS.includes(lastPart)) {
                           targetId = parts.slice(0, parts.length - 1).join('-');
@@ -1113,7 +1113,10 @@ const AvailableBalancePage = ({
                             invoiceNumber: trip?.invoiceNumber || 'N/A',
                             tripDieselAllocations: {
                               dieselPaid: 0,
-                              extraDieselPaid: 0
+                              extraDieselPaid: 0,
+                              generatorDieselPaid: 0,
+                              bonusPaid: 0,
+                              fridayPaid: 0
                             },
                             amount: 0,
                             paymentIds: [],
@@ -1123,6 +1126,12 @@ const AvailableBalancePage = ({
 
                         if (subType === 'extraDiesel') {
                           groupedTripDiesel[tripKey].tripDieselAllocations.extraDieselPaid += amt;
+                        } else if (subType === 'generatorDiesel') {
+                          groupedTripDiesel[tripKey].tripDieselAllocations.generatorDieselPaid += amt;
+                        } else if (subType === 'friday') {
+                          groupedTripDiesel[tripKey].tripDieselAllocations.fridayPaid += amt;
+                        } else if (subType === 'bonus') {
+                          groupedTripDiesel[tripKey].tripDieselAllocations.bonusPaid += amt;
                         } else {
                           groupedTripDiesel[tripKey].tripDieselAllocations.dieselPaid += amt;
                         }
@@ -1166,7 +1175,10 @@ const AvailableBalancePage = ({
                       const getTripDieselPendingBalance = () => {
                         try {
                           const totalAmount = (item.tripDieselAllocations?.dieselPaid || 0) + 
-                                              (item.tripDieselAllocations?.extraDieselPaid || 0);
+                                              (item.tripDieselAllocations?.generatorDieselPaid || 0) +
+                                              (item.tripDieselAllocations?.extraDieselPaid || 0) +
+                                              (item.tripDieselAllocations?.bonusPaid || 0) +
+                                              (item.tripDieselAllocations?.fridayPaid || 0);
                           const paymentAmount = item.amount || 0;
                           const pending = totalAmount - Math.abs(paymentAmount);
                           return pending > 0 ? (pending < 10 && pending > 0 ? `${pending.toFixed(1)}` : pending.toLocaleString()) : '0';
@@ -1874,11 +1886,11 @@ const PendingBreakdownPage = ({ navigationDirection, setNavigationDirection, dat
                            };
                         }
                         if (item.details?.subType) {
-                           if (item.details?.subType !== "generatorDiesel") { groupedTripDues[tripId].diesels[item.details.subType] = Number(item.pending) || 0; }
+                           groupedTripDues[tripId].diesels[item.details.subType] = Number(item.pending) || 0;
                         } else {
                            groupedTripDues[tripId].diesels['dieselPrice'] = (groupedTripDues[tripId].diesels['dieselPrice'] || 0) + (Number(item.pending) || 0);
                         }
-                        if (item.details?.subType !== "generatorDiesel") { groupedTripDues[tripId].totalPending += Number(item.pending) || 0; }
+                        groupedTripDues[tripId].totalPending += Number(item.pending) || 0;
                      });
 
                      return Object.values(groupedTripDues).map((group, index) => {
@@ -2848,18 +2860,8 @@ const MonthlyFileDetails: React.FC = () => {
   }, [payments, fileTrips, isItemBelongsToCurrentFile]);
 
   const getTripDue = (trip: Trip) => {
-    const dieselDue = (Number(trip.dieselPrice) || 0) - (Number(trip.dieselPaid) || 0);
-    const commDue = (Number(trip.commission) || 0) - (Number(trip.commissionPaid) || 0);
-    const fridayDue = (Number(trip.friday) || 0) - (Number(trip.fridayPaid) || 0);
-    const bonusDue = (Number(trip.bonus) || 0) - (Number(trip.bonusPaid) || 0);
-    const overtimeDue = (Number(trip.overtime) || 0) - (Number(trip.overtimePaid) || 0);
-    const genDieselDue = (Number(trip.generatorDiesel || (trip as any).genDiesel) || 0) - (Number(trip.generatorDieselPaid || (trip as any).genDieselPaid) || 0);
-    const extraDieselDue = (Number(trip.extraDiesel) || 0) - (Number(trip.extraDieselPaid) || 0);
-    
-    const total = Math.max(0, dieselDue) + Math.max(0, commDue) + Math.max(0, fridayDue) + 
-           Math.max(0, bonusDue) + Math.max(0, overtimeDue) + 
-           Math.max(0, extraDieselDue);
-    return isNaN(total) ? 0 : total;
+    const total = (Number(trip.totalAmount) || 0) - (Number(trip.paidAmount) || 0);
+    return isNaN(total) || total < 0 ? 0 : total;
   };
 
   const totalCommDue = fileTrips.reduce((acc, trip) => acc + Math.max(0, (trip.commission || 0) - (trip.commissionPaid || 0)), 0);
@@ -3116,7 +3118,7 @@ const MonthlyFileDetails: React.FC = () => {
                const isExtraFuel = trip.category === 'EXTRA_FUEL';
                const tripAmount = isExtraFuel 
                  ? Math.max(0, (trip.extraDiesel || trip.totalAmount || 0) - (trip.extraDieselPaid || trip.paidAmount || 0))
-                 : Math.max(0, (trip.totalAmount || 0) - (trip.paidAmount || 0));
+                 : getTripDue(trip);
                const isCompleted = isExtraFuel 
                  ? ((trip.extraDieselPaid || 0) >= (trip.extraDiesel || 0) && (trip.extraDiesel || 0) > 0)
                  : (trip.status === 'COMPLETED' || trip.tariffStatus?.toLowerCase() === 'complete' || trip.tariffStatus?.toLowerCase() === 'completed');
@@ -3789,29 +3791,21 @@ const MonthlyFileDetails: React.FC = () => {
                     isIncome: false,
                     subtext: undefined
                   },
-                  { label: language === 'bn' ? 'জেনারেটর ডিজেল' : 'Generator Diesel', total: selectedTrip.generatorDiesel || 0, paid: selectedTrip.generatorDieselPaid || 0, icon: Fuel, color: 'sky', isIncome: false },
                   { label: language === 'bn' ? 'কমিশন' : 'Commission', total: selectedTrip.commission || 0, paid: selectedTrip.commissionPaid || 0, icon: Coins, color: 'emerald', isIncome: true },
                   { label: language === 'bn' ? 'শুক্রবার বিল' : 'Friday', total: selectedTrip.friday || 0, paid: selectedTrip.fridayPaid || 0, icon: Calendar, color: 'orange', isIncome: true },
                   { label: language === 'bn' ? 'বোনাস' : 'Bonus', total: selectedTrip.bonus || 0, paid: selectedTrip.bonusPaid || 0, icon: Award, color: 'purple', isIncome: true },
                   { label: language === 'bn' ? 'ওভারটাইম' : 'Overtime', total: selectedTrip.overtime || 0, paid: selectedTrip.overtimePaid || 0, icon: Zap, color: 'amber', isIncome: true },
                   { 
-                    label: language === 'bn' ? 'এক্সট্রা ডিজেল' : 'Extra Diesel', 
+                    label: selectedTrip.extraDieselReason || (language === 'bn' ? 'এক্সট্রা ডিজেল' : 'Extra Diesel'), 
                     total: selectedTrip.extraDiesel || 0, 
                     paid: selectedTrip.extraDieselPaid || 0, 
                     icon: Fuel, 
                     color: 'indigo', 
                     isIncome: false, 
-                    subtext: selectedTrip.extraDieselReason || (language === 'bn' ? 'অন্যান্য' : 'Other') 
+                    subtext: undefined 
                   },
                 ].filter(item => {
                   if (item.total <= 0) return false;
-                  // Prevent duplicate generator diesel card if the extra diesel reason is Generator Diesel (case-insensitive)
-                  if (item.label === (language === 'bn' ? 'এক্সট্রা ডিজেল' : 'Extra Diesel')) {
-                    const reason = (selectedTrip.extraDieselReason || '').toLowerCase();
-                    if (reason.includes('generator') || reason.includes('জেনারেটর')) {
-                      return false;
-                    }
-                  }
                   return true;
                 }).map((item) => {
                   const due = item.total - item.paid;

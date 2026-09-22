@@ -247,7 +247,7 @@ const NotificationsView: React.FC = () => {
   const isAllSelected = notifications.length > 0 && selectedIds.length === notifications.length;
 
   const handleToggleSelectAll = () => {
-    if (hasAnySelected) {
+    if (isAllSelected) {
       setSelectedIds([]);
     } else {
       setSelectedIds(notifications.map(n => n.id));
@@ -265,14 +265,17 @@ const NotificationsView: React.FC = () => {
 
   const handleDeleteSelected = async () => {
     const isBn = language === 'bn';
+    const count = selectedIds.length;
     confirmAction(
-      isBn ? `আপনি কি সিলেক্ট করা ${selectedIds.length} টি বিজ্ঞপ্তি মুছে ফেলতে চান?` : `Are you sure you want to delete ${selectedIds.length} selected notifications?`,
+      isBn ? `আপনি কি সিলেক্ট করা ${count} টি বিজ্ঞপ্তি মুছে ফেলতে চান?` : `Are you sure you want to delete ${count} selected notifications?`,
       async () => {
         showFeedback(isBn ? "মুছে ফেলা হচ্ছে..." : "Deleting...", 'success');
-        for (const id of selectedIds) {
+        const idsToDelete = [...selectedIds];
+        setSelectedIds([]);
+        setIsSelectionMode(false);
+        for (const id of idsToDelete) {
           await removeNotification(id);
         }
-        setSelectedIds([]);
         showFeedback(isBn ? "বিজ্ঞপ্তিগুলো সফলভাবে মুছে ফেলা হয়েছে!" : "Selected notifications deleted successfully!", 'success');
       }
     );
@@ -296,20 +299,18 @@ const NotificationsView: React.FC = () => {
               className="flex items-center gap-2.5 cursor-pointer select-none group"
             >
               <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
-                hasAnySelected 
+                isAllSelected 
                   ? 'text-white scale-105' 
                   : 'border-black/20 dark:border-white/20 bg-transparent'
               }`}
               style={{
-                backgroundColor: hasAnySelected ? 'var(--primary)' : undefined,
-                borderColor: hasAnySelected ? 'var(--primary)' : undefined
+                backgroundColor: isAllSelected ? 'var(--primary)' : undefined,
+                borderColor: isAllSelected ? 'var(--primary)' : undefined
               }}>
-                {hasAnySelected && <Check size={12} strokeWidth={4} />}
+                {isAllSelected && <Check size={12} strokeWidth={4} />}
               </div>
               <span className="text-sm font-semibold opacity-90" style={{ color: 'var(--header-text)' }}>
-                {hasAnySelected
-                  ? (language === 'bn' ? 'সবগুলো আনসিলেক্ট করুন' : 'Unselect All')
-                  : (language === 'bn' ? 'সবগুলো সিলেক্ট করুন' : 'Select All')}
+                All Select
               </span>
             </div>
           </div>

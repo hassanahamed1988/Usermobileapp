@@ -92,6 +92,15 @@ export class PaymentManager {
           if (category.toUpperCase() === 'EXTRA FUEL' && t.category !== 'EXTRA_FUEL') return;
 
           subkeysConfig.forEach(sub => {
+            if (category.toUpperCase() === 'TRIP DIESEL' && sub.key === 'extraDiesel') {
+              const reason = (t.extraDieselReason || '').toLowerCase();
+              if (reason !== 'generator diesel') return;
+            }
+            if (category.toUpperCase() === 'EXTRA FUEL' && sub.key === 'extraDiesel') {
+              const reason = (t.extraDieselReason || '').toLowerCase();
+              if (reason === 'generator diesel') return;
+            }
+
             const isGenReason = t.extraDieselReason?.toLowerCase() === 'generator diesel';
             let totalVal = 0;
             let directPaid = 0;
@@ -114,7 +123,11 @@ export class PaymentManager {
 
             // Calculate paid amount
             const paymentsPaid = listPayments
-              .filter(p => (p.category || '').toUpperCase() === category.toUpperCase() && p.status === 'RECEIVED' && p.type !== 'DEDUCTION')
+              .filter(p => {
+                const cat = (p.category || '').toUpperCase();
+                const targetCat = category.toUpperCase();
+                return (cat === targetCat || cat === 'TRIP PAYMENT') && p.status === 'RECEIVED' && p.type !== 'DEDUCTION';
+              })
               .reduce((sum, p) => {
                 if (!p.details?.pendingItems) return sum;
                 const exactVal = p.details.pendingItems[`${t.id}-${sub.key}`];
@@ -122,8 +135,20 @@ export class PaymentManager {
                 
                 // Fallback for old style entries
                 const legacyVal = p.details.pendingItems[t.id];
-                if (legacyVal !== undefined && sub.key === 'dieselPrice') {
-                  return sum + legacyVal;
+                if (legacyVal !== undefined) {
+                  if (
+                    (sub.key === 'dieselPrice' && category.toUpperCase() === 'TRIP DIESEL') ||
+                    (sub.key === 'commission' && category.toUpperCase() === 'COMMISSION') ||
+                    (sub.key === 'friday' && category.toUpperCase() === 'TRIP DIESEL') ||
+                    (sub.key === 'friday' && category.toUpperCase() === 'FRIDAY') ||
+                    (sub.key === 'bonus' && category.toUpperCase() === 'BONUS') ||
+                    (sub.key === 'bonus' && category.toUpperCase() === 'TRIP DIESEL') ||
+                    (sub.key === 'overtime' && category.toUpperCase() === 'OVERTIME') ||
+                    (sub.key === 'generatorDiesel' && category.toUpperCase() === 'TRIP DIESEL') ||
+                    (sub.key === 'extraDiesel' && category.toUpperCase() === 'TRIP DIESEL')
+                  ) {
+                    return sum + legacyVal;
+                  }
                 }
                 return sum;
               }, 0);
@@ -177,9 +202,9 @@ export class PaymentManager {
 
       // Define configurations for each category
       addCategoryItems('Trip Diesel', [
-        { key: 'dieselPrice', paidField: 'dieselPaid', label: 'Trip Diesel' },
-        { key: 'generatorDiesel', paidField: 'generatorDieselPaid', label: 'Generator Diesel' },
-        { key: 'friday', paidField: 'fridayPaid', label: 'Friday' }
+         { key: 'dieselPrice', paidField: 'dieselPaid', label: 'Trip Diesel' },
+         { key: 'extraDiesel', paidField: 'extraDieselPaid', label: 'Generator Diesel' },
+         { key: 'friday', paidField: 'fridayPaid', label: 'Friday' }
       ]);
 
       const addAggregatedCategoryItems = (category: string, subkeysConfig: { key: string, paidField: string, label: string }[]) => {
@@ -208,7 +233,11 @@ export class PaymentManager {
             const directPaid = companyMap[compName].directPaid;
 
             const paymentsPaid = listPayments
-              .filter(p => (p.category || '').toUpperCase() === category.toUpperCase() && p.status === 'RECEIVED')
+              .filter(p => {
+                const cat = (p.category || '').toUpperCase();
+                const targetCat = category.toUpperCase();
+                return (cat === targetCat || cat === 'TRIP PAYMENT') && p.status === 'RECEIVED';
+              })
               .reduce((sum, p) => {
                 if (!p.details?.pendingItems) return sum;
                 const exactVal = p.details.pendingItems[aggId];

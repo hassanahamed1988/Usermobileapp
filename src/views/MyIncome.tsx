@@ -441,7 +441,8 @@ const PendingBreakdownPage = ({ data, total, onClose, currency, isDark, wallpape
                                   (updatedTrip.extraDieselPaid || 0) + 
                                   (updatedTrip.bonusPaid || 0) + 
                                   (updatedTrip.fridayPaid || 0) + 
-                                  (updatedTrip.overtimePaid || 0);
+                                  (updatedTrip.overtimePaid || 0) +
+                                  (updatedTrip.generatorDieselPaid || 0);
             
             updatedTrip.paidAmount = newPaidAmount;
             if (newPaidAmount <= 0) updatedTrip.paymentStatus = 'UNPAID';
@@ -484,7 +485,8 @@ const PendingBreakdownPage = ({ data, total, onClose, currency, isDark, wallpape
                                 (updatedTrip.extraDieselPaid || 0) + 
                                 (updatedTrip.bonusPaid || 0) + 
                                 (updatedTrip.fridayPaid || 0) + 
-                                (updatedTrip.overtimePaid || 0);
+                                (updatedTrip.overtimePaid || 0) +
+                                (updatedTrip.generatorDieselPaid || 0);
           
           updatedTrip.paidAmount = newPaidAmount;
           if (newPaidAmount <= 0) updatedTrip.paymentStatus = 'UNPAID';
