@@ -1134,8 +1134,6 @@ const ViewContainer: React.FC = () => {
       return (
         <>
           <Login />
-          <FeedbackModal />
-          <ConfirmationModal />
         </>
       );
     }
@@ -1144,8 +1142,6 @@ const ViewContainer: React.FC = () => {
     return (
       <>
         <Login />
-        <FeedbackModal />
-        <ConfirmationModal />
       </>
     );
   }
