@@ -658,22 +658,24 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
          }
          
          if (!parsed.language) parsed.language = 'en';
-         if (!parsed.user) {
-           parsed.appThemeMode = 'light';
-           parsed.theme = 'day-mode';
-           parsed.isNightMode = false;
-           parsed.backgroundColor = '';
-           parsed.wallpaper = '';
-           parsed.headerBg = '';
-           parsed.navBg = '';
-           parsed.primaryColor = '#10b981';
-           parsed.fontStyle = 'sans';
-           parsed.fontSize = 14;
-           parsed.fontBold = false;
-           parsed.loginWallpaper = '';
-           parsed.loginBackgroundColor = '';
-           parsed.loginCardColor = '';
-         } else {
+         
+         // Ensure theme and style fields have default fallbacks but are never overwritten on logout
+         if (parsed.appThemeMode === undefined) parsed.appThemeMode = 'light';
+         if (parsed.theme === undefined) parsed.theme = 'day-mode';
+         if (parsed.isNightMode === undefined) parsed.isNightMode = parsed.appThemeMode === 'dark';
+         if (parsed.backgroundColor === undefined) parsed.backgroundColor = '';
+         if (parsed.wallpaper === undefined) parsed.wallpaper = '';
+         if (parsed.headerBg === undefined) parsed.headerBg = '';
+         if (parsed.navBg === undefined) parsed.navBg = '';
+         if (parsed.primaryColor === undefined) parsed.primaryColor = '#10b981';
+         if (parsed.fontStyle === undefined) parsed.fontStyle = 'sans';
+         if (parsed.fontSize === undefined) parsed.fontSize = 14;
+         if (parsed.fontBold === undefined) parsed.fontBold = false;
+         if (parsed.loginWallpaper === undefined) parsed.loginWallpaper = '';
+         if (parsed.loginBackgroundColor === undefined) parsed.loginBackgroundColor = '';
+         if (parsed.loginCardColor === undefined) parsed.loginCardColor = '';
+
+         if (parsed.user) {
            if (!parsed.appThemeMode || parsed.appThemeMode === 'system') parsed.appThemeMode = 'light';
            if (!parsed.theme || parsed.theme === 'system') parsed.theme = 'day-mode';
            // Keep isNightMode in sync with the resolved theme mode so a stale/legacy
@@ -1437,20 +1439,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
          mutate((d: any) => { 
            d.user = null; 
            d.currentView = 'LOGIN'; 
-           d.theme = 'day-mode';
-           d.appThemeMode = 'light';
-           d.isNightMode = false;
-           d.backgroundColor = '';
-           d.wallpaper = '';
-           d.headerBg = '';
-           d.navBg = '';
-           d.primaryColor = '#10b981';
-           d.fontStyle = 'sans';
-           d.fontSize = 14;
-           d.fontBold = false;
-           d.loginWallpaper = '';
-           d.loginBackgroundColor = '';
-           d.loginCardColor = '';
            d.trips = [];
            d.allTrips = [];
            d.profiles = [];
