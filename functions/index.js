@@ -162,6 +162,85 @@ CRITICAL: If any field is physically blank, empty, unwritten, or missing in the 
   }
 });
 
+app.post(["/api/diesel-ocr", "/diesel-ocr"], async (req, res) => {
+  try {
+    const { image, apiKey: clientApiKey } = req.body;
+    if (!image) {
+      res.status(400).json({ error: "Image data is required" });
+      return;
+    }
+
+    const apiKey = await getGeminiApiKey(clientApiKey);
+    if (!apiKey) {
+      res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
+      return;
+    }
+
+    const ai = new GoogleGenAI({
+      apiKey: apiKey,
+    });
+
+    let cleanBase64 = image;
+    let mimeType = "image/jpeg";
+    if (image.startsWith("data:")) {
+      const match = image.match(/^data:([^;]+);base64,(.*)$/);
+      if (match) {
+        mimeType = match[1];
+        cleanBase64 = match[2];
+      }
+    }
+
+    const imagePart = {
+      inlineData: {
+        mimeType: mimeType,
+        data: cleanBase64,
+      }
+    };
+
+    const prompt = `Extract structured data from this Diesel/Fuel Receipt.
+Identify values correctly:
+1. "Pump Name" or supplier/station name (e.g., "WOQOD" or "Bu Sulba" or "WOQOD - Bu Sulba"). Maximize accuracy. ➔ pumpName
+2. "Fuel Quantity" or volume in Liters (e.g., 24.39). Convert to number/string. ➔ fuelQuantity
+3. "Unit Price" or cost per Liter (e.g., 2.05). Convert to number/string. ➔ unitPrice
+4. "Amount" or total amount/cost paid (e.g., 50). Convert to number/string. ➔ generatorDiesel
+5. "Receipt Number" or invoice/receipt No. (e.g., "249278"). ➔ generatorReceiveNumber
+6. "Receipt Date" ➔ Extract the EXACT raw date string as written or printed on the receipt, preserving its original format (e.g., "17/09/2026" or "17-09-2026" or "17-Sep-2026"). Do NOT convert or normalize. ➔ dieselReceiptDate
+7. "Receipt Time" ➔ Extract the EXACT raw time string as written or printed on the receipt, preserving its original format (e.g., "17:06:53" or "17:06" or "05:06 PM"). Do NOT convert or normalize. ➔ dieselReceiptTime
+8. Classify the "Diesel Type" depending on the receipt details. Default to "generator" unless "truck" or other is clear. ➔ dieselReceiptType
+
+CRITICAL: If any field is physically blank or not found, return empty string.`;
+
+    const response = await generateWithFallback(
+      ai,
+      [imagePart, { text: prompt }],
+      {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            pumpName: { type: Type.STRING, description: "Extracted Pump Station / Supplier Name. Empty string if not found." },
+            fuelQuantity: { type: Type.STRING, description: "Extracted fuel quantity in Liters (e.g., '24.39'). Empty string if not found." },
+            unitPrice: { type: Type.STRING, description: "Extracted unit price (e.g., '2.05'). Empty string if not found." },
+            generatorDiesel: { type: Type.STRING, description: "Extracted total amount (e.g., '50'). Empty string if not found." },
+            generatorReceiveNumber: { type: Type.STRING, description: "Extracted receipt number. Empty string if not found." },
+            dieselReceiptDate: { type: Type.STRING, description: "Extracted receipt Date in its exact original raw format from the receipt. Empty string if not found." },
+            dieselReceiptTime: { type: Type.STRING, description: "Extracted receipt Time in its exact original raw format from the receipt. Empty string if not found." },
+            dieselReceiptType: { type: Type.STRING, description: "Classification: 'truck', 'generator', or 'light_vehicle'." },
+          },
+          required: ["pumpName", "fuelQuantity", "unitPrice", "generatorDiesel", "generatorReceiveNumber", "dieselReceiptDate", "dieselReceiptTime", "dieselReceiptType"]
+        }
+      }
+    );
+
+    const resultText = response.text || "{}";
+    const parsedData = JSON.parse(resultText.trim());
+    res.json(parsedData);
+  } catch (error) {
+    console.error("Diesel OCR API Error on Server:", error);
+    res.status(500).json({ error: error.message || "Internal Server Error" });
+  }
+});
+
 app.post(["/api/purchase-ocr", "/purchase-ocr"], async (req, res) => {
   try {
     const { image, apiKey: clientApiKey } = req.body;
