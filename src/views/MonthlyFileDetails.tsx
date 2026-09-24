@@ -2542,7 +2542,25 @@ const MonthlyFileDetails: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
+  const pinchStartDistanceRef = useRef<number | null>(null);
+  const pinchStartZoomRef = useRef<number>(1);
+
+  const getTouchDistance = (touches: React.TouchList) => {
+    if (touches.length < 2) return 0;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+  };
+
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    if ('touches' in e && e.touches.length === 2) {
+      const dist = getTouchDistance(e.touches);
+      pinchStartDistanceRef.current = dist;
+      pinchStartZoomRef.current = zoom;
+      setIsDragging(false);
+      return;
+    }
+
     if (zoom <= 1) return;
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
@@ -2551,6 +2569,18 @@ const MonthlyFileDetails: React.FC = () => {
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    if ('touches' in e && e.touches.length === 2) {
+      if (pinchStartDistanceRef.current !== null) {
+        const currentDist = getTouchDistance(e.touches);
+        if (currentDist > 0) {
+          const scale = currentDist / pinchStartDistanceRef.current;
+          const targetZoom = Math.min(Math.max(pinchStartZoomRef.current * scale, 1), 4);
+          setZoom(targetZoom);
+        }
+      }
+      return;
+    }
+
     if (!isDragging || zoom <= 1) return;
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
@@ -2562,6 +2592,7 @@ const MonthlyFileDetails: React.FC = () => {
 
   const handleMouseUp = () => {
     setIsDragging(false);
+    pinchStartDistanceRef.current = null;
   };
 
   const resetZoom = () => {
