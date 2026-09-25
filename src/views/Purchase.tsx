@@ -3073,7 +3073,7 @@ const fileName = `Invoice_${purchase.id}.pdf`;
     const partnerAvatar = selectedPartnerProfile.avatar || partnerUser?.avatar;
 
     return (
-      <div className="relative min-h-screen bg-transparent">
+      <div className="relative h-[calc(100dvh-140px)] md:h-[calc(100dvh-100px)] w-full overflow-y-auto scrollbar-hide px-4 pt-4 pb-[100px]" id="partner-profile-scroll-container">
         <div className="relative z-10 max-w-4xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-300">
           <PartnerProfileCard 
             selectedPartnerProfile={selectedPartnerProfile}
@@ -3119,7 +3119,7 @@ const fileName = `Invoice_${purchase.id}.pdf`;
     });
 
     return (
-      <div className="relative min-h-screen bg-transparent">
+      <div className="relative h-[calc(100dvh-140px)] md:h-[calc(100dvh-100px)] w-full overflow-y-auto scrollbar-hide px-4 pt-4 pb-[100px]" id="partnership-state-scroll-container">
         <div className="relative z-10 max-w-4xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-300">
           
           {/* Status Toggle Card */}
@@ -3265,8 +3265,8 @@ const fileName = `Invoice_${purchase.id}.pdf`;
 
   if (currentView === 'NEW_PURCHASE') {
     return (
-      <div className="relative min-h-screen bg-transparent">
-        <div className="relative z-10 max-w-lg mx-auto flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300"
+      <div className="relative h-[calc(100dvh-140px)] md:h-[calc(100dvh-100px)] w-full overflow-y-auto scrollbar-hide px-4 pt-4 pb-[100px]" id="newpurchase-scroll-container">
+        <div className="relative z-10 max-w-lg mx-auto flex flex-col animate-in fade-in slide-in-from-bottom-5 duration-300"
              style={{ background: 'transparent' }}
         >
           <div className="py-6 space-y-6 purchase-form-container">
@@ -3512,7 +3512,7 @@ const fileName = `Invoice_${purchase.id}.pdf`;
   }
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative h-[calc(100dvh-140px)] md:h-[calc(100dvh-100px)] w-full overflow-y-auto scrollbar-hide px-4 pt-4 pb-[100px]" id="purchase-main-scroll-container">
       {/* Top Layout */}
       <div className="relative z-10 max-w-4xl mx-auto space-y-6">
         
