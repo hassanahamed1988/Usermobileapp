@@ -5475,7 +5475,7 @@ setShowPendingBreakdown(false);
       {/* Global Delete Button Removed as per request */}
 
 
-      <div className="z-20 pb-4  shrink-0">
+      <div className="z-20 pb-4 px-4 pt-4 shrink-0">
         {/* Summary Card */}
         <div 
           className="relative overflow-hidden rounded-xl p-5 min-h-[190px] md:min-h-[220px] flex flex-col justify-between text-white shadow-md bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a] border border-white/10"
@@ -5607,12 +5607,12 @@ setShowPendingBreakdown(false);
       </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-hide pb-[80px]" id="payment-scroll-container">
+      <div className="flex-1 overflow-y-auto scrollbar-hide pb-[80px] px-4 pt-2" id="payment-scroll-container">
       {/* Transaction History */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-black text-text-main uppercase tracking-widest">Transaction History</h3>
-          <div className="flex bg-theme-card rounded-[10px] items-center shadow-sm relative">
+          <div className="flex bg-gray-100/80 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-[10px] items-center relative p-0.5">
             <button 
               onClick={() => setActiveTab('INCOME')}
               className={`relative flex-1 py-3 px-6 rounded-[10px] font-bold text-sm transition-all z-10 ${
@@ -5710,7 +5710,7 @@ setShowPendingBreakdown(false);
                 <div 
                   key={p.id}
                   onClick={() => setSelectedTransaction(p)}
-                  className="group w-full bg-theme-card hover:bg-slate-50/50 dark:hover:bg-slate-800/50 border border-[var(--dynamic-card-border)] rounded-[10px] py-2 px-4 min-h-[72px] flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-200 ease-out cursor-pointer relative overflow-hidden text-left"
+                  className="group w-full bg-theme-card hover:bg-slate-50/50 dark:hover:bg-slate-800/50 border border-[var(--dynamic-card-border)] rounded-[10px] py-2 px-4 min-h-[72px] flex items-center justify-between transition-all duration-200 ease-out cursor-pointer relative text-left"
                   role="button"
                   tabIndex={0}
                 >
@@ -5864,7 +5864,7 @@ setShowPendingBreakdown(false);
                     categoryTransactions.map(p => (
                       <div 
                         key={p.id} 
-                        className="bg-theme-card p-4 rounded-[10px] tx-history-card border border-black/5 dark:border-white/5 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between cursor-pointer"
+                        className="bg-theme-card p-4 rounded-[10px] tx-history-card border border-black/5 dark:border-white/5 transition-shadow flex items-center justify-between cursor-pointer"
                         onClick={() => setSelectedTransaction(p)}
                       >
                         <div>

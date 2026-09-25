@@ -2859,7 +2859,7 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
       className="flex flex-col h-[calc(100dvh-140px)] md:h-[calc(100dvh-100px)] w-full mx-auto"
     >
       {/* Header with Filters & Unified Balance Display */}
-      <div className="z-20 pb-4  shrink-0">
+      <div className="z-20 pb-4 px-4 pt-4 shrink-0">
         <div className="mx-0 relative overflow-hidden">
           <div className="relative z-10 flex flex-col gap-4">
             <div className="">
@@ -2946,7 +2946,7 @@ const SwipeTransactionCard = ({ payment, onClick, currency, isIncome, onDelete, 
       </div>
 
       {/* List of Payments */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide pb-[80px] " id="myincome-scroll-container">
+      <div className="flex-1 overflow-y-auto scrollbar-hide pb-[80px] px-4 pt-2" id="myincome-scroll-container">
       <div className="w-full mx-auto space-y-4">
         {/* Transaction History Section Title */}
         <div className="flex items-center justify-between  mb-2 pt-2 border-t border-black/[0.03] dark:border-white/[0.03]">

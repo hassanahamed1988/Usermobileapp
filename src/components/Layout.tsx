@@ -434,13 +434,9 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
   const rgbShadow = hexToRgbString(shadowColorHex);
   const rgbPrimary = hexToRgbString(currentThemeObj.primary || '#10b981');
 
-  const dynamicCardShadow = isDarkMode
-    ? `0 0 20px rgba(0, 0, 0, 0.85)`
-    : `0 0 16px rgba(0, 0, 0, 0.12)`;
+  const dynamicCardShadow = `0 0 14px rgba(0, 0, 0, 0.12), 0 0 4px rgba(0, 0, 0, 0.06), 0 0 0 1.5px rgba(255, 255, 255, 0.25), 0 0 8px rgba(255, 255, 255, 0.12)`;
 
-  const dynamicCardShadowHover = isDarkMode
-    ? `0 0 24px rgba(0, 0, 0, 1)`
-    : `0 0 20px rgba(0, 0, 0, 0.18)`;
+  const dynamicCardShadowHover = `0 0 20px rgba(0, 0, 0, 0.18), 0 0 6px rgba(0, 0, 0, 0.08), 0 0 0 2px rgba(255, 255, 255, 0.35), 0 0 12px rgba(255, 255, 255, 0.18)`;
 
   const dynamicCardBorder = isDarkMode
     ? `1px solid transparent`

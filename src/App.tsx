@@ -1237,7 +1237,7 @@ const renderView = (view: StoreState['currentView'], language: string) => {
 
   const isPendingIncome = localStorage.getItem('pendingAction') === 'ADD_INCOME';
   const shouldHideHeader = (currentView === 'MY_INCOME' && (activeSection === 'PENDING_PAGE' || (typeof activeSection === 'string' && (activeSection.startsWith('CATEGORY_') || activeSection.startsWith('PENDING_CATEGORY_'))))) || (currentView === 'PAYMENT' && (isEntryFormOpen || isPendingIncome)) || currentView === 'CHAT';
-  const shouldBeFullWidth = (currentView === 'MY_INCOME' && (activeSection === 'PENDING_PAGE' || activeSection === 'INCOME' || activeSection === 'DEDUCTION' || (typeof activeSection === 'string' && (activeSection.startsWith('CATEGORY_') || activeSection.startsWith('PENDING_CATEGORY_'))) || activeSection === 'ADD_INCOME')) || currentView === 'CHAT' || currentView === 'SETTINGS' || currentView === 'WALLET' || currentView === 'SEARCH';
+  const shouldBeFullWidth = currentView === 'MY_INCOME' || currentView === 'CHAT' || currentView === 'SETTINGS' || currentView === 'WALLET' || currentView === 'SEARCH' || currentView === 'PAYMENT';
 
   const mainNavViews = ['DASHBOARD', 'SEARCH', 'PAYMENT', 'USER_PROFILE', 'TRIPS', 'PROFILES', 'MONTHLY_FILES', 'SETTINGS', 'FINANCE', 'MY_INCOME', 'CHAT', 'NOTIFICATIONS', 'FUEL', 'DOWNLOAD', 'BANK_ACCOUNT'];
   const isNavTransition = prevView && mainNavViews.includes(prevView) && mainNavViews.includes(currentView);

@@ -78,8 +78,8 @@ root.render(
       .bg-card-bg, 
       .glass-card, 
       .reset-option-card {
-        box-shadow: var(--dynamic-card-shadow, 0 0 16px rgba(0, 0, 0, 0.12)) !important;
-        -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 16px rgba(0, 0, 0, 0.12)) !important;
+        box-shadow: var(--dynamic-card-shadow, 0 0 14px rgba(0, 0, 0, 0.12), 0 0 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 8px rgba(255, 255, 255, 0.12)) !important;
+        -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 14px rgba(0, 0, 0, 0.12), 0 0 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 8px rgba(255, 255, 255, 0.12)) !important;
         border: var(--dynamic-card-border, 1px solid rgba(0, 0, 0, 0.04)) !important;
         isolation: isolate !important;
       }
@@ -87,8 +87,8 @@ root.render(
       .bg-theme-card:hover, 
       .bg-card-bg:hover, 
       .glass-card:hover {
-        box-shadow: var(--dynamic-card-shadow-hover, var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.18))) !important;
-        -webkit-box-shadow: var(--dynamic-card-shadow-hover, var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.18))) !important;
+        box-shadow: var(--dynamic-card-shadow-hover, 0 0 20px rgba(0, 0, 0, 0.18), 0 0 6px rgba(0, 0, 0, 0.08), 0 0 0 1.5px rgba(255, 255, 255, 0.35), 0 0 12px rgba(255, 255, 255, 0.18)) !important;
+        -webkit-box-shadow: var(--dynamic-card-shadow-hover, 0 0 20px rgba(0, 0, 0, 0.18), 0 0 6px rgba(0, 0, 0, 0.08), 0 0 0 1.5px rgba(255, 255, 255, 0.35), 0 0 12px rgba(255, 255, 255, 0.18)) !important;
       }
 
       .dark .bg-theme-card,
@@ -99,8 +99,8 @@ root.render(
       .dark-mode .bg-card-bg,
       .dark-mode .glass-card,
       .dark-mode .reset-option-card {
-        box-shadow: var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.85)) !important;
-        -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.85)) !important;
+        box-shadow: var(--dynamic-card-shadow, 0 0 14px rgba(0, 0, 0, 0.12), 0 0 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 8px rgba(255, 255, 255, 0.12)) !important;
+        -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 14px rgba(0, 0, 0, 0.12), 0 0 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 8px rgba(255, 255, 255, 0.12)) !important;
         border: var(--dynamic-card-border, 1px solid rgba(255, 255, 255, 0.08)) !important;
         isolation: isolate !important;
       }
@@ -112,8 +112,8 @@ root.render(
       .dark-mode .bg-card-bg:hover,
       .dark-mode .glass-card:hover,
       .dark-mode .reset-option-card:hover {
-        box-shadow: var(--dynamic-card-shadow-hover, var(--dynamic-card-shadow, 0 0 24px rgba(0, 0, 0, 1))) !important;
-        -webkit-box-shadow: var(--dynamic-card-shadow-hover, var(--dynamic-card-shadow, 0 0 24px rgba(0, 0, 0, 1))) !important;
+        box-shadow: var(--dynamic-card-shadow-hover, 0 0 20px rgba(0, 0, 0, 0.18), 0 0 6px rgba(0, 0, 0, 0.08), 0 0 0 1.5px rgba(255, 255, 255, 0.35), 0 0 12px rgba(255, 255, 255, 0.18)) !important;
+        -webkit-box-shadow: var(--dynamic-card-shadow-hover, 0 0 20px rgba(0, 0, 0, 0.18), 0 0 6px rgba(0, 0, 0, 0.08), 0 0 0 1.5px rgba(255, 255, 255, 0.35), 0 0 12px rgba(255, 255, 255, 0.18)) !important;
       }
 
       /* 1. Sub Cards inside Main Card - Disable Box Borders and Border Shadows */
@@ -260,7 +260,10 @@ root.render(
       .tx-history-card,
       .bg-theme-card.tx-history-card,
       .light .bg-theme-card.tx-history-card {
-        box-shadow: inset 0 2px 6px rgba(15, 23, 42, 0.15) !important;
+        box-shadow: var(--dynamic-card-shadow, 0 0 14px rgba(0, 0, 0, 0.12), 0 0 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 8px rgba(255, 255, 255, 0.12)) !important;
+        -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 14px rgba(0, 0, 0, 0.12), 0 0 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 8px rgba(255, 255, 255, 0.12)) !important;
+        border: var(--dynamic-card-border, 1px solid rgba(0, 0, 0, 0.04)) !important;
+        isolation: isolate !important;
       }
       .dark .tx-history-card,
       .dark-mode .tx-history-card,
@@ -268,7 +271,10 @@ root.render(
       .dark .bg-theme-card.tx-history-card,
       .dark-mode .bg-theme-card.tx-history-card,
       .dark-theme .bg-theme-card.tx-history-card {
-        box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+        box-shadow: var(--dynamic-card-shadow, 0 0 14px rgba(0, 0, 0, 0.12), 0 0 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 8px rgba(255, 255, 255, 0.12)) !important;
+        -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 14px rgba(0, 0, 0, 0.12), 0 0 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 8px rgba(255, 255, 255, 0.12)) !important;
+        border: var(--dynamic-card-border, 1px solid rgba(255, 255, 255, 0.08)) !important;
+        isolation: isolate !important;
       }
 
       :root {
@@ -734,8 +740,8 @@ root.render(
         background-color: rgba(255, 255, 255, 0.92) !important;
         backdrop-filter: blur(16px) saturate(1.2) !important;
         -webkit-backdrop-filter: blur(16px) saturate(1.2) !important;
-        box-shadow: var(--dynamic-card-shadow, 0 0 16px rgba(0, 0, 0, 0.12)) !important;
-        -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 16px rgba(0, 0, 0, 0.12)) !important;
+        box-shadow: var(--dynamic-card-shadow, 0 0 14px rgba(0, 0, 0, 0.12), 0 0 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 8px rgba(255, 255, 255, 0.12)) !important;
+        -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 14px rgba(0, 0, 0, 0.12), 0 0 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 8px rgba(255, 255, 255, 0.12)) !important;
         border: var(--dynamic-card-border, 1px solid rgba(0, 0, 0, 0.04)) !important;
         --text-main: #111827 !important;
         --text-muted: #4b5563 !important;
@@ -747,8 +753,8 @@ root.render(
       .light .bg-card-bg:hover,
       .light .glass-card:hover,
       .light .reset-option-card:hover {
-        box-shadow: var(--dynamic-card-shadow-hover, var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.18))) !important;
-        -webkit-box-shadow: var(--dynamic-card-shadow-hover, var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.18))) !important;
+        box-shadow: var(--dynamic-card-shadow-hover, 0 0 20px rgba(0, 0, 0, 0.18), 0 0 6px rgba(0, 0, 0, 0.08), 0 0 0 1.5px rgba(255, 255, 255, 0.35), 0 0 12px rgba(255, 255, 255, 0.18)) !important;
+        -webkit-box-shadow: var(--dynamic-card-shadow-hover, 0 0 20px rgba(0, 0, 0, 0.18), 0 0 6px rgba(0, 0, 0, 0.08), 0 0 0 1.5px rgba(255, 255, 255, 0.35), 0 0 12px rgba(255, 255, 255, 0.18)) !important;
       }
 
       /* Light Mode Sub Cards & Selection Panels inside Main Cards - Clean without box border or shadow */
@@ -1271,8 +1277,8 @@ root.render(
         background-color: rgba(20, 20, 24, 0.75) !important;
         backdrop-filter: blur(16px) saturate(1.2) !important;
         -webkit-backdrop-filter: blur(16px) saturate(1.2) !important;
-        box-shadow: var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.85)) !important;
-        -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.85)) !important;
+        box-shadow: var(--dynamic-card-shadow, 0 0 14px rgba(0, 0, 0, 0.12), 0 0 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 8px rgba(255, 255, 255, 0.12)) !important;
+        -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 14px rgba(0, 0, 0, 0.12), 0 0 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 8px rgba(255, 255, 255, 0.12)) !important;
         border: var(--dynamic-card-border, 1px solid rgba(255, 255, 255, 0.08)) !important;
         transition: none !important;
       }
@@ -1318,8 +1324,8 @@ root.render(
         background-color: var(--card-bg-solid, var(--card-bg, #121212)) !important;
         backdrop-filter: blur(16px) saturate(1.2) !important;
         -webkit-backdrop-filter: blur(16px) saturate(1.2) !important;
-        box-shadow: var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.85)) !important;
-        -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 20px rgba(0, 0, 0, 0.85)) !important;
+        box-shadow: var(--dynamic-card-shadow, 0 0 14px rgba(0, 0, 0, 0.12), 0 0 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 8px rgba(255, 255, 255, 0.12)) !important;
+        -webkit-box-shadow: var(--dynamic-card-shadow, 0 0 14px rgba(0, 0, 0, 0.12), 0 0 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 8px rgba(255, 255, 255, 0.12)) !important;
         border: var(--dynamic-card-border, 1px solid rgba(255, 255, 255, 0.08)) !important;
         transition: none !important;
       }
