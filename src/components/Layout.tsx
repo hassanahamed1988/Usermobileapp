@@ -438,9 +438,9 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
 
   const dynamicCardShadowHover = `0 0 20px rgba(0, 0, 0, 0.18), 0 0 6px rgba(0, 0, 0, 0.08), 0 0 0 2px rgba(255, 255, 255, 0.35), 0 0 12px rgba(255, 255, 255, 0.18)`;
 
-  const dynamicCardBorder = isDarkMode
-    ? `1px solid transparent`
-    : `1px solid transparent`;
+  const dynamicCardBorder = isDarkMode || effectiveRootText === '#ffffff'
+    ? `1px solid rgba(255, 255, 255, 0.08)`
+    : `1px solid rgba(0, 0, 0, 0.05)`;
 
   return (
     <div 
@@ -933,7 +933,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, hideHeader, hideBottom
               className={`lg:hidden fixed bottom-0 w-full flex flex-col z-[1100] shadow-[0_-4px_10px_rgba(0,0,0,0.05)] bottom-nav-solid transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${(!effectiveHideBottomNav) ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-full opacity-0 pointer-events-none'}`}
               style={{ 
                 paddingBottom: 'env(safe-area-inset-bottom)',
-                borderTop: '1px solid rgba(255,255,255,0.1)',
+                borderTop: navTextColor === '#ffffff' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.08)',
                 background: wallpaper ? `url(${wallpaper}) center/cover no-repeat` : rawNavBg,
                 backdropFilter: 'none',
                 WebkitBackdropFilter: 'none'

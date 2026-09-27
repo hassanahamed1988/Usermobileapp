@@ -25,7 +25,9 @@ import {
   Hash,
   Calendar,
   Wallet,
-  ExternalLink
+  ExternalLink,
+  Copy,
+  Check
 } from 'lucide-react';
 import { useStore } from '@/store';
 import { TRANSLATIONS } from '@/translations';
@@ -1324,9 +1326,10 @@ const BankAccountView: React.FC = () => {
                   value={showFullNumbers ? selectedAccount.accountNumber : maskAccountNumber(selectedAccount.accountNumber)} 
                   isMono 
                   icon={<CreditCard size={15} className="text-emerald-500" />}
+                  copyValue={selectedAccount.accountNumber}
                 />
                 {selectedAccount.routingNumber && (
-                  <DetailRow label={language === 'bn' ? 'রাউটিং নম্বর' : 'Routing Number'} value={selectedAccount.routingNumber} isMono icon={<Hash size={15} className="text-blue-500" />} />
+                  <DetailRow label={language === 'bn' ? 'রাউটিং নম্বর' : 'Routing Number'} value={selectedAccount.routingNumber} isMono icon={<Hash size={15} className="text-blue-500" />} copyValue={selectedAccount.routingNumber} />
                 )}
                 <DetailRow label={language === 'bn' ? 'অ্যাকাউন্টের ধরন' : 'Account Type'} value={selectedAccount.accountType} icon={<Building2 size={15} className="text-sky-500" />} />
                 <DetailRow label={language === 'bn' ? 'অ্যাকাউন্ট ওপেনিং তারিখ' : 'Account Opening Date'} value={selectedAccount.accountOpeningDate} isMono icon={<Calendar size={15} className="text-sky-500" />} />
@@ -1383,12 +1386,12 @@ const BankAccountView: React.FC = () => {
 
                   <DetailRow label={language === 'bn' ? 'শাখার নাম' : 'Branch Name'} value={selectedAccount.branchName} icon={<MapPin size={15} className="text-teal-500" />} />
                   <DetailRow label={language === 'bn' ? 'শাখা কোড' : 'Branch Code'} value={selectedAccount.branchCode} isMono icon={<Hash size={15} className="text-teal-500" />} />
-                  <DetailRow label={language === 'bn' ? 'রাউটিং নম্বর' : 'Routing Number'} value={selectedAccount.routingNumber} isMono icon={<Hash size={15} className="text-blue-500" />} />
+                  <DetailRow label={language === 'bn' ? 'রাউটিং নম্বর' : 'Routing Number'} value={selectedAccount.routingNumber} isMono icon={<Hash size={15} className="text-blue-500" />} copyValue={selectedAccount.routingNumber} />
                   <DetailRow label={language === 'bn' ? 'সুইফট কোড' : 'SWIFT Code'} value={selectedAccount.swiftCode} isMono icon={<Hash size={15} className="text-sky-500" />} />
                   <DetailRow label={language === 'bn' ? 'শাখার ঠিকানা' : 'Branch Address'} value={selectedAccount.branchAddress} icon={<Building2 size={15} className="text-teal-500" />} />
-                  <DetailRow label={language === 'bn' ? 'ব্রাঞ্চ কন্টাক্ট নম্বর' : 'Branch Contact Number'} value={selectedAccount.branchContactNumber} isMono icon={<Phone size={15} className="text-teal-500" />} />
-                  <DetailRow label={language === 'bn' ? 'অ্যাসিস্ট্যান্ট অফিসার নম্বর' : 'Assistant Officer Number'} value={selectedAccount.assistantOfficerNumber} isMono icon={<Phone size={15} className="text-teal-500" />} />
-                  <DetailRow label={language === 'bn' ? 'ব্রাঞ্চ ম্যানেজার নম্বর' : 'Branch Manager Number'} value={selectedAccount.branchManagerNumber} isMono icon={<Phone size={15} className="text-teal-500" />} />
+                  <DetailRow label={language === 'bn' ? 'ব্রাঞ্চ কন্টাক্ট নম্বর' : 'Branch Contact Number'} value={selectedAccount.branchContactNumber} isMono icon={<Phone size={15} className="text-teal-500" />} copyValue={selectedAccount.branchContactNumber} />
+                  <DetailRow label={language === 'bn' ? 'অ্যাসিস্ট্যান্ট অফিসার নম্বর' : 'Assistant Officer Number'} value={selectedAccount.assistantOfficerNumber} isMono icon={<Phone size={15} className="text-teal-500" />} copyValue={selectedAccount.assistantOfficerNumber} />
+                  <DetailRow label={language === 'bn' ? 'ব্রাঞ্চ ম্যানেজার নম্বর' : 'Branch Manager Number'} value={selectedAccount.branchManagerNumber} isMono icon={<Phone size={15} className="text-teal-500" />} copyValue={selectedAccount.branchManagerNumber} />
                 </div>
               )}
             </div>
@@ -1430,6 +1433,7 @@ const BankAccountView: React.FC = () => {
                     value={showFullNumbers ? selectedAccount.cardNumber : maskCardNumber(selectedAccount.cardNumber)} 
                     isMono 
                     icon={<CreditCard size={15} className="text-purple-500" />}
+                    copyValue={selectedAccount.cardNumber}
                   />
                   <DetailRow label={language === 'bn' ? 'কার্ডের ধরন' : 'Card Type'} value={selectedAccount.cardType} icon={<CreditCard size={15} className="text-purple-500" />} />
                   <DetailRow label={language === 'bn' ? 'মেয়াদ উত্তীর্ণের তারিখ' : 'Expiry Date'} value={selectedAccount.cardExpiryDate} isMono icon={<Calendar size={15} className="text-purple-500" />} />
@@ -1438,6 +1442,7 @@ const BankAccountView: React.FC = () => {
                     value={selectedAccount.cardPin ? (showFullNumbers ? selectedAccount.cardPin : '••••') : ''} 
                     isMono 
                     icon={<Lock size={15} className="text-purple-500" />} 
+                    copyValue={selectedAccount.cardPin}
                   />
                   <DetailRow label={language === 'bn' ? 'কার্ড স্ট্যাটাস' : 'Card Status'} value={selectedAccount.cardStatus} icon={<Info size={15} className="text-purple-500" />} />
                 </div>
@@ -1476,13 +1481,14 @@ const BankAccountView: React.FC = () => {
                   </div>
 
                   <DetailRow label={language === 'bn' ? 'প্রোভাইডারের নাম' : 'Provider Name'} value={selectedAccount.mobileProviderName} icon={<Smartphone size={15} className="text-pink-500" />} />
-                  <DetailRow label={language === 'bn' ? 'নিবন্ধিত মোবাইল নম্বর' : 'Registered Mobile'} value={selectedAccount.mobileRegisteredNumber} isMono icon={<Phone size={15} className="text-pink-500" />} />
-                  <DetailRow label={language === 'bn' ? 'ওয়ালেট/অ্যাকাউন্ট নম্বর' : 'Wallet / Account Number'} value={selectedAccount.mobileAccountNumber} isMono icon={<Wallet size={15} className="text-pink-500" />} />
+                  <DetailRow label={language === 'bn' ? 'নিবন্ধিত মোবাইল নম্বর' : 'Registered Mobile'} value={selectedAccount.mobileRegisteredNumber} isMono icon={<Phone size={15} className="text-pink-500" />} copyValue={selectedAccount.mobileRegisteredNumber} />
+                  <DetailRow label={language === 'bn' ? 'ওয়ালেট/অ্যাকাউন্ট নম্বর' : 'Wallet / Account Number'} value={selectedAccount.mobileAccountNumber} isMono icon={<Wallet size={15} className="text-pink-500" />} copyValue={selectedAccount.mobileAccountNumber} />
                   <DetailRow 
                     label={language === 'bn' ? 'পিন নম্বর' : 'PIN Number'} 
                     value={selectedAccount.mobilePin ? (showFullNumbers ? selectedAccount.mobilePin : '•••••') : ''} 
                     isMono 
                     icon={<Lock size={15} className="text-pink-500" />}
+                    copyValue={selectedAccount.mobilePin}
                   />
                   <DetailRow label={language === 'bn' ? 'অ্যাপ্লিকেশনের নাম' : 'Application Name'} value={selectedAccount.mobileAppName || selectedAccount.mobileProviderName} icon={<Smartphone size={15} className="text-pink-500" />} />
                   <DetailRow label={language === 'bn' ? 'স্ট্যাটাস' : 'Status'} value={selectedAccount.mobileStatus} icon={<Info size={15} className="text-pink-500" />} />
@@ -1545,24 +1551,27 @@ const BankAccountView: React.FC = () => {
                     </Button>
                   </div>
 
-                  <DetailRow label={language === 'bn' ? 'ইউজার আইডি' : 'User ID'} value={selectedAccount.ibankingUserId} isMono icon={<UserIcon size={15} className="text-amber-500" />} />
+                  <DetailRow label={language === 'bn' ? 'ইউজার আইডি' : 'User ID'} value={selectedAccount.ibankingUserId} isMono icon={<UserIcon size={15} className="text-amber-500" />} copyValue={selectedAccount.ibankingUserId} />
                   <DetailRow 
                     label={language === 'bn' ? 'পাসওয়ার্ড' : 'Password'} 
                     value={selectedAccount.ibankingPassword ? (showFullNumbers ? selectedAccount.ibankingPassword : '••••••••') : ''} 
                     isMono 
                     icon={<Lock size={15} className="text-amber-500" />}
+                    copyValue={selectedAccount.ibankingPassword}
                   />
                   <DetailRow 
                     label={language === 'bn' ? 'টিপিন (TPIN)' : 'TPIN'} 
                     value={selectedAccount.ibankingTpin ? (showFullNumbers ? selectedAccount.ibankingTpin : '••••') : ''} 
                     isMono 
                     icon={<Lock size={15} className="text-amber-500" />}
+                    copyValue={selectedAccount.ibankingTpin}
                   />
                   <DetailRow 
                     label={language === 'bn' ? 'নিবন্ধিত মোবাইল নম্বর' : 'Registered Mobile'} 
                     value={selectedAccount.ibankingRegisteredMobile || selectedAccount.ibankingRegisteredContact} 
                     isMono 
                     icon={<Phone size={15} className="text-amber-500" />}
+                    copyValue={selectedAccount.ibankingRegisteredMobile || selectedAccount.ibankingRegisteredContact}
                   />
                   <DetailRow 
                     label={language === 'bn' ? 'নিবন্ধিত ইমেইল' : 'Registered Email'} 
@@ -2949,21 +2958,51 @@ interface DetailRowProps {
   value?: string | number | null;
   isMono?: boolean;
   icon?: React.ReactNode;
+  copyValue?: string | number | null;
 }
 
-const DetailRow: React.FC<DetailRowProps> = ({ label, value, isMono = false, icon }) => (
-  <div className="flex items-center justify-between py-3 sm:py-3.5 px-3 sm:px-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors rounded-lg gap-4">
-    <div className="flex items-center gap-2.5 shrink-0 min-w-0">
-      {icon && <span className="shrink-0">{icon}</span>}
-      <span className="text-xs sm:text-sm text-text-muted font-medium truncate">
-        {label}
-      </span>
+const DetailRow: React.FC<DetailRowProps> = ({ label, value, isMono = false, icon, copyValue }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const textToCopy = String(copyValue !== undefined && copyValue !== null ? copyValue : (value || ''));
+    if (!textToCopy || textToCopy === '-') return;
+
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(err => {
+      console.error('Failed to copy: ', err);
+    });
+  };
+
+  return (
+    <div className="flex items-center justify-between py-3 sm:py-3.5 px-3 sm:px-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors rounded-lg gap-4">
+      <div className="flex items-center gap-2.5 shrink-0 min-w-0">
+        {icon && <span className="shrink-0">{icon}</span>}
+        <span className="text-xs sm:text-sm text-text-muted font-medium truncate">
+          {label}
+        </span>
+      </div>
+      <div className="flex items-center gap-2 min-w-0">
+        <span className={`text-xs sm:text-sm font-bold text-text-main text-right break-words ${isMono ? 'font-mono' : ''}`}>
+          {value || '-'}
+        </span>
+        {copyValue !== undefined && copyValue !== null && copyValue !== '' && String(copyValue) !== '-' && (
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="p-1 rounded-md text-text-muted hover:text-text-main hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0 cursor-pointer active:scale-90"
+            title={copied ? "Copied!" : "Copy to clipboard"}
+          >
+            {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+          </button>
+        )}
+      </div>
     </div>
-    <span className={`text-xs sm:text-sm font-bold text-text-main text-right break-words ${isMono ? 'font-mono' : ''}`}>
-      {value || '-'}
-    </span>
-  </div>
-);
+  );
+};
 
 interface EmptyTabStateProps {
   icon: React.ReactNode;

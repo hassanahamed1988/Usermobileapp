@@ -1272,91 +1272,97 @@ const renderView = (view: StoreState['currentView'], language: string) => {
               style={{ background: wallpaper ? 'transparent' : ((isNightMode || appThemeMode === 'dark' || theme === 'night-mode') ? "var(--page-bg-solid, #000000)" : (backgroundColor || 'var(--app-bg)')) }}
             >
               {/* Toper (Top Bar Header) */}
-              {!shouldHideHeader && (
-                <div 
-                  className="flex-none shadow-sm safe-top z-40 transition-colors duration-300"
-                  style={{ 
-                    background: 'var(--header-bg)',
-                    borderBottom: isDarkMode ? '1px solid #1f2937' : '1px solid #e2e8f0'
-                  }}
-                >
-                  <div className="h-14 flex items-center justify-between px-4 w-full gap-2">
-                    {/* Left: Menu Icon (Dashboard only) or Back Button (Subpages) & Title */}
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {(() => {
-                        const iconColor = 'var(--header-text)';
-                        const isLightIcon = isDarkMode || getContrastColor(headerBg || backgroundColor || '#ffffff') === '#ffffff';
-                        const hoverBgClass = isLightIcon 
-                          ? 'hover:bg-white/10 active:bg-white/20' 
-                          : 'hover:bg-black/5 active:bg-black/10';
-                        const btnClass = `p-2 rounded-full flex items-center justify-center shrink-0 active:scale-95 transition-transform duration-100 ease-out select-none ${hoverBgClass}`;
+              {!shouldHideHeader && (() => {
+                const isLightIcon = isDarkMode || getContrastColor(headerBg || backgroundColor || '#ffffff') === '#ffffff';
+                const hoverBgClass = isLightIcon 
+                  ? 'hover:bg-white/10 active:bg-white/20' 
+                  : 'hover:bg-black/5 active:bg-black/10';
+                const borderBottomStyle = isLightIcon 
+                  ? '1px solid rgba(255, 255, 255, 0.1)' 
+                  : '1px solid rgba(0, 0, 0, 0.08)';
 
-                        if (isMainDashboard) {
-                          return (
-                            <button 
-                              onClick={() => setIsDrawerOpen(true)}
-                              className={`${btnClass} lg:hidden`}
-                              style={{ color: iconColor }}
-                            >
-                              <Menu size={22} />
-                            </button>
-                          );
-                        } else {
-                          return (
-                            <button 
-                              onClick={handleBackClick}
-                              className={btnClass}
-                              style={{ color: iconColor }}
-                            >
-                              <ChevronLeft size={24} />
-                            </button>
-                          );
-                        }
-                      })()}
-                      
-                      {/* Center/Left Title */}
-                      <h2 
-                        className="font-bold text-lg tracking-tight truncate"
-                        style={{ color: 'var(--header-text)' }}
-                      >
-                        {getHeaderTitle()}
-                      </h2>
-                    </div>
+                return (
+                  <div 
+                    className="flex-none shadow-sm safe-top z-40 transition-colors duration-300"
+                    style={{ 
+                      background: 'var(--header-bg)',
+                      borderBottom: borderBottomStyle
+                    }}
+                  >
+                    <div className="h-14 flex items-center justify-between px-4 w-full gap-2">
+                      {/* Left: Menu Icon (Dashboard only) or Back Button (Subpages) & Title */}
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {(() => {
+                          const iconColor = 'var(--header-text)';
+                          const btnClass = `p-2 rounded-full flex items-center justify-center shrink-0 active:scale-95 transition-transform duration-100 ease-out select-none ${hoverBgClass}`;
 
-                    {/* Right: Actions */}
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {/* Notifications Bell */}
-                      <button 
-                        onClick={() => setView('NOTIFICATIONS')}
-                        className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors relative flex items-center justify-center"
-                        style={{ color: 'var(--header-text)' }}
-                      >
-                        <Bell size={20} />
-                        {unreadCount > 0 && (
-                          <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-extrabold text-white animate-pulse">
-                            {unreadCount}
-                          </span>
-                        )}
-                      </button>
-
-                      {/* Theme Toggle Button */}
-                      <button 
-                        onClick={() => {
-                          if (isDarkMode) {
-                            setAppThemeMode('light');
+                          if (isMainDashboard) {
+                            return (
+                              <button 
+                                onClick={() => setIsDrawerOpen(true)}
+                                className={`${btnClass} lg:hidden`}
+                                style={{ color: iconColor }}
+                              >
+                                <Menu size={22} />
+                              </button>
+                            );
                           } else {
-                            setAppThemeMode('dark');
+                            return (
+                              <button 
+                                onClick={handleBackClick}
+                                className={btnClass}
+                                style={{ color: iconColor }}
+                              >
+                                <ChevronLeft size={24} />
+                              </button>
+                            );
                           }
-                        }}
-                        className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors flex items-center justify-center"
-                        style={{ color: 'var(--header-text)' }}
-                      >
-                        {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-                      </button>
+                        })()}
+                        
+                        {/* Center/Left Title */}
+                        <h2 
+                          className="font-bold text-lg tracking-tight truncate"
+                          style={{ color: 'var(--header-text)' }}
+                        >
+                          {getHeaderTitle()}
+                        </h2>
+                      </div>
+
+                      {/* Right: Actions */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {/* Notifications Bell */}
+                        <button 
+                          onClick={() => setView('NOTIFICATIONS')}
+                          className={`p-2 rounded-full transition-all relative flex items-center justify-center cursor-pointer active:scale-95 ${hoverBgClass}`}
+                          style={{ color: 'var(--header-text)' }}
+                        >
+                          <Bell size={20} />
+                          {unreadCount > 0 && (
+                            <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-extrabold text-white animate-pulse">
+                              {unreadCount}
+                            </span>
+                          )}
+                        </button>
+
+                        {/* Theme Toggle Button */}
+                        <button 
+                          onClick={() => {
+                            if (isDarkMode) {
+                              setAppThemeMode('light');
+                            } else {
+                              setAppThemeMode('dark');
+                            }
+                          }}
+                          className={`p-2 rounded-full transition-all flex items-center justify-center cursor-pointer active:scale-95 ${hoverBgClass}`}
+                          style={{ color: 'var(--header-text)' }}
+                        >
+                          {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
               
               <div className="flex-1 relative overflow-hidden">
                 <div 

@@ -3531,7 +3531,7 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                 <button
                   type="button"
                   onClick={() => setIsMonthSelectOpen(true)}
-                  className="bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-text-main transition-all border border-black/5 dark:border-white/10 flex items-center gap-1.5 active:scale-95 shadow-xs cursor-pointer"
+                  className="bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 px-3 py-1.5 rounded-[8px] text-[10px] font-black uppercase tracking-widest text-text-main transition-all border border-black/5 dark:border-white/10 flex items-center gap-1.5 active:scale-95 shadow-xs cursor-pointer"
                 >
                   <span>{selectedMonth === 'ALL' ? (language === 'bn' ? 'সব মাস' : 'All Month') : new Date(0, (typeof selectedMonth === 'number' ? selectedMonth : 1) - 1).toLocaleString('default', { month: 'long' })}</span>
                   <ChevronDown size={12} className="text-text-muted" />
@@ -3540,7 +3540,7 @@ const fileName = `Invoice_${purchase.id}.pdf`;
                 <button
                   type="button"
                   onClick={() => setIsYearSelectOpen(true)}
-                  className="bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-text-main transition-all border border-black/5 dark:border-white/10 flex items-center gap-1.5 active:scale-95 shadow-xs cursor-pointer"
+                  className="bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 px-3 py-1.5 rounded-[8px] text-[10px] font-black uppercase tracking-widest text-text-main transition-all border border-black/5 dark:border-white/10 flex items-center gap-1.5 active:scale-95 shadow-xs cursor-pointer"
                 >
                   <span>{selectedYear === 'ALL' ? (language === 'bn' ? 'সব বছর' : 'All Years') : selectedYear}</span>
                   <ChevronDown size={12} className="text-text-muted" />

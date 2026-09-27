@@ -460,7 +460,7 @@ export default function FuelView() {
                   <button
                     type="button"
                     onClick={() => setIsMonthSelectOpen(true)}
-                    className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 active:scale-95 shadow-lg cursor-pointer animate-fade-in"
+                    className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-[8px] text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 active:scale-95 shadow-lg cursor-pointer animate-fade-in"
                   >
                     <span>{selectedMonth === 'ALL' ? (language === 'bn' ? 'সব মাস' : 'All Month') : months[selectedMonth - 1]}</span>
                     <ChevronDown size={10} className="text-white/70" />
@@ -469,7 +469,7 @@ export default function FuelView() {
                   <button
                     type="button"
                     onClick={() => setIsYearSelectOpen(true)}
-                    className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 active:scale-95 shadow-lg cursor-pointer animate-fade-in"
+                    className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-[8px] text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 active:scale-95 shadow-lg cursor-pointer animate-fade-in"
                   >
                     <span>{selectedYear === 'ALL' ? (language === 'bn' ? 'সব বছর' : 'All Years') : selectedYear}</span>
                     <ChevronDown size={10} className="text-white/70" />

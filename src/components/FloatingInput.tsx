@@ -2,6 +2,37 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../store';
 
+const addOpacityToHex = (hex: string, opacity: number) => {
+  if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) return hex;
+  const r = parseInt(hex.length === 4 ? hex[1]+hex[1] : hex.substr(1, 2), 16);
+  const g = parseInt(hex.length === 4 ? hex[2]+hex[2] : hex.substr(3, 2), 16);
+  const b = parseInt(hex.length === 4 ? hex[3]+hex[3] : hex.substr(5, 2), 16);
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+};
+
+const isColorDark = (colorStr: string): boolean => {
+  if (!colorStr) return true;
+  let clean = colorStr.trim().toLowerCase();
+  if (clean === 'transparent' || clean === 'rgba(0, 0, 0, 0)' || clean === 'rgba(0,0,0,0)') return true;
+  if (clean === 'white' || clean === '#ffffff' || clean === '#fff') return false;
+  if (clean === 'black' || clean === '#000000' || clean === '#000') return true;
+
+  if (clean.startsWith('#')) {
+    let hex = clean.replace('#', '');
+    if (hex.length === 3) {
+      hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
+    if (hex.length === 6) {
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+      return yiq < 128;
+    }
+  }
+  return true;
+};
+
 interface FloatingInputProps {
   label: string;
   value: string | number;
@@ -80,8 +111,7 @@ const FloatingInput: React.FC<FloatingInputProps> = ({ label, value, onChange, t
       // If parent explicitly passed textColor and bgColor, avoid any async calculations
       setDynamicColor(textColor);
       setDynamicBgColor(bgColor);
-      const clean = bgColor.trim().toLowerCase();
-      setIsDarkBg(clean === '#000000' || clean === '#111827' || clean === '#090d1a' || isDarkMode);
+      setIsDarkBg(isColorDark(bgColor) || !isColorDark(textColor) || isDarkMode);
       return;
     }
 
@@ -228,12 +258,12 @@ const FloatingInput: React.FC<FloatingInputProps> = ({ label, value, onChange, t
           ? 'rgb(239, 68, 68)' 
           : (isFocused 
               ? (isDarkBg ? '#ffffff' : 'var(--primary, #10b981)') 
-              : (isDarkBg ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)')),
+              : addOpacityToHex(dynamicColor, isDarkBg ? 0.35 : 0.22)),
         '--search-text-color': dynamicColor,
         '--search-placeholder-color': isDarkBg ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
         '--search-label-color': isDarkBg ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.8)',
         '--search-icon-color': isDarkBg ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.8)',
-        '--search-border-color': isDarkBg ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+        '--search-border-color': addOpacityToHex(dynamicColor, isDarkBg ? 0.35 : 0.22),
         '--search-focus-border-color': isDarkBg ? '#ffffff' : 'var(--primary, #10b981)',
         '--search-label-active-color': dynamicColor,
         '--search-bg-color': dynamicBgColor,

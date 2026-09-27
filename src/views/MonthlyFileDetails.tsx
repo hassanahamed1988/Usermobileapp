@@ -3052,7 +3052,7 @@ const MonthlyFileDetails: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsMonthSelectOpen(true)}
-                className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-white  border border-white/10 backdrop-blur-md flex items-center gap-1.5 active:scale-95 shadow-lg"
+                className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-[8px] text-[10px] font-black uppercase tracking-widest text-white  border border-white/10 backdrop-blur-md flex items-center gap-1.5 active:scale-95 shadow-lg"
               >
                 <span>{["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][currentFile.month - 1]}</span>
                 <ChevronDown size={10} className="text-white/70" />
@@ -3061,7 +3061,7 @@ const MonthlyFileDetails: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsYearSelectOpen(true)}
-                className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 active:scale-95 shadow-lg"
+                className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-[8px] text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 active:scale-95 shadow-lg"
               >
                 <span>{currentFile.year}</span>
                 <ChevronDown size={10} className="text-white/70" />

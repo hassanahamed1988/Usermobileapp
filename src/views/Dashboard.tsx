@@ -548,14 +548,14 @@ const Dashboard: React.FC = () => {
                 <div className="flex gap-2">
                   <button 
                     onClick={() => setShowMonthSelect(true)}
-                    className="bg-white/20 hover:bg-white/30 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 shadow-lg"
+                    className="bg-white/20 hover:bg-white/30 px-3 py-1.5 md:px-4 md:py-2 rounded-[8px] text-[10px] md:text-xs font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 shadow-lg"
                   >
                     {selectedMonth === 'ALL' ? localT.ALL_MONTH : months[selectedMonth - 1]}
                     <ChevronDown size={10} className="text-white/70" />
                   </button>
                   <button 
                     onClick={() => setShowYearSelect(true)}
-                    className="bg-white/20 hover:bg-white/30 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 shadow-lg"
+                    className="bg-white/20 hover:bg-white/30 px-3 py-1.5 md:px-4 md:py-2 rounded-[8px] text-[10px] md:text-xs font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 shadow-lg"
                   >
                     {selectedYear === 'ALL' ? localT.ALL_YEARS : selectedYear}
                     <ChevronDown size={10} className="text-white/70" />
@@ -636,14 +636,14 @@ const Dashboard: React.FC = () => {
                 <div className="flex gap-2">
                   <button 
                     onClick={() => setShowMonthSelect(true)}
-                    className="bg-white/20 hover:bg-white/30 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 shadow-lg"
+                    className="bg-white/20 hover:bg-white/30 px-3 py-1.5 md:px-4 md:py-2 rounded-[8px] text-[10px] md:text-xs font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 shadow-lg"
                   >
                     {selectedMonth === 'ALL' ? localT.ALL_MONTH : months[selectedMonth - 1]}
                     <ChevronDown size={10} className="text-white/70" />
                   </button>
                   <button 
                     onClick={() => setShowYearSelect(true)}
-                    className="bg-white/20 hover:bg-white/30 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 shadow-lg"
+                    className="bg-white/20 hover:bg-white/30 px-3 py-1.5 md:px-4 md:py-2 rounded-[8px] text-[10px] md:text-xs font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 shadow-lg"
                   >
                     {selectedYear === 'ALL' ? localT.ALL_YEARS : selectedYear}
                     <ChevronDown size={10} className="text-white/70" />

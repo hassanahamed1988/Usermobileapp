@@ -50,10 +50,10 @@ export const Button: React.FC<ButtonProps> = ({
     case 'secondary':
     case 'outline':
       variantClasses =
-        'bg-card hover:bg-black/5 dark:hover:bg-white/5 text-foreground border border-black/10 dark:border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.3)]';
+        'bg-card hover:bg-black/5 dark:hover:bg-white/5 text-neutral-900 dark:text-white border border-black/15 dark:border-white/15 shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.3)]';
       break;
     case 'ghost':
-      variantClasses = 'bg-transparent hover:bg-black/5 dark:hover:bg-white/5 text-foreground border-none';
+      variantClasses = 'bg-transparent hover:bg-black/5 dark:hover:bg-white/5 text-text-main border-none';
       break;
   }
 
