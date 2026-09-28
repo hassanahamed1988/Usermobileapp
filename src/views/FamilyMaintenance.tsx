@@ -633,69 +633,81 @@ const FamilyMaintenance: React.FC = () => {
       {mode === 'LIST' && (
         <div className="animate-in slide-in-from-right-8 fade-in duration-300 space-y-6">
           {/* Summary Card */}
-          <div className="bg-theme-card border-[var(--dynamic-card-border)] shadow-[var(--dynamic-card-shadow)] rounded-2xl p-6 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-white/5 pb-4">
-              <h2 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">
-                {language === 'bn' ? 'সারাংশ (Summary)' : 'Summary'}
-              </h2>
-              <div className="flex items-center gap-2">
-                {/* Month Filter */}
-                <button
-                  type="button"
-                  onClick={() => setIsMonthSelectOpen(true)}
-                  className="px-3 py-2 rounded-[8px] text-xs bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white font-bold flex items-center justify-between gap-2 shadow-2xs active:scale-95 transition-all cursor-pointer select-none"
-                >
-                  <span>
-                    {selectedMonth === 'ALL'
-                      ? (language === 'bn' ? 'সকল মাস' : 'All Months')
-                      : (months.find(m => m.value === selectedMonth)?.label || selectedMonth)}
-                  </span>
-                  <ChevronDown size={14} className="text-gray-400 shrink-0" />
-                </button>
+          <div className="relative overflow-hidden rounded-xl p-5 min-h-[190px] md:min-h-[220px] flex flex-col justify-between text-white shadow-md bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a] border border-white/10">
+            {/* Visual accents */}
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-pink-400/10 rounded-full blur-[80px] pointer-events-none"></div>
+            <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-indigo-400/10 rounded-full blur-[80px] pointer-events-none"></div>
 
-                {/* Year Filter */}
-                <button
-                  type="button"
-                  onClick={() => setIsYearSelectOpen(true)}
-                  className="px-3 py-2 rounded-[8px] text-xs bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white font-bold flex items-center justify-between gap-2 shadow-2xs active:scale-95 transition-all cursor-pointer select-none"
-                >
-                  <span>
-                    {selectedYear === 'ALL'
-                      ? (language === 'bn' ? 'সকল বছর' : 'All Years')
-                      : selectedYear}
-                  </span>
-                  <ChevronDown size={14} className="text-gray-400 shrink-0" />
-                </button>
-              </div>
-            </div>
+            <div className="relative z-10 space-y-4 flex-1 flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-black text-white uppercase tracking-wider">
+                  {language === 'bn' ? 'সারাংশ' : 'Summary'}
+                </h2>
+                <div className="flex items-center gap-2">
+                  {/* Month Filter */}
+                  <button
+                    type="button"
+                    onClick={() => setIsMonthSelectOpen(true)}
+                    className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-[8px] text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 active:scale-95 shadow-lg cursor-pointer"
+                  >
+                    <span>
+                      {selectedMonth === 'ALL'
+                        ? (language === 'bn' ? 'সকল মাস' : 'All Months')
+                        : (months.find(m => m.value === selectedMonth)?.label || selectedMonth)}
+                    </span>
+                    <ChevronDown size={10} className="text-white/70" />
+                  </button>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-red-50 dark:bg-red-500/10 p-4 rounded-xl border border-red-100 dark:border-red-500/20">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="p-2 rounded-lg bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400">
-                    <TrendingDown size={16} />
-                  </div>
-                  <p className="text-xs text-red-600 dark:text-red-400 font-bold uppercase tracking-wider">
-                    {language === 'bn' ? 'সেন্ড অ্যামাউন্ট (Send Amount)' : 'Send Amount'}
-                  </p>
+                  {/* Year Filter */}
+                  <button
+                    type="button"
+                    onClick={() => setIsYearSelectOpen(true)}
+                    className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-[8px] text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/10 backdrop-blur-md flex items-center gap-1.5 active:scale-95 shadow-lg cursor-pointer"
+                  >
+                    <span>
+                      {selectedYear === 'ALL'
+                        ? (language === 'bn' ? 'সকল বছর' : 'All Years')
+                        : selectedYear}
+                    </span>
+                    <ChevronDown size={10} className="text-white/70" />
+                  </button>
                 </div>
-                <p className="text-2xl font-black text-gray-900 dark:text-white mt-2">
-                  {totalSend.toLocaleString()} QAR
-                </p>
               </div>
 
-              <div className="bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-xl border border-emerald-100 dark:border-emerald-500/20">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                    <TrendingUp size={16} />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/5 hover:bg-white/10 p-4 rounded-xl border border-white/10 flex flex-col justify-between min-h-[96px] md:min-h-[112px] relative overflow-hidden group shadow-lg transition-all duration-300">
+                  <div className="absolute right-[-16px] bottom-[-16px] opacity-15 pointer-events-none transform group-hover:scale-110 transition-transform duration-300">
+                    <TrendingDown size={80} strokeWidth={1.5} className="text-white" />
                   </div>
-                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider">
-                    {language === 'bn' ? 'রিসিভ অ্যামাউন্ট (Receive Amount)' : 'Receive Amount'}
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="p-1.5 rounded-lg bg-red-500/20 text-red-400">
+                      <TrendingDown size={14} />
+                    </div>
+                    <p className="text-[10px] text-red-300 font-bold uppercase tracking-wider">
+                      {language === 'bn' ? 'সেন্ড অ্যামাউন্ট' : 'Send Amount'}
+                    </p>
+                  </div>
+                  <p className="text-xl md:text-2xl font-black text-white mt-2">
+                    {totalSend.toLocaleString()} QAR
                   </p>
                 </div>
-                <p className="text-2xl font-black text-gray-900 dark:text-white mt-2">
-                  {totalReceive.toLocaleString()} QAR
-                </p>
+
+                <div className="bg-white/5 hover:bg-white/10 p-4 rounded-xl border border-white/10 flex flex-col justify-between min-h-[96px] md:min-h-[112px] relative overflow-hidden group shadow-lg transition-all duration-300">
+                  <div className="absolute right-[-16px] bottom-[-16px] opacity-15 pointer-events-none transform group-hover:scale-110 transition-transform duration-300">
+                    <TrendingUp size={80} strokeWidth={1.5} className="text-white" />
+                  </div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+                      <TrendingUp size={14} />
+                    </div>
+                    <p className="text-[10px] text-emerald-300 font-bold uppercase tracking-wider">
+                      {language === 'bn' ? 'রিসিভ অ্যামাউন্ট' : 'Receive Amount'}
+                    </p>
+                  </div>
+                  <p className="text-xl md:text-2xl font-black text-white mt-2">
+                    {totalReceive.toLocaleString()} QAR
+                  </p>
+                </div>
               </div>
             </div>
           </div>

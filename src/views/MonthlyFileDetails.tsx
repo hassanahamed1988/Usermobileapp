@@ -3165,7 +3165,8 @@ const MonthlyFileDetails: React.FC = () => {
                return (
                  <div 
                    key={trip.id} 
-                   className="bg-[#FFFBF2] dark:bg-[#1A1A1A] py-1.5 px-4 rounded-[10px] flex items-center justify-between shadow-sm border-[1.5px] border-solid border-[#D4AF37] dark:border-white/10 cursor-pointer group min-h-[72px] relative"
+                   className="bg-[#FFFBF2] dark:bg-[#1A1A1A] py-1.5 px-4 rounded-[10px] flex items-center justify-between shadow-[var(--dynamic-card-shadow)] hover:shadow-[var(--dynamic-card-shadow-hover)] transition-all border-[1.5px] border-solid border-[#D4AF37] dark:border-white/10 cursor-pointer group min-h-[72px] relative"
+                   style={{ boxShadow: 'var(--dynamic-card-shadow, 0 0 14px rgba(0, 0, 0, 0.12), 0 0 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 8px rgba(255, 255, 255, 0.12))' }}
                    onClick={() => {
                      setSelectedTrip(trip);
                    }}
@@ -3776,6 +3777,15 @@ const MonthlyFileDetails: React.FC = () => {
                     <div className="flex flex-col">
                       <span className="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Trip Status</span>
                       <span className="text-[14px] font-black text-[#117651] dark:text-emerald-400 uppercase mt-0.5">{selectedTrip.tariffStatus || 'INCOMPLETE'}</span>
+                    </div>
+                    <div className="col-span-2 border-b border-black dark:border-white"></div>
+                    <div className="flex flex-col col-span-2">
+                      <span className="text-[11px] text-gray-500 font-bold uppercase tracking-wider">
+                        {language === 'bn' ? 'কোম্পানির নাম' : 'Company Name'}
+                      </span>
+                      <span className="text-[14px] font-black text-gray-900 dark:text-white uppercase mt-0.5">
+                        {selectedTrip.companyName || '-'}
+                      </span>
                     </div>
                     <div className="col-span-2 border-b border-black dark:border-white"></div>
                     {selectedTrip.emptyReturnYard && (

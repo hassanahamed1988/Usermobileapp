@@ -537,7 +537,7 @@ const Dashboard: React.FC = () => {
       <div className="z-20 pb-4  shrink-0 md:col-span-5 lg:col-span-4 flex flex-col justify-start md:h-full md:overflow-y-auto scrollbar-hide">
         {user?.accountType !== "Personal Account" ? (
           <div 
-            className="relative overflow-hidden rounded-xl p-5 min-h-[175px] md:min-h-[290px] lg:min-h-[240px] flex flex-col justify-between text-white shadow-2xl bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a] border border-white/10"
+            className="relative overflow-hidden rounded-xl p-5 min-h-[190px] md:min-h-[220px] flex flex-col justify-between text-white shadow-2xl bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a] border border-white/10"
           >
             {/* Visual accents */}
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-cyan-400/10 rounded-full blur-[80px]"></div>
@@ -625,7 +625,7 @@ const Dashboard: React.FC = () => {
           </div>
         ) : (
           <div 
-            className="relative overflow-hidden rounded-xl p-5 min-h-[175px] md:min-h-[220px] lg:min-h-[240px] flex flex-col justify-between text-white shadow-2xl bg-gradient-to-br from-[#0f172a] via-[#581c87] to-[#0f172a] border border-white/10"
+            className="relative overflow-hidden rounded-xl p-5 min-h-[190px] md:min-h-[220px] flex flex-col justify-between text-white shadow-2xl bg-gradient-to-br from-[#0f172a] via-[#581c87] to-[#0f172a] border border-white/10"
           >
             {/* Visual accents */}
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-purple-400/10 rounded-full blur-[80px]"></div>

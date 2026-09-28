@@ -1114,9 +1114,14 @@ const BankAccountView: React.FC = () => {
                         <CreditCard size={13} className="text-emerald-500 shrink-0" />
                         {language === 'bn' ? 'অ্যাকাউন্ট নম্বর' : 'Account Number'}
                       </span>
-                      <span className="font-mono font-semibold text-text-main tracking-wider">
-                        {maskedNumber}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono font-semibold text-text-main tracking-wider">
+                          {maskedNumber}
+                        </span>
+                        {account.accountNumber && (
+                          <CardCopyButton text={account.accountNumber} size={11} />
+                        )}
+                      </div>
                     </div>
                     
                     {account.accountType && (
@@ -1228,9 +1233,12 @@ const BankAccountView: React.FC = () => {
                     {selectedAccount.accountStatus || 'Active'}
                   </span>
                 </div>
-                <p className="text-xs text-text-muted truncate mt-0.5">
-                  {holderName} • {showFullNumbers ? selectedAccount.accountNumber : maskAccountNumber(selectedAccount.accountNumber)}
-                </p>
+                <div className="text-xs text-text-muted mt-0.5 flex items-center gap-1.5 flex-wrap">
+                  <span>{holderName} • {showFullNumbers ? selectedAccount.accountNumber : maskAccountNumber(selectedAccount.accountNumber)}</span>
+                  {selectedAccount.accountNumber && (
+                    <CardCopyButton text={selectedAccount.accountNumber} size={11} />
+                  )}
+                </div>
               </div>
             </div>
 
@@ -2953,6 +2961,35 @@ const BankAccountView: React.FC = () => {
 };
 
 /* ==================== HELPER SUBCOMPONENTS ==================== */
+const CardCopyButton: React.FC<{ text?: string; size?: number }> = ({ text, size = 12 }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!text || text === '-') return;
+
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(err => {
+      console.error('Failed to copy: ', err);
+    });
+  };
+
+  if (!text || text === '-') return null;
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="p-1 rounded-md text-text-muted hover:text-text-main hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0 cursor-pointer active:scale-90 flex items-center justify-center"
+      title={copied ? "Copied!" : "Copy to clipboard"}
+    >
+      {copied ? <Check size={size} className="text-emerald-500" /> : <Copy size={size} />}
+    </button>
+  );
+};
+
 interface DetailRowProps {
   label: string;
   value?: string | number | null;

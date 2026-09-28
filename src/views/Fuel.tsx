@@ -447,7 +447,7 @@ export default function FuelView() {
           
           {/* MAIN SUMMARY CARD */}
           <div 
-            className="relative overflow-hidden rounded-xl p-5 md:p-6 min-h-[175px] flex flex-col justify-between text-white shadow-2xl bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a] border border-white/10 -mx-1"
+            className="relative overflow-hidden rounded-xl p-5 md:p-6 min-h-[190px] md:min-h-[220px] flex flex-col justify-between text-white shadow-2xl bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a] border border-white/10 -mx-1"
           >
             {/* Visual accents */}
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-orange-500/10 rounded-full blur-[80px]"></div>
